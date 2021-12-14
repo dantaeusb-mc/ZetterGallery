@@ -1,0 +1,56 @@
+modLoader="javafml"
+
+loaderVersion="[37,)"
+
+license="Mozilla Public License 2.0"
+
+issueTrackerURL="https://github.com/dantaeusb-mc/ZetterGallery/issues"
+
+[[mods]]
+
+modId="zetter_gallery"
+
+version="${file.jarVersion}"
+
+displayName="Zetter Gallery"
+
+displayURL="https://www.curseforge.com/minecraft/mc-mods/zettergallery"
+
+logoFile="zetter.png"
+
+credits='''
+
+Forge Discord:
+diesieben07#0714
+gigaherz#9173
+
+Examples and references:
+Vazkii and Quark team for opening their source code as I often used it as a reference
+'''
+
+authors="Dmitry Burlakov <dantaeusb@live.com>"
+
+description='''
+
+'''
+
+[[dependencies.zetter_gallery]]
+    modId="forge"
+    mandatory=true
+    versionRange="[34,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.zetter_gallery]]
+    modId="zetter"
+    mandatory=true
+    versionRange="[1.12.1]"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.zetter_gallery]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.16.3,1.17)"
+    ordering="NONE"
+    side="BOTH"
