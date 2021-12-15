@@ -8,7 +8,7 @@ issueTrackerURL="https://github.com/dantaeusb-mc/ZetterGallery/issues"
 
 [[mods]]
 
-modId="zetter_gallery"
+modId="zettergallery"
 
 version="${file.jarVersion}"
 

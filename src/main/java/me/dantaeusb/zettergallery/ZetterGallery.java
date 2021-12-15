@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 @Mod(ZetterGallery.MOD_ID)
 public class ZetterGallery
 {
-    public static final String MOD_ID = "zetter_gallery";
+    public static final String MOD_ID = "zettergallery";
     public static boolean DEBUG_MODE = false;
 
     // get a reference to the event bus for this mod;  Registration events are fired on this bus.

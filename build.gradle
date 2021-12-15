@@ -97,8 +97,8 @@ dependencies {
 }
 
 mixin {
-    add sourceSets.main, 'mixins.zetter_gallery.refmap.json'
-    config 'mixins.zetter_gallery.json'
+    add sourceSets.main, 'mixins.zettergallery.refmap.json'
+    config 'mixins.zettergallery.json'
 
     debug.verbose = true
     debug.export = true

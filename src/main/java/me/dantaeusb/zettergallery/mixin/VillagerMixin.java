@@ -1,4 +1,4 @@
-package me.dantaeusb.zettergallery.trading;
+package me.dantaeusb.zettergallery.mixin;
 
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.core.ZetterGalleryVillagers;
