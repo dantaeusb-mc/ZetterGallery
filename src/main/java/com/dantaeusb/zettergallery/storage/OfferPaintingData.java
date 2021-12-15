@@ -1,6 +1,7 @@
 package com.dantaeusb.zettergallery.storage;
 
 import com.dantaeusb.zetter.storage.AbstractCanvasData;
+import com.dantaeusb.zetter.storage.PaintingData;
 import com.dantaeusb.zettergallery.ZetterGallery;
 import net.minecraft.nbt.CompoundTag;
 
@@ -15,16 +16,24 @@ import com.dantaeusb.zetter.storage.AbstractCanvasData.Type;
  * Contains information about painting downloaded from Zetter Gallery
  */
 public class OfferPaintingData extends AbstractCanvasData {
-    private final UUID uuid;
-    private final String authorName;
-    private final String title;
+    private UUID uuid;
+    private String authorName;
+    private String title;
 
-    public OfferPaintingData(UUID uuid, String authorName, String title) {
+    private OfferPaintingData() {
         super();
+    }
 
-        this.uuid = uuid;
-        this.authorName = authorName;
-        this.title = title;
+    public static OfferPaintingData create(UUID uuid, String authorName, String title, Resolution resolution,
+                                           int width, int height, byte[] color
+    ) {
+        OfferPaintingData newPainting = new OfferPaintingData();
+        newPainting.wrapData(resolution, width, height, color);
+        newPainting.uuid = uuid;
+        newPainting.authorName = authorName;
+        newPainting.title = title;
+
+        return newPainting;
     }
 
     protected void updateColorData(byte[] color) {

@@ -37,20 +37,20 @@ description='''
 [[dependencies.zetter_gallery]]
     modId="forge"
     mandatory=true
-    versionRange="[34,)"
+    versionRange="[39,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.zetter_gallery]]
     modId="zetter"
     mandatory=true
-    versionRange="[1.12.1]"
+    versionRange="[0.12.2-1.18.1-beta,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.zetter_gallery]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.16.3,1.17)"
+    versionRange="[1.18.1]"
     ordering="NONE"
     side="BOTH"

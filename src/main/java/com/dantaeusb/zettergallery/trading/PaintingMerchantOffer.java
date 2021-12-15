@@ -1,5 +1,6 @@
 package com.dantaeusb.zettergallery.trading;
 
+import com.dantaeusb.zetter.storage.AbstractCanvasData;
 import com.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import com.dantaeusb.zettergallery.storage.OfferPaintingData;
 
@@ -37,7 +38,6 @@ public class PaintingMerchantOffer {
      * @return
      */
     private OfferPaintingData createOfferDataFromItem(PaintingsResponse.PaintingItem paintingItem) {
-        final OfferPaintingData offer = new OfferPaintingData(paintingItem.uuid, paintingItem.author, paintingItem.name);
         final AbstractCanvasData.Resolution resolution = AbstractCanvasData.Resolution.x16;
         final int paintingSize = (paintingItem.sizeH * resolution.getNumeric()) * (paintingItem.sizeW * resolution.getNumeric());
         byte[] canvasData = new byte[paintingSize * 4];
@@ -50,9 +50,6 @@ public class PaintingMerchantOffer {
             // Skip alpha, it should not be used anyway
         }
 
-        // @todo: resolution calculation is completely wrong for x4
-        offer.initData(AbstractCanvasData.Resolution.x16, paintingItem.sizeH * resolution.getNumeric(), paintingItem.sizeW * resolution.getNumeric(), canvasData);
-
-        return offer;
+        return OfferPaintingData.create(paintingItem.uuid, paintingItem.author, paintingItem.name, AbstractCanvasData.Resolution.x16, paintingItem.sizeH * resolution.getNumeric(), paintingItem.sizeW * resolution.getNumeric(), canvasData);
     }
 }

@@ -1,16 +1,15 @@
 package com.dantaeusb.zettergallery.container;
 
 import com.dantaeusb.zetter.core.ZetterItems;
-import com.dantaeusb.zettergallery.core.ModNetwork;
-import com.dantaeusb.zettergallery.network.packet.SGallerySalesPacket;
 import com.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.core.NonNullList;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
+import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.network.PacketDistributor;
+import net.minecraft.world.item.trading.Merchant;
+import net.minecraft.world.item.trading.MerchantOffer;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -22,7 +21,10 @@ public class PaintingMerchantContainer implements Container {
     public static final int OUTPUT_SLOT = 1;
 
     private final NonNullList<ItemStack> itemStacks = NonNullList.withSize(STORAGE_SIZE, ItemStack.EMPTY);
-    private final Player player;
+    private final Merchant merchant;
+
+    @Nullable
+    private MerchantOffer activeOffer;
 
     private boolean saleAllowed = false;
     private int currentOfferIndex;
@@ -30,8 +32,8 @@ public class PaintingMerchantContainer implements Container {
     @Nullable
     private List<PaintingMerchantOffer> offers;
 
-    public PaintingMerchantContainer(Player player) {
-        this.player = player;
+    public PaintingMerchantContainer(Merchant merchant) {
+        this.merchant = merchant;
     }
 
     @Override
@@ -45,8 +47,8 @@ public class PaintingMerchantContainer implements Container {
      * @param offers
      */
     public void handleOffers(boolean saleAllowed, List<PaintingMerchantOffer> offers) {
-        if (this.player.level.isClientSide()) {
-            ICanvasTracker tracker = Helper.getWorldCanvasTracker(this.player.world);
+        /*if (this.merchant.isClientSide()) {
+            ICanvasTracker tracker = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().getLevel());
 
             // @todo: unregister on GUI close
             for (PaintingMerchantOffer offer : offers) {
@@ -59,7 +61,7 @@ public class PaintingMerchantContainer implements Container {
         }
 
         this.saleAllowed = saleAllowed;
-        this.offers = offers;
+        this.offers = offers;*/
     }
 
     public boolean isSaleAllowed() {
@@ -80,7 +82,11 @@ public class PaintingMerchantContainer implements Container {
         return 0;
     }
 
-    public void updateOfferOutput() {
+    public void setChanged() {
+        this.updateSellItem();
+    }
+
+    public void updateSellItem() {
         PaintingMerchantOffer currentOffer = this.getCurrentOffer();
         ItemStack inputStack;
 
@@ -121,16 +127,15 @@ public class PaintingMerchantContainer implements Container {
      * @return
      */
     public ItemStack getInputSlot() {
-        return this.getStackInSlot(INPUT_SLOT);
+        return this.getItem(INPUT_SLOT);
     }
 
     public ItemStack getOutputSlot() {
-        return this.getStackInSlot(OUTPUT_SLOT);
+        return this.getItem(OUTPUT_SLOT);
     }
 
-    @Override
-    public boolean isUsableByPlayer(Player player) {
-        return this.player.equals(player);
+    public boolean stillValid(Player player) {
+        return this.merchant.getTradingPlayer() == player;
     }
 
     @Override
@@ -155,13 +160,11 @@ public class PaintingMerchantContainer implements Container {
     }
 
     public void stopOpen() {
-        if (this.player.level.isClientSide() && this.offers != null) {
-            ICanvasTracker tracker = Helper.getWorldCanvasTracker(this.player.level);
+        //
+    }
 
-            for (PaintingMerchantOffer offer : this.offers) {
-                tracker.unregisterCanvasData(offer.getPaintingData());
-            }
-        }
+    public void clearContent() {
+        this.itemStacks.clear();
     }
 
     @Override
@@ -171,24 +174,16 @@ public class PaintingMerchantContainer implements Container {
 
     @Override
     public ItemStack removeItem(int index, int count) {
-        return this.itemStacks.get(index, count, false);
+        return ContainerHelper.removeItem(this.itemStacks, index, count);
     }
 
     @Override
     public ItemStack removeItemNoUpdate(int index) {
-        int maxPossibleItemStackSize = paintingMerchantContents.getSlotLimit(index);
-        return paintingMerchantContents.extractItem(index, maxPossibleItemStackSize, false);
+        return ContainerHelper.takeItem(this.itemStacks, index);
     }
 
     @Override
     public void setItem(int index, ItemStack stack) {
         this.itemStacks.set(index, stack);
-    }
-
-    @Override
-    public void clear() {
-        for (int i = 0; i < paintingMerchantContents.getSlots(); ++i) {
-            paintingMerchantContents.setStackInSlot(i, ItemStack.EMPTY);
-        }
     }
 }

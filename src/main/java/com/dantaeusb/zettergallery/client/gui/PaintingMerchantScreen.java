@@ -6,7 +6,7 @@ import com.dantaeusb.zettergallery.client.gui.merchant.PreviewWidget;
 import com.dantaeusb.zettergallery.client.gui.merchant.AuthWidget;
 import com.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import com.dantaeusb.zettergallery.core.Helper;
-import com.dantaeusb.zettergallery.core.ModNetwork;
+import com.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import com.dantaeusb.zettergallery.network.packet.CGallerySelectOfferPacket;
 import com.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -256,7 +256,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         this.menu.updateCurrentOfferIndex(newOffersIndex);
 
         CGallerySelectOfferPacket selectOfferPacket = new CGallerySelectOfferPacket(newOffersIndex);
-        ModNetwork.simpleChannel.sendToServer(selectOfferPacket);
+        ZetterGalleryNetwork.simpleChannel.sendToServer(selectOfferPacket);
     }
 
     public int getOffersCount() {

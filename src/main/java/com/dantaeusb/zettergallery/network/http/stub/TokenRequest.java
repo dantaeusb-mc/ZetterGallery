@@ -1,6 +1,5 @@
 package com.dantaeusb.zettergallery.network.http.stub;
 
-import net.minecraft.util.IStringSerializable;
 import javax.annotation.Nullable;
 
 public class TokenRequest {
@@ -12,7 +11,7 @@ public class TokenRequest {
         this.crossAuthorizationRole = crossAuthorizationRole;
     }
 
-    public enum CrossAuthorizationRole implements IStringSerializable
+    public enum CrossAuthorizationRole
     {
         PLAYER("player"),
         PLAYER_SERVER("player_server");
@@ -30,7 +29,6 @@ public class TokenRequest {
             return this.name;
         }
 
-        @Override
         public String getString()
         {
             return this.name;

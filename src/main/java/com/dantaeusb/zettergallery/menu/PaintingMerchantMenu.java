@@ -1,31 +1,22 @@
 package com.dantaeusb.zettergallery.menu;
 
 import com.dantaeusb.zetter.core.ZetterItems;
-import com.dantaeusb.zetter.item.PaintingItem;
-import com.dantaeusb.zetter.storage.PaintingData;
 import com.dantaeusb.zettergallery.container.PaintingMerchantContainer;
-import com.dantaeusb.zettergallery.core.Helper;
-import com.dantaeusb.zettergallery.core.ModContainers;
-import com.dantaeusb.zettergallery.core.ModItems;
-import com.dantaeusb.zettergallery.core.ModNetwork;
-import com.dantaeusb.zettergallery.gallery.SalesManager;
-import com.dantaeusb.zettergallery.network.http.GalleryConnection;
+import com.dantaeusb.zettergallery.core.ZetterGalleryMenus;
+import com.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import com.dantaeusb.zettergallery.network.packet.CGalleryAuthorizationCheckPacket;
 import com.dantaeusb.zettergallery.network.packet.CGalleryOffersRequestPacket;
-import com.dantaeusb.zettergallery.storage.OfferPaintingData;
-import com.dantaeusb.zettergallery.tileentity.PaintingMerchantTileEntity;
 import com.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
+import net.minecraft.world.entity.npc.ClientSideMerchant;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.item.trading.Merchant;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -39,11 +30,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu {
     public static final int PLAYER_INVENTORY_XPOS = 8;
     public static final int PLAYER_INVENTORY_YPOS = 154;
 
-    private final ContainerLevelAccess worldPosCallable;
-
-    private final Player player;
-    private final Level world;
-
+    private final Merchant merchant;
     private final PaintingMerchantContainer container;
 
     private State state = State.SERVER_AUTHENTICATION;
@@ -53,16 +40,11 @@ public class PaintingMerchantMenu extends AbstractContainerMenu {
     @Nullable
     private String error;
 
-    public PaintingMerchantMenu(int windowID, Inventory invPlayer,
-                                PaintingMerchantContainer container,
-                                final ContainerLevelAccess worldPosCallable) {
-        super(ModContainers.PAINTING_MERCHANT, windowID);
+    public PaintingMerchantMenu(int windowID, Inventory invPlayer, Merchant merchant) {
+        super(ZetterGalleryMenus.PAINTING_MERCHANT, windowID);
 
-        this.container = container;
-        this.worldPosCallable = worldPosCallable;
-
-        this.player = invPlayer.player;
-        this.world = invPlayer.player.level;
+        this.merchant = merchant;
+        this.container = new PaintingMerchantContainer(merchant);
 
         // gui position of the player material slots
         final int INPUT_XPOS = 15;
@@ -96,23 +78,14 @@ public class PaintingMerchantMenu extends AbstractContainerMenu {
         }
     }
 
-    public static PaintingMerchantMenu createContainerServerSide(int windowID, Inventory playerInventory,
-                                                                 PaintingMerchantTileEntity tileEntity,
-                                                                 final ContainerLevelAccess worldPosCallable) {
-        // @todo: this should happen only if the storage is not ready (all caches after release)
-        // request token from Zetter Gallery
-        GalleryConnection.getInstance().authorizeServerPlayer((ServerPlayer) playerInventory.player);
-
-        PaintingMerchantContainer storage = SalesManager.getInstance().getStorage((ServerPlayer) playerInventory.player, tileEntity);
-
-        return new PaintingMerchantMenu(windowID, playerInventory, storage, worldPosCallable);
+    public static PaintingMerchantMenu createContainerServerSide(int windowID, Inventory playerInventory, Merchant merchant) {
+        return new PaintingMerchantMenu(windowID, playerInventory, merchant);
     }
 
-    public static PaintingMerchantMenu createContainerClientSide(int windowID, Inventory playerInventory,
-                                                                 FriendlyByteBuf networkBuffer) {
-        PaintingMerchantContainer canvasStorage = PaintingMerchantStorage.createForClientSideContainer(playerInventory.player);
+    public static PaintingMerchantMenu createContainerClientSide(int windowID, Inventory playerInventory, net.minecraft.network.FriendlyByteBuf networkBuffer) {
+        Merchant merchant = new ClientSideMerchant(playerInventory.player);
 
-        return new PaintingMerchantMenu(windowID, playerInventory, canvasStorage, ContainerLevelAccess.DUMMY);
+        return new PaintingMerchantMenu(windowID, playerInventory, merchant);
     }
 
     /**
@@ -130,7 +103,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu {
      */
     public boolean stillValid(Player player) {
         //return this.merchant.getCustomer() == player;
-        return this.container.isUsableByPlayer(player);
+        return this.container.stillValid(player);
     }
 
     /**
@@ -143,24 +116,24 @@ public class PaintingMerchantMenu extends AbstractContainerMenu {
     public ItemStack quickMoveStack(Player playerIn, int sourceSlotIndex)
     {
         ItemStack outStack = ItemStack.EMPTY;
-        Slot sourceSlot = this.inventorySlots.get(sourceSlotIndex);
+        Slot sourceSlot = this.slots.get(sourceSlotIndex);
 
         if (sourceSlot != null && sourceSlot.hasItem()) {
-            ItemStack sourceStack = sourceSlot.getStack();
+            ItemStack sourceStack = sourceSlot.getItem();
             outStack = sourceStack.copy();
 
             // Palette
             if (sourceSlotIndex == 0) {
-                if (!this.mergeItemStack(sourceStack, 2, 10, true)) {
+                if (!this.moveItemStackTo(sourceStack, 2, 10, true)) {
                     return ItemStack.EMPTY;
                 }
 
-                sourceSlot.onSlotChange(sourceStack, outStack);
+                //sourceSlot.onSlotChange(sourceStack, outStack);
 
             // Inventory
             } else {
                 if (sourceStack.getItem() == ZetterItems.PALETTE) {
-                    if (!this.mergeItemStack(sourceStack, 0, 1, false)) {
+                    if (!this.moveItemStackTo(sourceStack, 0, 1, false)) {
                         return ItemStack.EMPTY;
                     }
                 } else {
@@ -235,7 +208,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu {
      */
     public void updateAuthentication() {
         CGalleryAuthorizationCheckPacket authenticationCheckPacket = new CGalleryAuthorizationCheckPacket();
-        ModNetwork.simpleChannel.sendToServer(authenticationCheckPacket);
+        ZetterGalleryNetwork.simpleChannel.sendToServer(authenticationCheckPacket);
 
         this.state = this.state.success();
     }
@@ -255,7 +228,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu {
     public void updateLoadingState() {
         if (this.state == State.FETCHING_SALES) {
             CGalleryOffersRequestPacket offersRequestPacket = new CGalleryOffersRequestPacket();
-            ModNetwork.simpleChannel.sendToServer(offersRequestPacket);
+            ZetterGalleryNetwork.simpleChannel.sendToServer(offersRequestPacket);
         }
     }
 
@@ -311,54 +284,21 @@ public class PaintingMerchantMenu extends AbstractContainerMenu {
 
         this.container.stopOpen();
 
-        if (!this.world.isClientSide()) {
+        if (!this.merchant.isClientSide()) {
             if (!player.isAlive() || player instanceof ServerPlayer && ((ServerPlayer)player).hasDisconnected()) {
-                ItemStack itemstack = this.container.removeStackFromSlot(0);
+                ItemStack itemstack = this.container.removeItemNoUpdate(0);
                 if (!itemstack.isEmpty()) {
                     player.drop(itemstack, false);
                 }
 
-                itemstack = this.container.removeStackFromSlot(1);
+                itemstack = this.container.removeItemNoUpdate(1);
                 if (!itemstack.isEmpty()) {
                     player.drop(itemstack, false);
                 }
             } else {
-                player.getInventory().placeItemBackInInventory(this.container.removeStackFromSlot(0));
+                player.getInventory().placeItemBackInInventory(this.container.removeItemNoUpdate(0));
             }
         }
-    }
-
-    protected ItemStack takeOutput(Player player, ItemStack outStack) {
-        if (outStack.getItem() == ZetterItems.PAINTING) {
-            OfferPaintingData offerPaintingData = this.getCurrentOffer().getPaintingData();
-            PaintingData paintingData = Helper.createPaintingFromOffer(world, offerPaintingData);
-
-            PaintingItem.setPaintingData(outStack, paintingData);
-            PaintingItem.setBlockSize(
-                    outStack,
-                    new int[]{
-                            paintingData.getWidth() / paintingData.getResolution().getNumeric(),
-                            paintingData.getHeight() / paintingData.getResolution().getNumeric()
-                    }
-            );
-
-            if (!player.isCreative()) {
-                //this.inventorySlots.get(0);
-            }
-
-            if (!this.world.isClientSide()) {
-                GalleryConnection.getInstance().purchase((ServerPlayer) player, offerPaintingData.getUniqueId());
-            }
-        } else if (outStack.getItem() == Items.EMERALD) {
-            if (!this.world.isClientSide()) {
-                final String paintingCode = PaintingItem.getPaintingCode(this.container.getInputSlot());
-                PaintingData paintingData = Helper.getWorldCanvasTracker(this.world).getCanvasData(paintingCode, PaintingData.class);
-
-                GalleryConnection.getInstance().sell((ServerPlayer) player, paintingData);
-            }
-        }
-
-        return outStack;
     }
 
     private boolean areItemStacksEqual(ItemStack stack1, ItemStack stack2) {
@@ -405,7 +345,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu {
          */
         public void onTake(Player player, ItemStack stack) {
             super.onTake(player, stack);
-            PaintingMerchantMenu.this.takeOutput(player, stack);
+            //PaintingMerchantMenu.this.takeOutput(player, stack);
         }
     }
 

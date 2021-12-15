@@ -9,7 +9,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = ZetterGallery.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
-public class ModContainers {
+public class ZetterGalleryMenus {
     public static MenuType<PaintingMerchantMenu> PAINTING_MERCHANT;
 
     @SubscribeEvent

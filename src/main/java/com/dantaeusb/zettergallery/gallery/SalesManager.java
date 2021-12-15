@@ -3,7 +3,6 @@ package com.dantaeusb.zettergallery.gallery;
 import com.dantaeusb.zettergallery.gallery.salesmanager.PlayerFeed;
 import com.dantaeusb.zettergallery.network.http.GalleryConnection;
 import com.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
-import com.dantaeusb.zettergallery.tileentity.PaintingMerchantTileEntity;
 import com.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.server.level.ServerPlayer;
 

@@ -14,7 +14,7 @@ import static net.minecraftforge.network.NetworkDirection.PLAY_TO_SERVER;
 import java.util.Optional;
 
 @Mod.EventBusSubscriber(modid = ZetterGallery.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
-public class ModNetwork {
+public class ZetterGalleryNetwork {
     public static SimpleChannel simpleChannel;
     // @todo: rename this on release, it's zetter:zetter_channel 0.1
     public static final ResourceLocation simpleChannelRL = new ResourceLocation(ZetterGallery.MOD_ID, "zetter_channel");
@@ -35,8 +35,8 @@ public class ModNetwork {
         simpleChannel = NetworkRegistry.newSimpleChannel(
                 simpleChannelRL,
                 () -> MESSAGE_PROTOCOL_VERSION,
-                ModNetwork::isThisProtocolAcceptedByClient,
-                ModNetwork::isThisProtocolAcceptedByServer
+                ZetterGalleryNetwork::isThisProtocolAcceptedByClient,
+                ZetterGalleryNetwork::isThisProtocolAcceptedByServer
         );
 
         simpleChannel.registerMessage(GALLERY_AUTHORIZATION_REQUEST, SGalleryAuthorizationRequestPacket.class,
@@ -76,10 +76,10 @@ public class ModNetwork {
     }
 
     public static boolean isThisProtocolAcceptedByClient(String protocolVersion) {
-        return ModNetwork.MESSAGE_PROTOCOL_VERSION.equals(protocolVersion);
+        return ZetterGalleryNetwork.MESSAGE_PROTOCOL_VERSION.equals(protocolVersion);
     }
 
     public static boolean isThisProtocolAcceptedByServer(String protocolVersion) {
-        return ModNetwork.MESSAGE_PROTOCOL_VERSION.equals(protocolVersion);
+        return ZetterGalleryNetwork.MESSAGE_PROTOCOL_VERSION.equals(protocolVersion);
     }
 }

@@ -61,10 +61,7 @@ public class SGallerySalesPacket {
                 final byte[] color = networkBuffer.readByteArray();
                 final int price = networkBuffer.readInt();
 
-                assert resolution != null;
-
-                OfferPaintingData paintingData = new OfferPaintingData(uuid, authorName, title);
-                paintingData.initData(resolution, sizeW * resolution.getNumeric(), sizeH * resolution.getNumeric(), color);
+                OfferPaintingData paintingData = OfferPaintingData.create(uuid, authorName, title, resolution, sizeW * resolution.getNumeric(), sizeH * resolution.getNumeric(), color);
 
                 offers.add(new PaintingMerchantOffer(paintingData, price));
 

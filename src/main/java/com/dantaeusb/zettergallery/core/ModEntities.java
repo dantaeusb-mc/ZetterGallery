@@ -1,7 +1,7 @@
 package com.dantaeusb.zettergallery.core;
 
 import com.dantaeusb.zettergallery.ZetterGallery;
-import net.minecraft.entity.EntityType;
+import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ModelRegistryEvent;
