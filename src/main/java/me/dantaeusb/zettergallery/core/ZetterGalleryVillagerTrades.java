@@ -1,6 +1,6 @@
 package me.dantaeusb.zettergallery.core;
 
-import com.dantaeusb.zetter.core.ZetterItems;
+import me.dantaeusb.zetter.core.ZetterItems;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import net.minecraft.world.entity.npc.VillagerTrades;
 import net.minecraft.world.item.ItemStack;
@@ -15,6 +15,9 @@ import net.minecraftforge.fml.common.Mod;
 import java.util.List;
 @Mod.EventBusSubscriber(modid = ZetterGallery.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ZetterGalleryVillagerTrades {
+    public static final int BUY_OFFER_ID = 0;
+    public static final int SELL_OFFER_ID = 1;
+
     public enum WhichTrades {
         NONE,
         PCB_BLUEPRINT,
@@ -35,6 +38,16 @@ public class ZetterGalleryVillagerTrades {
                         new ItemStack(Items.EMERALD, 4),
                         ItemStack.EMPTY,
                         new ItemStack(ZetterItems.PAINTING, 1),
+                        16,
+                        2,
+                        0.05F
+                )
+            );
+            trades.get(1).add(
+                (entity, random) -> new MerchantOffer(
+                        new ItemStack(ZetterItems.PAINTING, 1),
+                        ItemStack.EMPTY,
+                        new ItemStack(Items.EMERALD, 4),
                         16,
                         2,
                         0.05F

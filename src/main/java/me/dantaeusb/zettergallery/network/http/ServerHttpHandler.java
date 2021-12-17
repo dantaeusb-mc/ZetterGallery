@@ -3,6 +3,7 @@ package me.dantaeusb.zettergallery.network.http;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.gallery.SalesManager;
+import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.stub.AuthCheckResponse;
 import me.dantaeusb.zettergallery.network.http.stub.AuthTokenResponse;
 import me.dantaeusb.zettergallery.network.http.stub.GenericMessageResponse;
@@ -14,22 +15,22 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.PacketDistributor;
 
 public class ServerHttpHandler {
-    public static void processPlayerToken(ServerPlayer playerEntity, AuthTokenResponse response) {
+    public static void processPlayerToken(ServerPlayer player, AuthTokenResponse response) {
         try {
-            GalleryConnection.getInstance().savePlayerToken(playerEntity, response.token);
+            GalleryConnection.getInstance().savePlayerToken(player, response.token);
 
             SGalleryAuthorizationRequestPacket authenticationPacket = new SGalleryAuthorizationRequestPacket(response.crossAuthorizationCode.code);
-            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> playerEntity), authenticationPacket);
+            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> player), authenticationPacket);
         } catch (Exception exception) {
             ZetterGallery.LOG.error(exception.getMessage());
             ZetterGallery.LOG.trace(exception);
         }
     }
 
-    public static void processPlayerTokenCheck(ServerPlayer playerEntity, AuthCheckResponse response) {
+    public static void processPlayerTokenCheck(ServerPlayer player, AuthCheckResponse response) {
         try {
             SGalleryAuthorizationResponsePacket authenticationPacket = new SGalleryAuthorizationResponsePacket(response.playerRights.canBuy, response.playerRights.canSell);
-            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> playerEntity), authenticationPacket);
+            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> player), authenticationPacket);
         } catch (Exception exception) {
             ZetterGallery.LOG.error(exception.getMessage());
         }
@@ -41,34 +42,56 @@ public class ServerHttpHandler {
      * no longer exists or expired, so we don't need to ask
      * Gallery to drop the token.
      *
-     * @param playerEntity
+     * @param player
      * @param error
      */
-    public static void processPlayerTokenCheckFail(ServerPlayer playerEntity, String error) {
+    public static void processPlayerTokenCheckFail(ServerPlayer player, String error) {
         try {
-            GalleryConnection.getInstance().removePlayerToken(playerEntity);
-            GalleryConnection.getInstance().authorizeServerPlayer(playerEntity);
+            GalleryConnection.getInstance().removePlayerToken(player);
+            GalleryConnection.getInstance().authorizeServerPlayer(player);
         } catch (Exception exception) {
             ZetterGallery.LOG.error(exception.getMessage());
         }
     }
 
-    public static void processPlayerTokenDrop(ServerPlayer playerEntity, GenericMessageResponse response) {
-        GalleryConnection.getInstance().removePlayerToken(playerEntity);
+    public static void processPlayerTokenDrop(ServerPlayer player, GenericMessageResponse response) {
+        GalleryConnection.getInstance().removePlayerToken(player);
     }
 
-    public static void processPlayerFeed(ServerPlayer playerEntity, PaintingsResponse response) {
+    public static void processPlayerFeed(ServerPlayer player, PaintingsResponse response) {
         try {
-            SalesManager.getInstance().handlePlayerFeed(playerEntity, response);
+            SalesManager.getInstance().handlePlayerFeed(player, response);
         } catch (Exception exception) {
             ZetterGallery.LOG.error(exception.getMessage());
         }
     }
 
-    public static void processRequestConnectionError(ServerPlayer playerEntity, String message) {
+    public static void processPurchaseResult(ServerPlayer player, PaintingsResponse response) {
+        try {
+            if (player.containerMenu instanceof PaintingMerchantMenu) {
+                PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)player.containerMenu;
+                paintingMerchantMenu.finalizeCheckout();
+            }
+        } catch (Exception exception) {
+            ZetterGallery.LOG.error(exception.getMessage());
+        }
+    }
+
+    public static void processSaleResult(ServerPlayer player, PaintingsResponse response) {
+        try {
+            if (player.containerMenu instanceof PaintingMerchantMenu) {
+                PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)player.containerMenu;
+                paintingMerchantMenu.finalizeCheckout();
+            }
+        } catch (Exception exception) {
+            ZetterGallery.LOG.error(exception.getMessage());
+        }
+    }
+
+    public static void processRequestConnectionError(ServerPlayer player, String message) {
         try {
             SGalleryErrorPacket authenticationPacket = new SGalleryErrorPacket(message);
-            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> playerEntity), authenticationPacket);
+            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> player), authenticationPacket);
 
             ZetterGallery.LOG.info("Authentication error");
         } catch (Exception exception) {

@@ -1,9 +1,9 @@
 package me.dantaeusb.zettergallery.network.packet;
 
-import com.dantaeusb.zetter.storage.AbstractCanvasData;
+import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.network.ClientHandler;
-import me.dantaeusb.zettergallery.storage.OfferPaintingData;
+import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
@@ -61,7 +61,7 @@ public class SGallerySalesPacket {
                 final byte[] color = networkBuffer.readByteArray();
                 final int price = networkBuffer.readInt();
 
-                OfferPaintingData paintingData = OfferPaintingData.create(uuid, authorName, title, resolution, sizeW * resolution.getNumeric(), sizeH * resolution.getNumeric(), color);
+                GalleryPaintingData paintingData = GalleryPaintingData.create(uuid, authorName, title, resolution, sizeW * resolution.getNumeric(), sizeH * resolution.getNumeric(), color);
 
                 offers.add(new PaintingMerchantOffer(paintingData, price));
 
@@ -83,13 +83,18 @@ public class SGallerySalesPacket {
         networkBuffer.writeInt(this.offers.size());
 
         for (PaintingMerchantOffer merchantOffer : this.offers) {
-            OfferPaintingData paintingData = merchantOffer.getPaintingData();
+            if (merchantOffer.isSaleOffer() || !(merchantOffer.getPaintingData() instanceof GalleryPaintingData)) {
+                ZetterGallery.LOG.error("Trying to send sell offer over the net");
+                return;
+            }
+
+            GalleryPaintingData paintingData = (GalleryPaintingData) merchantOffer.getPaintingData();
 
             int resolution = paintingData.getResolution().getNumeric();
             byte[] color = new byte[paintingData.getColorDataBuffer().remaining()];
             paintingData.getColorDataBuffer().get(color);
 
-            networkBuffer.writeUUID(paintingData.getUniqueId());
+            networkBuffer.writeUUID(paintingData.getUUID());
             networkBuffer.writeUtf(paintingData.getPaintingName(), MAX_NAME_LENGTH);
             networkBuffer.writeUtf(paintingData.getAuthorName(), MAX_AUTHOR_LENGTH);
             networkBuffer.writeInt(paintingData.getResolution().getNumeric());

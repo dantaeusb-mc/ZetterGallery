@@ -27,6 +27,7 @@ public class ZetterGalleryNetwork {
     public static final byte GALLERY_OFFERS_RESPONSE = 54;
     public static final byte GALLERY_SELECT_OFFER = 55;
     public static final byte GALLERY_UPDATE_OFFER = 56;
+    public static final byte GALLERY_PROCEED_OFFER = 57;
     public static final byte GALLERY_ERROR = 60;
 
     @SubscribeEvent
@@ -67,6 +68,11 @@ public class ZetterGalleryNetwork {
         simpleChannel.registerMessage(GALLERY_SELECT_OFFER, CGallerySelectOfferPacket.class,
                 CGallerySelectOfferPacket::writePacketData, CGallerySelectOfferPacket::readPacketData,
                 CGallerySelectOfferPacket::handle,
+                Optional.of(PLAY_TO_SERVER));
+
+        simpleChannel.registerMessage(GALLERY_PROCEED_OFFER, CGalleryProceedOfferPacket.class,
+                CGalleryProceedOfferPacket::writePacketData, CGalleryProceedOfferPacket::readPacketData,
+                CGalleryProceedOfferPacket::handle,
                 Optional.of(PLAY_TO_SERVER));
 
         simpleChannel.registerMessage(GALLERY_ERROR, SGalleryErrorPacket.class,

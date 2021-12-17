@@ -1,6 +1,6 @@
 package me.dantaeusb.zettergallery.network.http.stub;
 
-import com.dantaeusb.zetter.storage.PaintingData;
+import me.dantaeusb.zetter.storage.PaintingData;
 import com.google.gson.*;
 import com.google.gson.annotations.JsonAdapter;
 

@@ -19,12 +19,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.npc.VillagerData;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nullable;
+import java.awt.*;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -32,12 +35,10 @@ import java.net.URISyntaxException;
 @OnlyIn(Dist.CLIENT)
 public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerchantMenu> {
     // This is the resource location for the background image
-    private static final ResourceLocation LOADING_RESOURCE = new ResourceLocation("zetter", "textures/gui/painting_trade_loading.png");
-    private static final ResourceLocation READY_RESOURCE = new ResourceLocation("zetter", "textures/gui/painting_trade.png");
+    private static final ResourceLocation LOADING_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade_loading.png");
+    private static final ResourceLocation READY_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade.png");
 
-    private static final Component TRADES_TEXT = new TranslatableComponent("merchant.trades");
-    private static final Component DASH_TEXT = new TextComponent(" - ");
-    private static final Component field_243353_D = new TranslatableComponent("merchant.deprecated");
+    private static final Component LEVEL_SEPARATOR = new TextComponent(" - ");
 
     private AuthWidget statusWidget;
     private PreviewWidget previewWidget;
@@ -103,19 +104,23 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         }
     }
 
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(matrixStack);
+    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
+        this.renderBackground(poseStack);
 
         if (this.menu.getState() == PaintingMerchantMenu.State.READY) {
-            super.render(matrixStack, mouseX, mouseY, partialTicks);
-            this.previewWidget.render(matrixStack, mouseX, mouseY, partialTicks);
-            this.infoWidget.render(matrixStack, mouseX, mouseY, partialTicks);
+            super.render(poseStack, mouseX, mouseY, partialTicks);
+            this.previewWidget.render(poseStack, mouseX, mouseY, partialTicks);
+            this.infoWidget.render(poseStack, mouseX, mouseY, partialTicks);
         } else {
-            this.cleanRender(matrixStack, mouseX, mouseY, partialTicks);
-            this.statusWidget.render(matrixStack, mouseX, mouseY, partialTicks);
+            this.cleanRender(poseStack, mouseX, mouseY, partialTicks);
+            this.statusWidget.render(poseStack, mouseX, mouseY, partialTicks);
         }
 
-        this.renderTooltip(matrixStack, mouseX, mouseY);
+        int i = (this.width - this.imageWidth) / 2;
+        int j = (this.height - this.imageHeight) / 2;
+        this.renderProgressBar(poseStack, i, j);
+
+        this.renderTooltip(poseStack, mouseX, mouseY);
     }
 
     /**
@@ -138,7 +143,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         this.hoveredSlot = null;
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
-        this.drawGuiContainerForegroundLayer(poseStack1, mouseX, mouseY);
+        this.renderLabels(poseStack1, mouseX, mouseY);
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.ContainerScreenEvent.DrawForeground(this, poseStack1, mouseX, mouseY));
 
         poseStack1.popPose();
@@ -170,45 +175,47 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         }
     }
 
-    private void drawMerchantLevel(PoseStack p_238839_1_, int p_238839_2_, int p_238839_3_, MerchantOffer p_238839_4_) {
-        /*this.minecraft.getTextureManager().bindTexture(PAINTING_RESOURCE);
-        int i = this.menu.getMerchantLevel();
-        int j = this.menu.getXp();
+    private void renderProgressBar(PoseStack poseStack, int width, int height) {
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderTexture(0, READY_RESOURCE);
+        int merchantLevel = this.menu.getMerchantLevel();
+        int merchantXp = this.menu.getMerchant().getVillagerXp();
 
-        if (i < 5) {
-            blit(p_238839_1_, p_238839_2_ + 136, p_238839_3_ + 16, this.getBlitOffset(), 0.0F, 186.0F, 102, 5, 256, 512);
-            int k = VillagerData.getExperiencePrevious(i);
-            if (j >= k && VillagerData.canLevelUp(i)) {
+        if (merchantLevel < 5) {
+            blit(poseStack, width + 136, height + 16, this.getBlitOffset(), 0.0F, 186.0F, 102, 5, 512, 256);
+
+            int k = VillagerData.getMinXpPerLevel(merchantLevel);
+
+            if (merchantXp >= k && VillagerData.canLevelUp(merchantLevel)) {
                 int l = 100;
-                float f = 100.0F / (float)(VillagerData.getExperienceNext(i) - k);
-                int i1 = Math.min(MathHelper.floor(f * (float)(j - k)), 100);
-                blit(p_238839_1_, p_238839_2_ + 136, p_238839_3_ + 16, this.getBlitOffset(), 0.0F, 191.0F, i1 + 1, 5, 256, 512);
-                int j1 = this.menu.getPendingExp();
-                if (j1 > 0) {
-                    int k1 = Math.min(MathHelper.floor((float)j1 * f), 100 - i1);
-                    blit(p_238839_1_, p_238839_2_ + 136 + i1 + 1, p_238839_3_ + 16 + 1, this.getBlitOffset(), 2.0F, 182.0F, k1, 3, 256, 512);
-                }
+                float f = 100.0F / (float)(VillagerData.getMaxXpPerLevel(merchantLevel) - k);
+                int i1 = Math.min(Mth.floor(f * (float)(merchantXp - k)), l);
 
+                blit(poseStack, width + 136, height + 16, this.getBlitOffset(), 0.0F, 191.0F, i1 + 1, 5, 512, 256);
+
+                /*int futureTraderXp = this.menu.getFutureTraderXp();
+
+                if (futureTraderXp > 0) {
+                    int k1 = Math.min(Mth.floor((float)futureTraderXp * f), 100 - i1);
+                    blit(poseStack, width + 136 + i1 + 1, height + 16 + 1, this.getBlitOffset(), 2.0F, 182.0F, k1, 3, 512, 256);
+                }*/
             }
-        }*/
+        }
     }
 
-    protected void drawGuiContainerForegroundLayer(PoseStack matrixStack, int x, int y) {
-        /*int merchantLevel = this.menu.getMerchantLevel();
+    @Override
+    protected void renderLabels(PoseStack poseStack, int x, int y) {
+        int merchantLevel = this.menu.getMerchantLevel();
 
         // Draw level
-        if (merchantLevel > 0 && merchantLevel <= 5 && this.menu.func_217042_i()) {
-            ITextComponent levelText = this.title.deepCopy().append(DASH_TEXT).append(new TranslationTextComponent("merchant.level." + merchantLevel));
-            int j = this.font.getStringPropertyWidth(levelText);
-            int k = 49 + this.xSize / 2 - j / 2;
-            this.font.func_243248_b(matrixStack, levelText, (float)k, 6.0F, 4210752);
+        if (merchantLevel > 0 && merchantLevel <= 5) {
+            Component levelText = this.title.copy().append(LEVEL_SEPARATOR).append(new TranslatableComponent("merchant.level." + merchantLevel));
+            int textWidth = this.font.width(levelText);
+            int textPos = this.imageWidth / 2 - textWidth / 2;
+            this.font.draw(poseStack, levelText, (float)textPos, 6.0F, Color.darkGray.getRGB());
         } else {
-            this.font.func_243248_b(matrixStack, this.title, (float)(49 + this.xSize / 2 - this.font.getStringPropertyWidth(this.title) / 2), 6.0F, 4210752);
+            this.font.draw(poseStack, this.title, (float)(this.imageWidth / 2 - this.font.width(this.title) / 2), 6.0F, Color.darkGray.getRGB());
         }
-
-        this.font.func_243248_b(matrixStack, this.playerInventory.getDisplayName(), (float)this.playerInventoryTitleX, (float)this.playerInventoryTitleY, 4210752);
-        int l = this.font.getStringPropertyWidth(TRADES_TEXT);
-        this.font.func_243248_b(matrixStack, TRADES_TEXT, (float)(5 - l / 2 + 48), 6.0F, 4210752);*/
     }
 
     protected void renderBg(PoseStack matrixStack, float partialTicks, int x, int y) {
@@ -216,16 +223,20 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
         if (this.menu.getState() == PaintingMerchantMenu.State.READY) {
-            this.minecraft.getTextureManager().bindForSetup(READY_RESOURCE);
+            RenderSystem.setShaderTexture(0, READY_RESOURCE);
         } else {
-            this.minecraft.getTextureManager().bindForSetup(LOADING_RESOURCE);
+            RenderSystem.setShaderTexture(0, LOADING_RESOURCE);
         }
 
-        blit(matrixStack, this.leftPos, this.topPos, this.getBlitOffset(), 0.0F, 0.0F, this.width, this.height, 256, 256);
+        blit(matrixStack, this.leftPos, this.topPos, this.getBlitOffset(), 0.0F, 0.0F, this.imageWidth, this.imageHeight, 256, 256);
     }
 
+    /**
+     * Pipe methods to container
+     */
+
     public void prevOffer() {
-        if (this.menu.getOffers() == null || this.getOffersCount() == 0) {
+        if (!this.menu.hasOffers()) {
             return;
         }
 
@@ -239,7 +250,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     }
 
     public void nextOffer() {
-        if (this.menu.getOffers() == null || this.getOffersCount() == 0) {
+        if (!this.menu.hasOffers()) {
             return;
         }
 
@@ -259,12 +270,20 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         ZetterGalleryNetwork.simpleChannel.sendToServer(selectOfferPacket);
     }
 
+    public void proceed() {
+        this.menu.startCheckout();
+    }
+
+    public boolean canProceed() {
+        return this.menu.canProceed();
+    }
+
     public int getOffersCount() {
         return this.menu.getOffersCount();
     }
 
     public int getCurrentOfferIndex() {
-        if (this.menu.getOffers() != null) {
+        if (this.menu.hasOffers()) {
             return this.menu.getCurrentOfferIndex();
         }
 

@@ -93,7 +93,7 @@ dependencies {
     minecraft 'net.minecraftforge:forge:1.18.1-39.0.0'
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    implementation fg.deobf("com.dantaeusb.zetter:Zetter:0.12.2-1.18.1-beta")
+    implementation fg.deobf("com.dantaeusb.zetter:Zetter:0.13.1-1.18.1-beta")
 }
 
 mixin {

@@ -1,14 +1,19 @@
 package me.dantaeusb.zettergallery.gallery;
 
+import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
+import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.gallery.salesmanager.PlayerFeed;
+import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryConnection;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.trading.Merchant;
 
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @todo: get rid of pair and javafx dependency
@@ -44,44 +49,53 @@ public class SalesManager {
 
     }
 
-    public void requestOffers(ServerPlayer player, UUID merchantId, int merchantLevel, Consumer<List<PaintingMerchantOffer>> offersConsumer) {
+    public void requestOffers(ServerPlayer player, PaintingMerchantMenu paintingMerchantMenu) {
         if (this.playerFeed.containsKey(player.getUUID())) {
-            PlayerFeed feed = this.playerFeed.get(player.getUUID());
+            PaintingMerchantContainer container = paintingMerchantMenu.getContainer();
 
-            List<PaintingMerchantOffer> list = this.getOffersFromFeed(feed, merchantId, merchantLevel);
-            offersConsumer.accept(list);
+            PlayerFeed feed = this.playerFeed.get(player.getUUID());
+            List<PaintingMerchantOffer> offers = this.getOffersFromFeed(feed, paintingMerchantMenu.getMerchantId(), paintingMerchantMenu.getMerchantLevel());
+
+            container.handleOffers(feed.isSaleAllowed(), offers);
         } else {
-            this.requestPlayerFeed(player, (feed) -> {
-                List<PaintingMerchantOffer> list = this.getOffersFromFeed(feed, merchantId, merchantLevel);
-                offersConsumer.accept(list);
-            });
+            // Will call handlePlayerFeed on response, which call handleOffers
+            GalleryConnection.getInstance().getPlayerFeed(player);
         }
     }
 
+    public void handlePlayerFeed(ServerPlayer player, PaintingsResponse response) {
+        PlayerFeed feed = PlayerFeed.createFeedFromSaleResponse(player, response);
+
+        this.playerFeed.put(player.getUUID(), feed);
+
+        if (player.containerMenu instanceof PaintingMerchantMenu) {
+            PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)player.containerMenu;
+            PaintingMerchantContainer container = paintingMerchantMenu.getContainer();
+
+            List<PaintingMerchantOffer> offers = this.getOffersFromFeed(feed, paintingMerchantMenu.getMerchantId(), paintingMerchantMenu.getMerchantLevel());
+            container.handleOffers(response.sell.allowed, offers);
+        }
+    }
+
+    /**
+     * Depending on merchant ID and level pick some paintings from feed to show on sale
+     * @param feed
+     * @param merchantId
+     * @param merchantLevel
+     * @return
+     */
     private List<PaintingMerchantOffer> getOffersFromFeed(PlayerFeed feed, UUID merchantId, int merchantLevel) {
         Random rng = new Random(feed.getPlayer().getUUID().getMostSignificantBits() ^ merchantId.getMostSignificantBits());
 
         final int totalCount = feed.getOffersCount();
 
         int showCount = 5 + merchantLevel * 2;
-        showCount = Math.max(showCount, totalCount);
+        showCount = Math.min(showCount, totalCount);
 
-        List<PaintingMerchantOffer> offers = new Vector<>();
+        List<Integer> available = IntStream.range(0, totalCount).boxed().collect(Collectors.toList());
+        Collections.shuffle(available, rng);
+        available = available.subList(0, showCount);
 
-        return rng.ints(showCount, 0, totalCount).mapToObj(offers::get).collect(Collectors.toList());
-    }
-
-    public void requestPlayerFeed(ServerPlayer player, Consumer<PlayerFeed> playerOffersConsumer) {
-        if (this.playerFeed.containsKey(player.getUUID())) {
-            playerOffersConsumer.accept(this.playerFeed.get(player.getUUID()));
-        }
-
-        GalleryConnection.getInstance().getPlayerFeed(player);
-    }
-
-    public void handlePlayerFeed(ServerPlayer player, PaintingsResponse response) {
-        PlayerFeed feed = PlayerFeed.createFeedFromSaleResponse(player, response);
-
-
+        return available.stream().map(feed.getOffers()::get).collect(Collectors.toList());
     }
 }

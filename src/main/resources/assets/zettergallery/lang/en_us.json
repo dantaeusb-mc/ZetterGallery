@@ -1,0 +1,11 @@
+{
+  "entity.minecraft.villager.zettergallery.painting_merchant": "Painting Merchant",
+  "container.zettergallery.merchant.preview": "Painting Preview",
+  "container.zettergallery.merchant.authenticating": "Authenticating",
+  "container.zettergallery.merchant.login_request": "Please log in",
+  "container.zettergallery.merchant.fetching_sales": "Loading paintings",
+  "container.zettergallery.merchant.unknown_error": "Unknown error occurred",
+  "container.zettergallery.merchant.try_again": "Please try again later",
+  "container.zettergallery.merchant.buy": "Buy",
+  "container.zettergallery.merchant.sell": "Sell"
+}

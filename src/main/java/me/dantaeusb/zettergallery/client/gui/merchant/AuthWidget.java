@@ -1,5 +1,7 @@
 package me.dantaeusb.zettergallery.client.gui.merchant;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -19,7 +21,7 @@ import java.awt.*;
 
 public class AuthWidget extends AbstractWidget implements Widget, GuiEventListener {
 
-    private static final ResourceLocation LOADING_RESOURCE = new ResourceLocation("zetter", "textures/gui/painting_trade_loading.png");
+    private static final ResourceLocation LOADING_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade_loading.png");
 
     protected final PaintingMerchantScreen parentScreen;
 
@@ -33,11 +35,11 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
 
     private int tick = 0;
 
-    private static final Component AUTHENTICATING_TEXT = new TranslatableComponent("container.zetter.paintingMerchant.authenticating");
-    private static final Component LOGIN_REQUEST_TEXT = new TranslatableComponent("container.zetter.paintingMerchant.loginRequest");
-    private static final Component FETCHING_SALES_TEXT = new TranslatableComponent("container.zetter.paintingMerchant.fetchingSales");
-    private static final Component UNKNOWN_ERROR_TEXT = new TranslatableComponent("container.zetter.paintingMerchant.unknownError");
-    private static final Component TRY_AGAIN_TEXT = new TranslatableComponent("container.zetter.paintingMerchant.tryAgain");
+    private static final Component AUTHENTICATING_TEXT = new TranslatableComponent("container.zettergallery.merchant.authenticating");
+    private static final Component LOGIN_REQUEST_TEXT = new TranslatableComponent("container.zettergallery.merchant.login_request");
+    private static final Component FETCHING_SALES_TEXT = new TranslatableComponent("container.zettergallery.merchant.fetching_sales");
+    private static final Component UNKNOWN_ERROR_TEXT = new TranslatableComponent("container.zettergallery.merchant.unknown_error");
+    private static final Component TRY_AGAIN_TEXT = new TranslatableComponent("container.zettergallery.merchant.try_again");
 
     public AuthWidget(PaintingMerchantScreen parentScreen, int x, int y) {
         super(x, y, WIDTH, HEIGHT, new TranslatableComponent("container.zetter.painting.status"));
@@ -134,7 +136,7 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
         final int BUTTON_UPOS = 176;
         final int BUTTON_VPOS = 0;
 
-        this.minecraft.getTextureManager().bindForSetup(LOADING_RESOURCE);
+        RenderSystem.setShaderTexture(0, LOADING_RESOURCE);
 
         if (isPointInRegion(BUTTON_XPOS, BUTTON_YPOS, BUTTON_WIDTH, BUTTON_HEIGHT, mouseX, mouseY)) {
             blit(matrixStack, this.x + BUTTON_XPOS, this.y + BUTTON_YPOS, BUTTON_UPOS, BUTTON_VPOS + BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT, 256, 256);

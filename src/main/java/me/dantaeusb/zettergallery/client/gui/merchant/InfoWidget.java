@@ -1,7 +1,9 @@
 package me.dantaeusb.zettergallery.client.gui.merchant;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+import me.dantaeusb.zetter.storage.PaintingData;
+import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
-import me.dantaeusb.zettergallery.storage.OfferPaintingData;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -11,6 +13,7 @@ import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -18,6 +21,8 @@ import javax.annotation.Nullable;
 import java.awt.*;
 
 public class InfoWidget extends AbstractWidget implements Widget {
+    private static final ResourceLocation BUTTON_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade_button.png");
+
     protected final PaintingMerchantScreen parentScreen;
 
     @Nullable
@@ -38,20 +43,68 @@ public class InfoWidget extends AbstractWidget implements Widget {
         this.font = minecraft.font;
     }
 
+    private static final int OFFER_BUTTON_WIDTH = 160;
+    private static final int OFFER_BUTTON_HEIGHT = 32;
+
     @Override
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        RenderSystem.setShaderTexture(0, BUTTON_RESOURCE);
+
         PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
         if (offer == null) {
             return;
         }
 
-        OfferPaintingData offerPaintingData = offer.getPaintingData();
+        PaintingData offerPaintingData = offer.getPaintingData();
         if (offerPaintingData == null) {
             return;
         }
 
-        this.font.drawShadow(matrixStack, offerPaintingData.getPaintingName(), this.x + 8, this.y + 7, Color.white.getRGB());
-        this.font.drawShadow(matrixStack, offerPaintingData.getAuthorName(), this.x + 8, this.y + 7 + 11, Color.white.getRGB());
+        final boolean hovered = isPointInRegion(0, 0, OFFER_BUTTON_WIDTH, OFFER_BUTTON_HEIGHT, mouseX, mouseY);
+
+        if (this.canProceed()) {
+            if (hovered) {
+                blit(
+                        matrixStack,
+                        this.x,
+                        this.y,
+                        0,
+                        OFFER_BUTTON_HEIGHT * 2,
+                        OFFER_BUTTON_WIDTH,
+                        OFFER_BUTTON_HEIGHT,
+                        256,
+                        256
+                );
+            } else {
+                blit(
+                        matrixStack,
+                        this.x,
+                        this.y,
+                        0,
+                        OFFER_BUTTON_HEIGHT,
+                        OFFER_BUTTON_WIDTH,
+                        OFFER_BUTTON_HEIGHT,
+                        256,
+                        256
+                );
+            }
+        } else {
+            blit(
+                    matrixStack,
+                    this.x,
+                    this.y,
+                    0,
+                    0,
+                    OFFER_BUTTON_WIDTH,
+                    OFFER_BUTTON_HEIGHT,
+                    256,
+                    256
+            );
+        }
+
+        // @todo: cache this and size
+        TranslatableComponent actionString = new TranslatableComponent(this.parentScreen.getCurrentOffer().isSaleOffer() ? "container.zettergallery.merchant.sell" : "container.zettergallery.merchant.buy");
+        final int actionWidth = this.font.width(actionString);
 
         String priceString = String.valueOf(offer.getPrice());
         final int priceWidth = this.font.width(priceString);
@@ -59,12 +112,54 @@ public class InfoWidget extends AbstractWidget implements Widget {
         ItemStack emeraldStack = new ItemStack(Items.EMERALD);
 
         this.itemRenderer.renderGuiItem(emeraldStack, this.x + this.width - 21, this.y + 8); // 8 padding + 16 texture - 3 emerald item padding
-        this.font.draw(matrixStack, priceString, this.x + this.width - 22 - priceWidth, this.y + 12, Color.white.getRGB()); // -21 - 4 padding to text + 3 emerald item padding
+
+        if (this.canProceed()) {
+            this.font.drawShadow(matrixStack, offerPaintingData.getPaintingName(), this.x + 8, this.y + 7, Color.white.getRGB());
+            this.font.drawShadow(matrixStack, offerPaintingData.getAuthorName(), this.x + 8, this.y + 7 + 11, Color.white.getRGB());
+            this.font.drawShadow(matrixStack, priceString, this.x + this.width - 22 - priceWidth, this.y + 12, Color.white.getRGB()); // -21 - 4 padding to text + 3 emerald item padding
+        } else {
+            this.font.draw(matrixStack, offerPaintingData.getPaintingName(), this.x + 8, this.y + 7, Color.darkGray.getRGB());
+            this.font.draw(matrixStack, offerPaintingData.getAuthorName(), this.x + 8, this.y + 7 + 11, Color.darkGray.getRGB());
+            this.font.draw(matrixStack, priceString, this.x + this.width - 22 - priceWidth, this.y + 12, Color.darkGray.getRGB());
+        }
+
+        if (this.canProceed() && hovered) {
+            this.font.drawShadow(matrixStack, actionString, this.x + this.width / 2.0F - (actionWidth / 2.0F), this.y + 12, Color.white.getRGB());
+        }
+    }
+
+    public boolean canProceed() {
+        return this.parentScreen.canProceed();
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (this.canProceed()) {
+            if (isPointInRegion(0, 0, OFFER_BUTTON_WIDTH, OFFER_BUTTON_HEIGHT, mouseX, mouseY)) {
+                this.playDownSound(Minecraft.getInstance().getSoundManager());
+                this.parentScreen.proceed();
+            }
+        }
+
         return false;
+    }
+
+    /**
+     * @see net.minecraft.client.gui.screen.inventory.ContainerScreen#isPointInRegion(int, int, int, int, double, double)
+     * @param x
+     * @param y
+     * @param width
+     * @param height
+     * @param mouseX
+     * @param mouseY
+     * @return
+     */
+    protected boolean isPointInRegion(int x, int y, int width, int height, double mouseX, double mouseY) {
+        int i = this.x;
+        int j = this.y;
+        mouseX = mouseX - (double)i;
+        mouseY = mouseY - (double)j;
+        return mouseX >= (double)(x - 1) && mouseX < (double)(x + width + 1) && mouseY >= (double)(y - 1) && mouseY < (double)(y + height + 1);
     }
 
     @Override

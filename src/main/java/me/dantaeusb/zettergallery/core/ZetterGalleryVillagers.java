@@ -1,7 +1,7 @@
 package me.dantaeusb.zettergallery.core;
 
-import com.dantaeusb.zetter.Zetter;
-import com.dantaeusb.zetter.core.ZetterBlocks;
+import me.dantaeusb.zetter.Zetter;
+import me.dantaeusb.zetter.core.ZetterBlocks;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import com.google.common.collect.ImmutableSet;
 import net.minecraft.sounds.SoundEvents;
@@ -24,7 +24,7 @@ public class ZetterGalleryVillagers {
     @SuppressWarnings("unused")
     public static void onVillagerPoiTypeRegister(final RegistryEvent.Register<PoiType> event) {
         PAINTING_MERCHANT_POI = new PoiType("painting_merchant", getAllStates(ZetterBlocks.ARTIST_TABLE), 1, 1);
-        PAINTING_MERCHANT_POI.setRegistryName(Zetter.MOD_ID, "painting_merchant");
+        PAINTING_MERCHANT_POI.setRegistryName(ZetterGallery.MOD_ID, "painting_merchant");
         event.getRegistry().register(PAINTING_MERCHANT_POI);
     }
 
@@ -32,7 +32,7 @@ public class ZetterGalleryVillagers {
     @SuppressWarnings("unused")
     public static void onVillagerProfessionRegister(final RegistryEvent.Register<VillagerProfession> event) {
         PAINTING_MERCHANT = new VillagerProfession(ZetterGallery.MOD_ID + ":painting_merchant", PAINTING_MERCHANT_POI, ImmutableSet.of(), ImmutableSet.of(), SoundEvents.VILLAGER_AMBIENT);
-        PAINTING_MERCHANT.setRegistryName(Zetter.MOD_ID, "painting_merchant");
+        PAINTING_MERCHANT.setRegistryName(ZetterGallery.MOD_ID, "painting_merchant");
         event.getRegistry().register(PAINTING_MERCHANT);
     }
 

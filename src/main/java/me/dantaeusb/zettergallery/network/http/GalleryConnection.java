@@ -1,6 +1,6 @@
 package me.dantaeusb.zettergallery.network.http;
 
-import com.dantaeusb.zetter.storage.PaintingData;
+import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import com.google.gson.Gson;
 import com.mojang.realmsclient.client.RealmsClientConfig;
@@ -29,8 +29,8 @@ public class GalleryConnection {
     private static final String CHECK_ENDPOINT = "auth/check";
     private static final String DROP_ENDPOINT = "auth/drop";
     private static final String PAINTINGS_ENDPOINT = "paintings";
+    private static final String PAINTINGS_PURCHASES_ENDPOINT = "purchases";
     private static final String PAINTINGS_FEED_ENDPOINT = "paintings/feed";
-    private static final String PAINTINGS_PURCHASE_ENDPOINT = "paintings/purchase";
 
     private static final Gson GSON = new Gson();
 
@@ -204,12 +204,12 @@ public class GalleryConnection {
 
                 executor.submitAsync(() -> ServerHttpHandler.processPlayerFeed(playerEntity, response));
             } catch (GalleryException e) {
+                ZetterGallery.LOG.error("Unable to authenticate player: " + e.getMessage());
 
-                // @todo: handle failed token check
+                executor.execute(() -> ServerHttpHandler.processRequestConnectionError(playerEntity, "Connection error"));
             } catch (IOException e) {
                 ZetterGallery.LOG.error("Unable to authenticate player: " + e.getMessage());
 
-                // @todo: translate
                 executor.execute(() -> ServerHttpHandler.processRequestConnectionError(playerEntity, "Connection error"));
             }
         });
@@ -229,17 +229,18 @@ public class GalleryConnection {
             BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
-                final URL saleUri = GalleryConnection.getUrl(PAINTINGS_PURCHASE_ENDPOINT);
+                final URL saleUri = GalleryConnection.getUrl(PAINTINGS_ENDPOINT + "/" + paintingId.toString() + "/" + PAINTINGS_PURCHASES_ENDPOINT);
                 PaintingsResponse response = makeRequest(saleUri, "POST", playerEntity, PaintingsResponse.class, null);
 
-                executor.submitAsync(() -> ServerHttpHandler.processPlayerFeed(playerEntity, response));
+                executor.submitAsync(() -> ServerHttpHandler.processPurchaseResult(playerEntity, response));
             } catch (GalleryException e) {
+                ZetterGallery.LOG.error("Unable to purchase painting: " + e.getMessage());
 
                 // @todo: handle failed token check
+                executor.execute(() -> ServerHttpHandler.processRequestConnectionError(playerEntity, "Connection error"));
             } catch (IOException e) {
-                ZetterGallery.LOG.error("Unable to authenticate player: " + e.getMessage());
+                ZetterGallery.LOG.error("Unable to purchase painting: " + e.getMessage());
 
-                // @todo: translate
                 executor.execute(() -> ServerHttpHandler.processRequestConnectionError(playerEntity, "Connection error"));
             }
         });
@@ -264,12 +265,13 @@ public class GalleryConnection {
                 final URL saleUri = GalleryConnection.getUrl(PAINTINGS_ENDPOINT);
                 PaintingsResponse response = makeRequest(saleUri, "POST", playerEntity, PaintingsResponse.class, request);
 
-                executor.submitAsync(() -> ServerHttpHandler.processPlayerFeed(playerEntity, response));
+                executor.submitAsync(() -> ServerHttpHandler.processSaleResult(playerEntity, response));
             } catch (GalleryException e) {
+                ZetterGallery.LOG.error("Unable to sell painting: " + e.getMessage());
 
                 // @todo: handle failed token check
             } catch (IOException e) {
-                ZetterGallery.LOG.error("Unable to authenticate player: " + e.getMessage());
+                ZetterGallery.LOG.error("Unable to sell painting: " + e.getMessage());
 
                 // @todo: translate
                 executor.execute(() -> ServerHttpHandler.processRequestConnectionError(playerEntity, "Connection error"));

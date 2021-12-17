@@ -1,7 +1,8 @@
 package me.dantaeusb.zettergallery.mixin;
 
-import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.core.ZetterGalleryVillagers;
+import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.VillagerData;
@@ -24,15 +25,28 @@ public abstract class VillagerMixin extends AbstractVillager {
 
     @Shadow public abstract VillagerData getVillagerData();
 
+    @Shadow private void updateSpecialPrices(Player player) {};
+
     //(Lnet/minecraft/world/entity/player/Player;)V
     @Inject(method = "startTrading", at = @At("HEAD"), cancellable = true)
     private void startTrading(Player player, CallbackInfo ci) {
-        ZetterGallery.LOG.error("Oh hi!");
-
         if (this.getVillagerData().getProfession().equals(ZetterGalleryVillagers.PAINTING_MERCHANT)) {
             ci.cancel();
 
-            //this.openTradingScreen(player, this.getDisplayName(), this.getVillagerData().getLevel());
+            this.updateSpecialPrices(player);
+            this.setTradingPlayer(player);
+            player.openMenu(new SimpleMenuProvider(
+                (windowID, playerInv, usingPlayer) -> {
+                    PaintingMerchantMenu menu = PaintingMerchantMenu.createMenuServerSide(windowID, playerInv, this);
+                    menu.setMerchantId(this.getUUID());
+                    menu.setMerchantLevel(this.getVillagerData().getLevel());
+
+                    // @todo: send network update
+
+                    return menu;
+                },
+                this.getDisplayName())
+            );
         }
     }
 }
