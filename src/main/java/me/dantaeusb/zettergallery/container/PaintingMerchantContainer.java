@@ -9,6 +9,7 @@ import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.core.ZetterGalleryVillagerTrades;
+import me.dantaeusb.zettergallery.gallery.SalesManager;
 import me.dantaeusb.zettergallery.network.packet.SGallerySalesPacket;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.core.NonNullList;
@@ -74,8 +75,8 @@ public class PaintingMerchantContainer implements Container {
      * @link {SalesManager}
      * @param offers
      */
-    public void handleOffers(boolean saleAllowed, List<PaintingMerchantOffer> offers) {
-        this.saleAllowed = saleAllowed;
+    public void handleOffers(List<PaintingMerchantOffer> offers) {
+        this.saleAllowed = true;
         this.offers = offers;
         this.updateCurrentOffer();
 
@@ -152,11 +153,17 @@ public class PaintingMerchantContainer implements Container {
                 this.canProceed = false;
             }  else {
                 if (inputStack.getItem() == ZetterItems.PAINTING) {
-                    // Current offer is to sell this painting, and we can proceed immediately
+                    // Current offer is to sell this painting, and we can proceed if validated
                     final String canvasCode = PaintingItem.getPaintingCode(inputStack);
                     PaintingData paintingData = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().level).getCanvasData(canvasCode, PaintingData.class);
                     this.currentOffer = new PaintingMerchantOffer(canvasCode, paintingData, 4);
+
                     this.canProceed = true;
+
+                    // Ask Gallery if we can sell this painting
+                    if (!this.merchant.isClientSide()) {
+                        SalesManager.getInstance().validateSale((ServerPlayer) this.merchant.getTradingPlayer(), this.currentOffer);
+                    }
                 } else {
                     this.updateCurrentOffer();
 

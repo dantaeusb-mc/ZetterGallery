@@ -22,7 +22,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.npc.VillagerData;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -44,7 +43,16 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     private PreviewWidget previewWidget;
     private InfoWidget infoWidget;
 
+    /**
+     * Flag is activated after player pressed log in link in authorization window
+     * but window is not yet unfocused, so browser is not opened yet
+     */
     private boolean waitingForBrowser = false;
+
+    /**
+     * Flag is activated after window lose focus after pressing log in button,
+     * when focused back we would need to check if player authorized server
+     */
     private boolean waitingForAuth = false;
 
     public PaintingMerchantScreen(PaintingMerchantMenu merchantContainer, Inventory playerInventory, Component title) {
@@ -109,16 +117,11 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
 
         if (this.menu.getState() == PaintingMerchantMenu.State.READY) {
             super.render(poseStack, mouseX, mouseY, partialTicks);
-            this.previewWidget.render(poseStack, mouseX, mouseY, partialTicks);
-            this.infoWidget.render(poseStack, mouseX, mouseY, partialTicks);
         } else {
             this.cleanRender(poseStack, mouseX, mouseY, partialTicks);
-            this.statusWidget.render(poseStack, mouseX, mouseY, partialTicks);
         }
 
-        int i = (this.width - this.imageWidth) / 2;
-        int j = (this.height - this.imageHeight) / 2;
-        this.renderProgressBar(poseStack, i, j);
+        this.renderProgressBar(poseStack);
 
         this.renderTooltip(poseStack, mouseX, mouseY);
     }
@@ -169,20 +172,40 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
 
         if (this.waitingForAuth) {
             if (Minecraft.getInstance().isWindowActive()) {
-                this.menu.updateAuthentication();
+                this.menu.requestUpdateAuthenticationStatus();
                 this.waitingForAuth = false;
             }
         }
     }
 
-    private void renderProgressBar(PoseStack poseStack, int width, int height) {
+    private void renderProgressBar(PoseStack poseStack) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderTexture(0, READY_RESOURCE);
+
+        final float BAR_U = 0.0F;
+        final float BAR_V = 246.0F;
+        final int BAR_WIDTH = 102;
+        final int BAR_HEIGHT = 5;
+
+        final int xPos = this.leftPos + (this.imageWidth / 2) - 50;
+        final int yPos = this.topPos + 16;
+
         int merchantLevel = this.menu.getMerchantLevel();
         int merchantXp = this.menu.getMerchant().getVillagerXp();
 
         if (merchantLevel < 5) {
-            blit(poseStack, width + 136, height + 16, this.getBlitOffset(), 0.0F, 186.0F, 102, 5, 512, 256);
+            blit(
+                    poseStack,
+                    xPos,
+                    yPos,
+                    this.getBlitOffset(), // hmmmm
+                    BAR_U,
+                    BAR_V,
+                    BAR_WIDTH,
+                    BAR_HEIGHT,
+                    256,
+                    256
+            );
 
             int k = VillagerData.getMinXpPerLevel(merchantLevel);
 
@@ -191,7 +214,18 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
                 float f = 100.0F / (float)(VillagerData.getMaxXpPerLevel(merchantLevel) - k);
                 int i1 = Math.min(Mth.floor(f * (float)(merchantXp - k)), l);
 
-                blit(poseStack, width + 136, height + 16, this.getBlitOffset(), 0.0F, 191.0F, i1 + 1, 5, 512, 256);
+                blit(
+                        poseStack,
+                        xPos,
+                        yPos,
+                        this.getBlitOffset(),
+                        BAR_U,
+                        BAR_V + BAR_HEIGHT,
+                        i1 + 1, // WIDTH
+                        BAR_HEIGHT,
+                        256,
+                        256
+                );
 
                 /*int futureTraderXp = this.menu.getFutureTraderXp();
 
@@ -218,7 +252,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         }
     }
 
-    protected void renderBg(PoseStack matrixStack, float partialTicks, int x, int y) {
+    protected void renderBg(PoseStack poseStack, float partialTicks, int mouseX, int mouseY) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
@@ -228,7 +262,14 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
             RenderSystem.setShaderTexture(0, LOADING_RESOURCE);
         }
 
-        blit(matrixStack, this.leftPos, this.topPos, this.getBlitOffset(), 0.0F, 0.0F, this.imageWidth, this.imageHeight, 256, 256);
+        blit(poseStack, this.leftPos, this.topPos, this.getBlitOffset(), 0.0F, 0.0F, this.imageWidth, this.imageHeight, 256, 256);
+
+        if (this.menu.getState() == PaintingMerchantMenu.State.READY) {
+            this.previewWidget.render(poseStack, mouseX, mouseY, partialTicks);
+            this.infoWidget.render(poseStack, mouseX, mouseY, partialTicks);
+        } else {
+            this.statusWidget.render(poseStack, mouseX, mouseY, partialTicks);
+        }
     }
 
     /**

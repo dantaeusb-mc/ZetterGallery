@@ -1,6 +1,5 @@
 package me.dantaeusb.zettergallery.gallery;
 
-import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.gallery.salesmanager.PlayerFeed;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
@@ -8,16 +7,10 @@ import me.dantaeusb.zettergallery.network.http.GalleryConnection;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.trading.Merchant;
 
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-/**
- * @todo: get rid of pair and javafx dependency
- */
 
 public class SalesManager {
     private static SalesManager instance;
@@ -25,7 +18,13 @@ public class SalesManager {
     /**
      * Player -> Entity -> Storage Tree that handles storages
      */
-    final HashMap<UUID, PlayerFeed> playerFeed = new HashMap<>();
+    private final HashMap<UUID, PlayerFeed> playerFeeds = new HashMap<>();
+
+    /**
+     * List of painting codes that were sent for validation before
+     * sale is allowed
+     */
+    private final List<String> validationRequestedCodes = new LinkedList<>();
 
     long timestamp;
 
@@ -49,14 +48,28 @@ public class SalesManager {
 
     }
 
+    public void validateSale(ServerPlayer player, PaintingMerchantOffer offer) {
+        PlayerFeed playerFeed = this.playerFeeds.get(player.getUUID());
+
+        if (playerFeed == null) {
+            return;
+        }
+
+        if (!playerFeed.isSaleAllowed()) {
+            return;
+        }
+
+        GalleryConnection.getInstance().validate(player, offer.getPaintingData());
+    }
+
     public void requestOffers(ServerPlayer player, PaintingMerchantMenu paintingMerchantMenu) {
-        if (this.playerFeed.containsKey(player.getUUID())) {
+        if (this.playerFeeds.containsKey(player.getUUID())) {
             PaintingMerchantContainer container = paintingMerchantMenu.getContainer();
 
-            PlayerFeed feed = this.playerFeed.get(player.getUUID());
+            PlayerFeed feed = this.playerFeeds.get(player.getUUID());
             List<PaintingMerchantOffer> offers = this.getOffersFromFeed(feed, paintingMerchantMenu.getMerchantId(), paintingMerchantMenu.getMerchantLevel());
 
-            container.handleOffers(feed.isSaleAllowed(), offers);
+            container.handleOffers(offers);
         } else {
             // Will call handlePlayerFeed on response, which call handleOffers
             GalleryConnection.getInstance().getPlayerFeed(player);
@@ -66,14 +79,14 @@ public class SalesManager {
     public void handlePlayerFeed(ServerPlayer player, PaintingsResponse response) {
         PlayerFeed feed = PlayerFeed.createFeedFromSaleResponse(player, response);
 
-        this.playerFeed.put(player.getUUID(), feed);
+        this.playerFeeds.put(player.getUUID(), feed);
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
             PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)player.containerMenu;
             PaintingMerchantContainer container = paintingMerchantMenu.getContainer();
 
             List<PaintingMerchantOffer> offers = this.getOffersFromFeed(feed, paintingMerchantMenu.getMerchantId(), paintingMerchantMenu.getMerchantLevel());
-            container.handleOffers(response.sell.allowed, offers);
+            container.handleOffers(offers);
         }
     }
 

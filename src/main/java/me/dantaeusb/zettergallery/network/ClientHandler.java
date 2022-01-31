@@ -1,10 +1,7 @@
 package me.dantaeusb.zettergallery.network;
 
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
-import me.dantaeusb.zettergallery.network.packet.SGalleryAuthorizationRequestPacket;
-import me.dantaeusb.zettergallery.network.packet.SGalleryAuthorizationResponsePacket;
-import me.dantaeusb.zettergallery.network.packet.SGalleryErrorPacket;
-import me.dantaeusb.zettergallery.network.packet.SGallerySalesPacket;
+import me.dantaeusb.zettergallery.network.packet.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -14,7 +11,7 @@ public class ClientHandler {
         Player player = Minecraft.getInstance().player;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
-            ((PaintingMerchantMenu) player.containerMenu).handleAuthorization(packetIn.canBuy(), packetIn.canSell());
+            ((PaintingMerchantMenu) player.containerMenu).handleServerAuthenticationSuccess(packetIn.canBuy(), packetIn.canSell());
         }
     }
 
@@ -29,7 +26,16 @@ public class ClientHandler {
         Player player = Minecraft.getInstance().player;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
-            ((PaintingMerchantMenu) player.containerMenu).handleAuthorizationRequest(packetIn.getCrossAuthorizationCode());
+            ((PaintingMerchantMenu) player.containerMenu).handleServerAuthenticationFail(packetIn.getCrossAuthorizationCode());
+        }
+    }
+
+    public static void processPaintingMerchantInfo(final SGalleryMerchantInfoPacket packetIn, Level world) {
+        Player player = Minecraft.getInstance().player;
+
+        if (player.containerMenu instanceof PaintingMerchantMenu) {
+            ((PaintingMerchantMenu) player.containerMenu).setMerchantId(packetIn.getMerchantId());
+            ((PaintingMerchantMenu) player.containerMenu).setMerchantLevel(packetIn.getMerchantLevel());
         }
     }
 

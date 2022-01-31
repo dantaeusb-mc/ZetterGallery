@@ -77,8 +77,8 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
                         UNKNOWN_ERROR_TEXT;
 
                 // stack, font, x, y, color
-                drawCenteredString(matrixStack, this.font, errorMessage, this.x + this.width / 2, this.y + 64, Color.white.getRGB());
-                drawCenteredString(matrixStack, this.font, TRY_AGAIN_TEXT, this.x + this.width / 2, this.y + 78, Color.white.getRGB());
+                drawCenteredString(matrixStack, this.font, errorMessage, this.x + this.width / 2, this.y + 82, Color.white.getRGB());
+                drawCenteredString(matrixStack, this.font, TRY_AGAIN_TEXT, this.x + this.width / 2, this.y + 96, Color.white.getRGB());
 
                 break;
         }

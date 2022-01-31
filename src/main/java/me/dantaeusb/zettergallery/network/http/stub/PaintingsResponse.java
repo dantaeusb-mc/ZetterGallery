@@ -12,24 +12,13 @@ import java.util.Vector;
 public class PaintingsResponse {
     public String seed;
 
-    public SellResponse sell;
     // Can't have enums, look for https://github.com/google/gson/issues/501
     public Map<String, Vector<PaintingItem>> feeds;
-
-    public static class SellResponse {
-        public boolean allowed;
-        public String message;
-
-        public SellResponse(boolean allowed, String message) {
-            this.allowed = allowed;
-            this.message = message;
-        }
-    }
 
     public static class PaintingItem {
         public UUID uuid;
         public String name;
-        public String author;
+        public Author author;
         public int resolution;
         public int sizeH;
         public int sizeW;
@@ -37,7 +26,7 @@ public class PaintingsResponse {
         public byte[] color;
         public int price;
 
-        public PaintingItem(UUID uuid, String name, String author, byte[] color, int resolution, int sizeH, int sizeW, int price) {
+        public PaintingItem(UUID uuid, String name, Author author, byte[] color, int resolution, int sizeH, int sizeW, int price) {
             this.uuid = uuid;
             this.name = name;
             this.author = author;
@@ -46,6 +35,16 @@ public class PaintingsResponse {
             this.sizeH = sizeH;
             this.sizeW = sizeW;
             this.price = price;
+        }
+    }
+
+    public static class Author {
+        public UUID uuid;
+        public String nickname;
+
+        public Author(UUID uuid, String nickname) {
+            this.uuid = uuid;
+            this.nickname = nickname;
         }
     }
 

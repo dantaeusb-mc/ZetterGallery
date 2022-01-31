@@ -4,10 +4,7 @@ import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.gallery.SalesManager;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
-import me.dantaeusb.zettergallery.network.http.stub.AuthCheckResponse;
-import me.dantaeusb.zettergallery.network.http.stub.AuthTokenResponse;
-import me.dantaeusb.zettergallery.network.http.stub.GenericMessageResponse;
-import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
+import me.dantaeusb.zettergallery.network.http.stub.*;
 import me.dantaeusb.zettergallery.network.packet.SGalleryAuthorizationResponsePacket;
 import me.dantaeusb.zettergallery.network.packet.SGalleryAuthorizationRequestPacket;
 import me.dantaeusb.zettergallery.network.packet.SGalleryErrorPacket;
@@ -15,6 +12,18 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.PacketDistributor;
 
 public class ServerHttpHandler {
+    public static void processRegistration(ServerResponse response) {
+
+    }
+
+    public static void processRegistrationFailed(String reason) {
+
+    }
+
+    public static void processUnregistration() {
+
+    }
+
     public static void processPlayerToken(ServerPlayer player, AuthTokenResponse response) {
         try {
             GalleryConnection.getInstance().savePlayerToken(player, response.token);
@@ -23,7 +32,6 @@ public class ServerHttpHandler {
             ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> player), authenticationPacket);
         } catch (Exception exception) {
             ZetterGallery.LOG.error(exception.getMessage());
-            ZetterGallery.LOG.trace(exception);
         }
     }
 
@@ -48,7 +56,7 @@ public class ServerHttpHandler {
     public static void processPlayerTokenCheckFail(ServerPlayer player, String error) {
         try {
             GalleryConnection.getInstance().removePlayerToken(player);
-            GalleryConnection.getInstance().authorizeServerPlayer(player);
+            GalleryConnection.getInstance().authenticateServerPlayer(player);
         } catch (Exception exception) {
             ZetterGallery.LOG.error(exception.getMessage());
         }
@@ -66,7 +74,21 @@ public class ServerHttpHandler {
         }
     }
 
-    public static void processPurchaseResult(ServerPlayer player, PaintingsResponse response) {
+    public static void processImpressionResult(ServerPlayer player, GenericMessageResponse response) {
+
+    }
+
+    public static void processPurchaseResult(ServerPlayer player, GenericMessageResponse response) {
+        try {
+            if (player.containerMenu instanceof PaintingMerchantMenu) {
+
+            }
+        } catch (Exception exception) {
+            ZetterGallery.LOG.error(exception.getMessage());
+        }
+    }
+
+    public static void processSaleValidationResult(ServerPlayer player, GalleryException galleryException) {
         try {
             if (player.containerMenu instanceof PaintingMerchantMenu) {
                 PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)player.containerMenu;

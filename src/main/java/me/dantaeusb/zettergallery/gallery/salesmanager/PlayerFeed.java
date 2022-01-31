@@ -29,7 +29,7 @@ public class PlayerFeed {
             }
         }
 
-        return new PlayerFeed(player, response.sell.allowed, offers);
+        return new PlayerFeed(player, true, offers);
     }
 
     public boolean isSaleAllowed() {

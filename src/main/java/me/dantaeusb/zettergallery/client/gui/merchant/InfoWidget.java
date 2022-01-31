@@ -113,17 +113,38 @@ public class InfoWidget extends AbstractWidget implements Widget {
 
         this.itemRenderer.renderGuiItem(emeraldStack, this.x + this.width - 21, this.y + 8); // 8 padding + 16 texture - 3 emerald item padding
 
+        // Duplicate from PaintingItem#setPaintingData
+        int widthBlocks = offerPaintingData.getWidth() / offerPaintingData.getResolution().getNumeric();
+        int heightBlocks = offerPaintingData.getHeight() / offerPaintingData.getResolution().getNumeric();
+        // Account for RTL?
+        TranslatableComponent blockSize = (new TranslatableComponent("item.zetter.painting.size", Integer.toString(widthBlocks), Integer.toString(heightBlocks)));
+
         if (this.canProceed()) {
             this.font.drawShadow(matrixStack, offerPaintingData.getPaintingName(), this.x + 8, this.y + 7, Color.white.getRGB());
-            this.font.drawShadow(matrixStack, offerPaintingData.getAuthorName(), this.x + 8, this.y + 7 + 11, Color.white.getRGB());
+            this.font.drawShadow(matrixStack, offerPaintingData.getAuthorName() + ", " + blockSize.getString(), this.x + 8, this.y + 7 + 11, Color.white.getRGB());
             this.font.drawShadow(matrixStack, priceString, this.x + this.width - 22 - priceWidth, this.y + 12, Color.white.getRGB()); // -21 - 4 padding to text + 3 emerald item padding
         } else {
             this.font.draw(matrixStack, offerPaintingData.getPaintingName(), this.x + 8, this.y + 7, Color.darkGray.getRGB());
-            this.font.draw(matrixStack, offerPaintingData.getAuthorName(), this.x + 8, this.y + 7 + 11, Color.darkGray.getRGB());
+            this.font.draw(matrixStack, offerPaintingData.getAuthorName() + ", " + blockSize.getString(), this.x + 8, this.y + 7 + 11, Color.darkGray.getRGB());
             this.font.draw(matrixStack, priceString, this.x + this.width - 22 - priceWidth, this.y + 12, Color.darkGray.getRGB());
         }
 
         if (this.canProceed() && hovered) {
+            final int xOverlayPos = OFFER_BUTTON_WIDTH / 2 - priceWidth / 2 - 3;
+            final int yOverlayPos = 9;
+
+            blit(
+                    matrixStack,
+                    this.x + xOverlayPos,
+                    this.y + yOverlayPos,
+                    xOverlayPos,
+                    OFFER_BUTTON_HEIGHT * 2 + yOverlayPos,
+                    actionWidth + 6,
+                    9 + 6,
+                    256,
+                    256
+            );
+
             this.font.drawShadow(matrixStack, actionString, this.x + this.width / 2.0F - (actionWidth / 2.0F), this.y + 12, Color.white.getRGB());
         }
     }

@@ -1,13 +1,18 @@
 package me.dantaeusb.zettergallery.mixin;
 
+import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.core.ZetterGalleryVillagers;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
+import me.dantaeusb.zettergallery.network.packet.SGalleryAuthorizationRequestPacket;
+import me.dantaeusb.zettergallery.network.packet.SGalleryMerchantInfoPacket;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.VillagerData;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.network.PacketDistributor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -41,7 +46,9 @@ public abstract class VillagerMixin extends AbstractVillager {
                     menu.setMerchantId(this.getUUID());
                     menu.setMerchantLevel(this.getVillagerData().getLevel());
 
-                    // @todo: send network update
+                    // @todo: use Forge hooks somehow? ; container not initialized when message received
+                    SGalleryMerchantInfoPacket infoPacket = new SGalleryMerchantInfoPacket(this.getUUID(), this.getVillagerData().getLevel());
+                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), infoPacket);
 
                     return menu;
                 },

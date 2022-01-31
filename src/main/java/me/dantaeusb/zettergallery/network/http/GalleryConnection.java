@@ -24,12 +24,14 @@ import java.util.concurrent.Executors;
  */
 public class GalleryConnection {
     private static final String API_VERSION = "v1";
-    private static final String BASE_URI = "http://[::1]:3000/api";
+    private static final String BASE_URI = "http://127.0.0.1/";
+    private static final String SERVERS_ENDPOINT = "servers";
     private static final String TOKEN_ENDPOINT = "auth/token";
-    private static final String CHECK_ENDPOINT = "auth/check";
+    private static final String CHECK_ENDPOINT = "auth/token/check";
     private static final String DROP_ENDPOINT = "auth/drop";
     private static final String PAINTINGS_ENDPOINT = "paintings";
-    private static final String PAINTINGS_PURCHASES_ENDPOINT = "purchases";
+    private static final String PAINTINGS_PURCHASES_ENDPOINT = "sales";
+    private static final String PAINTINGS_IMPRESSION_ENDPOINT = "impressions";
     private static final String PAINTINGS_FEED_ENDPOINT = "paintings/feed";
 
     private static final Gson GSON = new Gson();
@@ -68,8 +70,39 @@ public class GalleryConnection {
         return this.tokenStorage;
     }
 
+    public void registerServer() {
+        this.poolExecutor.execute(() -> {
+            /**
+             * @link {#NetworkEvent.enqueueWork}
+             */
+            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+
+            try {
+                URL authUri = GalleryConnection.getUri(SERVERS_ENDPOINT);
+
+                ServerResponse response = makeRequest(authUri, "POST", ServerResponse.class, (String) null, null);
+
+                executor.submitAsync(() -> ServerHttpHandler.processRegistration(response));
+            } catch (GalleryException e) {
+                // We don't expect errors here so we're treating it as connection issue
+                ZetterGallery.LOG.error("Unable to request token for player, Gallery returned error: " + e.getMessage());
+
+                executor.submitAsync(() -> ServerHttpHandler.processRegistrationFailed(e.getMessage()));
+            } catch (IOException e) {
+                ZetterGallery.LOG.error("Unable to request token for player: " + e.getMessage());
+
+                // @todo: translate
+                executor.submitAsync(() -> ServerHttpHandler.processRegistrationFailed("Connection error"));;
+            }
+        });
+    }
+
+    public void unregisterServer() {
+
+    }
+
     /**
-     * Start server player authorization flow. If we have a token
+     * Start server player authentication flow. If we have a token
      * already, just check if it works and what rights we have.
      * If we don't, request token and cross-authorization code,
      * which later will be sent to client. When client returns
@@ -78,7 +111,7 @@ public class GalleryConnection {
      *
      * @param playerEntity
      */
-    public void authorizeServerPlayer(ServerPlayer playerEntity) {
+    public void authenticateServerPlayer(ServerPlayer playerEntity) {
         if (this.getTokenStorage().hasPlayerToken(playerEntity)) {
             this.checkPlayerToken(playerEntity);
         } else {
@@ -105,9 +138,9 @@ public class GalleryConnection {
                 final HashMap<String, String> query = new HashMap<>();
                 query.put("crossAuthorizationRole", TokenRequest.CrossAuthorizationRole.PLAYER_SERVER.toString());
 
-                URL authUri = GalleryConnection.getUrl(TOKEN_ENDPOINT, query);
+                URL authUri = GalleryConnection.getUri(TOKEN_ENDPOINT, query);
                 // new TokenRequest(TokenRequest.CrossAuthorizationRole.PLAYER_SERVER) was used here, but we just add params to URL
-                AuthTokenResponse response = makeRequest(authUri, "GET", playerEntity, AuthTokenResponse.class, null);
+                AuthTokenResponse response = makeRequest(authUri, "GET", AuthTokenResponse.class, playerEntity, null);
 
                 executor.submitAsync(() -> ServerHttpHandler.processPlayerToken(playerEntity, response));
             } catch (GalleryException e) {
@@ -139,8 +172,8 @@ public class GalleryConnection {
             BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
-                final URL checkUri = GalleryConnection.getUrl(CHECK_ENDPOINT);
-                AuthCheckResponse response = makeRequest(checkUri, "GET", playerEntity, AuthCheckResponse.class, null);
+                final URL checkUri = GalleryConnection.getUri(CHECK_ENDPOINT);
+                AuthCheckResponse response = makeRequest(checkUri, "GET", AuthCheckResponse.class, playerEntity, null);
 
                 executor.submitAsync(() -> ServerHttpHandler.processPlayerTokenCheck(playerEntity, response));
             } catch (GalleryException e) {
@@ -168,8 +201,8 @@ public class GalleryConnection {
             BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
-                final URL checkUri = GalleryConnection.getUrl(DROP_ENDPOINT);
-                GenericMessageResponse response = makeRequest(checkUri, "GET", playerEntity, GenericMessageResponse.class, null);
+                final URL checkUri = GalleryConnection.getUri(DROP_ENDPOINT);
+                GenericMessageResponse response = makeRequest(checkUri, "GET", GenericMessageResponse.class, playerEntity, null);
 
                 executor.submitAsync(() -> ServerHttpHandler.processPlayerTokenDrop(playerEntity, response));
             } catch (GalleryException e) {
@@ -199,8 +232,8 @@ public class GalleryConnection {
             BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
-                final URL saleUri = GalleryConnection.getUrl(PAINTINGS_FEED_ENDPOINT);
-                PaintingsResponse response = makeRequest(saleUri, "GET", playerEntity, PaintingsResponse.class, null);
+                final URL saleUri = GalleryConnection.getUri(PAINTINGS_FEED_ENDPOINT);
+                PaintingsResponse response = makeRequest(saleUri, "GET", PaintingsResponse.class, playerEntity, null);
 
                 executor.submitAsync(() -> ServerHttpHandler.processPlayerFeed(playerEntity, response));
             } catch (GalleryException e) {
@@ -216,12 +249,12 @@ public class GalleryConnection {
     }
 
     /**
-     * Purchases painting on behalf of player
+     * Register that player sees a painting
      *
      * @param playerEntity
-     * @param paintingId
+     * @param paintingData
      */
-    public void purchase(ServerPlayer playerEntity, UUID paintingId) {
+    public void registerImpression(ServerPlayer playerEntity, UUID paintingUuid) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -229,8 +262,35 @@ public class GalleryConnection {
             BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
-                final URL saleUri = GalleryConnection.getUrl(PAINTINGS_ENDPOINT + "/" + paintingId.toString() + "/" + PAINTINGS_PURCHASES_ENDPOINT);
-                PaintingsResponse response = makeRequest(saleUri, "POST", playerEntity, PaintingsResponse.class, null);
+                final URL saleUri = GalleryConnection.getUri(PAINTINGS_ENDPOINT + "/" + paintingUuid.toString() + "/" + PAINTINGS_IMPRESSION_ENDPOINT);
+                GenericMessageResponse response = makeRequest(saleUri, "POST", GenericMessageResponse.class, playerEntity, null);
+
+                executor.submitAsync(() -> ServerHttpHandler.processImpressionResult(playerEntity, response));
+            } catch (GalleryException|IOException e) {
+                ZetterGallery.LOG.error("Unable to register painting impression: " + e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Purchases painting on behalf of player
+     *
+     * @param playerEntity player who is purchasing painting
+     * @param paintingUuid uuid of purchased painting
+     * @param price price in emeralds, 1-10
+     */
+    public void purchase(ServerPlayer playerEntity, UUID paintingUuid, int price) {
+        this.poolExecutor.execute(() -> {
+            /**
+             * @link {#NetworkEvent.enqueueWork}
+             */
+            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+
+            try {
+                final PurchaseRequest request = new PurchaseRequest(price);
+
+                final URL saleUri = GalleryConnection.getUri(PAINTINGS_ENDPOINT + "/" + paintingUuid.toString() + "/" + PAINTINGS_PURCHASES_ENDPOINT);
+                GenericMessageResponse response = makeRequest(saleUri, "POST", GenericMessageResponse.class, playerEntity, request);
 
                 executor.submitAsync(() -> ServerHttpHandler.processPurchaseResult(playerEntity, response));
             } catch (GalleryException e) {
@@ -241,6 +301,43 @@ public class GalleryConnection {
             } catch (IOException e) {
                 ZetterGallery.LOG.error("Unable to purchase painting: " + e.getMessage());
 
+                executor.execute(() -> ServerHttpHandler.processRequestConnectionError(playerEntity, "Connection error"));
+            }
+        });
+    }
+
+    /**
+     * Check if painting can be submitted by player
+     *
+     * @param playerEntity
+     * @param paintingData
+     */
+    public void validate(ServerPlayer playerEntity, PaintingData paintingData) {
+        this.poolExecutor.execute(() -> {
+            /**
+             * @link {#NetworkEvent.enqueueWork}
+             */
+            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+
+            try {
+                final SaleRequest request = new SaleRequest(paintingData);
+
+                final HashMap<String, String> query = new HashMap<>();
+                query.put("save", "false");
+                final URL validateUri = GalleryConnection.getUri(PAINTINGS_ENDPOINT, query);
+
+                PaintingsResponse response = makeRequest(validateUri, "POST", PaintingsResponse.class, playerEntity, request);
+
+                executor.submitAsync(() -> ServerHttpHandler.processSaleResult(playerEntity, response));
+            } catch (GalleryException e) {
+                ZetterGallery.LOG.error("Unable to validate painting: " + e.getMessage());
+
+                // @todo: handle failed token check
+                executor.execute(() -> ServerHttpHandler.processSaleValidationResult(playerEntity, e));
+            } catch (IOException e) {
+                ZetterGallery.LOG.error("Unable to validate painting: " + e.getMessage());
+
+                // @todo: translate
                 executor.execute(() -> ServerHttpHandler.processRequestConnectionError(playerEntity, "Connection error"));
             }
         });
@@ -262,8 +359,10 @@ public class GalleryConnection {
             try {
                 final SaleRequest request = new SaleRequest(paintingData);
 
-                final URL saleUri = GalleryConnection.getUrl(PAINTINGS_ENDPOINT);
-                PaintingsResponse response = makeRequest(saleUri, "POST", playerEntity, PaintingsResponse.class, request);
+                final HashMap<String, String> query = new HashMap<>();
+                query.put("save", "false");
+                final URL saleUri = GalleryConnection.getUri(PAINTINGS_ENDPOINT, query);
+                PaintingsResponse response = makeRequest(saleUri, "POST", PaintingsResponse.class, playerEntity, request);
 
                 executor.submitAsync(() -> ServerHttpHandler.processSaleResult(playerEntity, response));
             } catch (GalleryException e) {
@@ -279,11 +378,11 @@ public class GalleryConnection {
         });
     }
 
-    protected static URL getUrl(String endpoint) throws MalformedURLException {
-        return GalleryConnection.getUrl(endpoint, null);
+    protected static URL getUri(String endpoint) throws MalformedURLException {
+        return GalleryConnection.getUri(endpoint, null);
     }
 
-    protected static URL getUrl(String endpoint, @Nullable Map<String, String> queryMap) throws MalformedURLException {
+    protected static URL getUri(String endpoint, @Nullable Map<String, String> queryMap) throws MalformedURLException {
         String query = "";
 
         if (queryMap != null && !queryMap.isEmpty()) {
@@ -296,10 +395,15 @@ public class GalleryConnection {
         }
 
 
-        return new URL(BASE_URI + "/" + API_VERSION + "/" + endpoint + query);
+        return new URL(BASE_URI + API_VERSION + "/" + endpoint + query);
     }
 
-    protected static <T> T makeRequest(URL uri, String method, ServerPlayer playerEntity, Class<T> classOfT, @Nullable Object input) throws IOException, GalleryException {
+    protected static <T> T makeRequest(URL uri, String method, Class<T> classOfT, ServerPlayer player, @Nullable Object input) throws IOException, GalleryException {
+        final String token = GalleryConnection.getInstance().getTokenStorage().getPlayerToken(player);
+        return makeRequest(uri, method, classOfT, token, input);
+    }
+
+    protected static <T> T makeRequest(URL uri, String method, Class<T> classOfT, @Nullable String token, @Nullable Object input) throws IOException, GalleryException {
         Proxy proxy = RealmsClientConfig.getProxy();
         final HttpURLConnection connection;
 
@@ -308,8 +412,6 @@ public class GalleryConnection {
         } else {
             connection = (HttpURLConnection) uri.openConnection();
         }
-
-        final String token = GalleryConnection.getInstance().getTokenStorage().getPlayerToken(playerEntity);
 
         if (token != null) {
             connection.setRequestProperty("Authorization", "Bearer " + token);

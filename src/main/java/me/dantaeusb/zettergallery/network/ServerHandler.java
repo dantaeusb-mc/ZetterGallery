@@ -8,7 +8,10 @@ import me.dantaeusb.zettergallery.network.packet.CGalleryAuthorizationCheckPacke
 import me.dantaeusb.zettergallery.network.packet.CGalleryOffersRequestPacket;
 import me.dantaeusb.zettergallery.network.packet.CGalleryProceedOfferPacket;
 import me.dantaeusb.zettergallery.network.packet.CGallerySelectOfferPacket;
+import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import net.minecraft.server.level.ServerPlayer;
+
+import java.util.UUID;
 
 public class ServerHandler {
     public static void processGalleryAuthenticationRequest(final CGalleryAuthorizationCheckPacket packetIn, ServerPlayer sendingPlayer) {
@@ -28,6 +31,11 @@ public class ServerHandler {
         if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
             PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)sendingPlayer.containerMenu;
             paintingMerchantMenu.updateCurrentOfferIndex(packetIn.getOfferIndex());
+
+            // @todo: Might be different type
+            UUID paintingUuid = ((GalleryPaintingData) paintingMerchantMenu.getCurrentOffer().getPaintingData()).getUUID();
+
+            GalleryConnection.getInstance().registerImpression(sendingPlayer, paintingUuid);
         }
     }
 

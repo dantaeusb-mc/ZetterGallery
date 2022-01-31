@@ -17,6 +17,16 @@ public class PaintingMerchantOffer {
 
     private final PaintingData paintingData;
 
+    /**
+     * If we're ready to make a transaction
+     */
+    private boolean loading;
+
+    /**
+     * Describe error or action
+     */
+    private String message;
+
     public PaintingMerchantOffer(PaintingsResponse.PaintingItem paintingItem) {
         this.canvasCode = GalleryPaintingData.getCanvasCode(paintingItem.uuid);
         this.price = paintingItem.price;
@@ -95,6 +105,6 @@ public class PaintingMerchantOffer {
             // Skip alpha, it should not be used anyway
         }
 
-        return GalleryPaintingData.create(paintingItem.uuid, paintingItem.author, paintingItem.name, AbstractCanvasData.Resolution.x16, paintingItem.sizeH * resolution.getNumeric(), paintingItem.sizeW * resolution.getNumeric(), canvasData);
+        return GalleryPaintingData.create(paintingItem.uuid, paintingItem.author.nickname, paintingItem.name, resolution, paintingItem.sizeH * resolution.getNumeric(), paintingItem.sizeW * resolution.getNumeric(), canvasData);
     }
 }

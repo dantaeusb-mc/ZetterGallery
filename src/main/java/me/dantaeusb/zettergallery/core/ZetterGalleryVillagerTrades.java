@@ -38,7 +38,7 @@ public class ZetterGalleryVillagerTrades {
                         new ItemStack(Items.EMERALD, 4),
                         ItemStack.EMPTY,
                         new ItemStack(ZetterItems.PAINTING, 1),
-                        16,
+                        4,
                         2,
                         0.05F
                 )
