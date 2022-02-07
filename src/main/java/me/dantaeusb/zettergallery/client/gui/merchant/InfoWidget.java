@@ -146,6 +146,8 @@ public class InfoWidget extends AbstractWidget implements Widget {
             );
 
             this.font.drawShadow(matrixStack, actionString, this.x + this.width / 2.0F - (actionWidth / 2.0F), this.y + 12, Color.white.getRGB());
+        } else if (offer.isError()) {
+            this.font.drawShadow(matrixStack, offer.getMessage(), this.x + this.width / 2.0F - (actionWidth / 2.0F), this.y + 12, Color.white.getRGB());
         }
     }
 

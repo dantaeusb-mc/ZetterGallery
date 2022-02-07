@@ -22,12 +22,7 @@ public class ServerHandler {
         if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
             PaintingMerchantMenu menu = (PaintingMerchantMenu) sendingPlayer.containerMenu;
 
-            ConnectionManager.getInstance().authorizeServerPlayer(
-                    sendingPlayer,
-                    menu::handleServerAuthenticationSuccess,
-                    menu::handleServerAuthenticationFail,
-                    menu::handleError
-            );
+            menu.handleServerAuthenticationRetry();
         }
     }
 

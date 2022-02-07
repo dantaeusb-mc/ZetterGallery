@@ -1,14 +1,20 @@
 package me.dantaeusb.zettergallery.trading;
 
+import me.dantaeusb.zetter.Zetter;
+import me.dantaeusb.zetter.canvastracker.ICanvasTracker;
+import me.dantaeusb.zetter.core.Helper;
 import me.dantaeusb.zetter.core.ZetterItems;
 import me.dantaeusb.zetter.item.FrameItem;
 import me.dantaeusb.zetter.item.PaintingItem;
 import me.dantaeusb.zetter.storage.AbstractCanvasData;
+import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 
 public class PaintingMerchantOffer {
     private final String canvasCode;
@@ -32,7 +38,12 @@ public class PaintingMerchantOffer {
         this.paintingData = paintingData;
         this.price = price;
         this.saleOffer = sale;
-        this.state = sale ? State.WAITING : State.READY;
+
+        if (paintingData == null) {
+            this.state = State.PENDING;
+        } else {
+            this.state = sale ? State.WAITING : State.UNFULFILLED;
+        }
     }
 
     public static PaintingMerchantOffer createOfferFromResponse(PaintingsResponse.PaintingItem paintingItem) {
@@ -78,21 +89,21 @@ public class PaintingMerchantOffer {
         return this.price;
     }
 
-    public ItemStack getOfferResult() {
+    public String getMessage() {
+        return this.getMessage();
+    }
+
+    public ItemStack getOfferResult(Level level) {
         if (this.saleOffer) {
             return new ItemStack(Items.EMERALD, this.price);
         } else {
             ItemStack painting = new ItemStack(ZetterItems.PAINTING);
 
-            // @todo: use PaintingItem
-            FrameItem.setPaintingData(painting, this.canvasCode, this.paintingData, 1);
-            FrameItem.setBlockSize(
-                    painting,
-                    new int[]{
-                            paintingData.getWidth() / paintingData.getResolution().getNumeric(),
-                            paintingData.getHeight() / paintingData.getResolution().getNumeric()
-                    }
-            );
+            ICanvasTracker canvasTracker = Helper.getWorldCanvasTracker(level);
+            canvasTracker.registerCanvasData(this.canvasCode, this.paintingData);
+            // @todo: this spawns event that will replace offer
+
+            PaintingItem.setPaintingData(painting, this.canvasCode, this.paintingData, 1);
 
             return painting;
         }
@@ -106,12 +117,17 @@ public class PaintingMerchantOffer {
         return this.state == State.ERROR;
     }
 
-    public void markReady() {
+    public void unfulfilled() {
+        this.state = State.UNFULFILLED;
+    }
+
+    public void ready() {
         this.state = State.READY;
     }
 
     public void markError(String error) {
         this.state = State.ERROR;
+        this.message = error;
     }
 
 
@@ -137,7 +153,9 @@ public class PaintingMerchantOffer {
     }
 
     public enum State {
+        PENDING, // painting data is not yet received
         WAITING,
+        UNFULFILLED,
         READY,
         ERROR,
     }

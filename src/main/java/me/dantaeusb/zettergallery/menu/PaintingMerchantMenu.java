@@ -1,14 +1,14 @@
 package me.dantaeusb.zettergallery.menu;
 
+import me.dantaeusb.zetter.canvastracker.ICanvasTracker;
+import me.dantaeusb.zetter.core.Helper;
 import me.dantaeusb.zetter.core.ZetterItems;
+import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.core.ZetterGalleryMenus;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.gallery.ConnectionManager;
-import me.dantaeusb.zettergallery.network.packet.CGalleryAuthorizationCheckPacket;
-import me.dantaeusb.zettergallery.network.packet.CGalleryProceedOfferPacket;
-import me.dantaeusb.zettergallery.network.packet.SGalleryAuthorizationRequestPacket;
-import me.dantaeusb.zettergallery.network.packet.SGalleryAuthorizationResponsePacket;
+import me.dantaeusb.zettergallery.network.packet.*;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.server.level.ServerPlayer;
@@ -88,7 +88,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
                 int slotNumber = HOTBAR_SLOT_COUNT + y * PLAYER_INVENTORY_COLUMN_COUNT + x;
                 int xpos = PLAYER_INVENTORY_XPOS + x * SLOT_X_SPACING;
                 int ypos = PLAYER_INVENTORY_YPOS + y * SLOT_Y_SPACING;
-                this.addSlot(new Slot(invPlayer, slotNumber,  xpos, ypos));
+                this.addSlot(new Slot(invPlayer, slotNumber, xpos, ypos));
             }
         }
 
@@ -139,14 +139,12 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     }
 
     /**
-     *
      * @param playerIn
      * @param sourceSlotIndex
      * @return
      */
     @Override
-    public ItemStack quickMoveStack(Player playerIn, int sourceSlotIndex)
-    {
+    public ItemStack quickMoveStack(Player playerIn, int sourceSlotIndex) {
         ItemStack outStack = ItemStack.EMPTY;
         Slot sourceSlot = this.slots.get(sourceSlotIndex);
 
@@ -162,7 +160,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
 
                 //sourceSlot.onSlotChange(sourceStack, outStack);
 
-            // Inventory
+                // Inventory
             } else {
                 if (sourceStack.getItem() == ZetterItems.PALETTE) {
                     if (!this.moveItemStackTo(sourceStack, 0, 1, false)) {
@@ -203,7 +201,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
 
     /**
      * Start sell/purchase process - send message to the server that player
-     * intents to buy a paiting
+     * intents to buy a painting
      */
     public void startCheckout() {
         if (this.merchant.getTradingPlayer().getLevel().isClientSide()) {
@@ -271,7 +269,8 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         return this.state;
     }
 
-    public @Nullable String getError() {
+    public @Nullable
+    String getError() {
         return this.error;
     }
 
@@ -290,11 +289,13 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     /**
      * General callback for all state changes. If something has to be
      * done in new state, no matter which state we came from
+     *
+     * Move to the state machine enum?
      */
     public void update() {
-        switch (this.state) {
-            case SERVER_AUTHENTICATION:
-                if (!this.player.level.isClientSide()) {
+        if (!this.player.level.isClientSide()) {
+            switch (this.state) {
+                case SERVER_AUTHENTICATION:
                     ConnectionManager.getInstance().authorizeServerPlayer(
                             (ServerPlayer) this.player,
                             // to FETCHING_SALES
@@ -303,36 +304,37 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
                             this::handleServerAuthenticationFail,
                             this::handleError
                     );
-                }
-                break;
-            case CLIENT_AUTHORIZATION:
-                if (!this.player.level.isClientSide()) {
+                    break;
+                case CLIENT_AUTHORIZATION:
                     // Server
                     SGalleryAuthorizationRequestPacket authorizationRequestPacket = new SGalleryAuthorizationRequestPacket(this.crossAuthorizationCode);
                     ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), authorizationRequestPacket);
-                }
-                break;
-            case FETCHING_OFFERS:
-                if (!this.player.level.isClientSide()) {
+                    break;
+                case FETCHING_OFFERS:
                     SGalleryAuthorizationResponsePacket authorizationResponsePacket = new SGalleryAuthorizationResponsePacket(true, true);
                     ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), authorizationResponsePacket);
 
                     ConnectionManager.getInstance().requestOffers(
                             (ServerPlayer) this.player,
-                            (PaintingMerchantMenu) this,
+                            this,
                             (offers) -> {
                                 this.handleOffers(true, offers);
                             },
                             this::handleError
                     );
-                }
-                break;
-            case RETRY:
-            case READY:
-            default:
-                break;
-        }
+                    break;
+                case RETRY:
+                    break;
+                case READY:
+                    // sync with client when updating, calls the same method on client side
+                    SGallerySalesPacket salesPacket = new SGallerySalesPacket(this.isSaleAllowed(), this.getContainer().getOffers());
+                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), salesPacket);
 
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     /**
@@ -354,6 +356,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
      * Assert that we are in given state, and if everything
      * is correct, change to the next state by
      * success path
+     *
      * @param assertState
      */
     private void assertStateSuccess(State assertState) {
@@ -370,6 +373,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
      * Assert that we are in given state, and if everything
      * is correct, change to the next state by
      * fail path
+     *
      * @param assertState
      */
     private void assertStateFail(State assertState) {
@@ -385,6 +389,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     /**
      * General callback for handling errors,
      * also called on many states update fail
+     *
      * @param error
      */
     public void handleError(String error) {
@@ -394,7 +399,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
 
     private void playTradeSound() {
         if (!this.merchant.isClientSide()) {
-            Entity entity = (Entity)this.merchant;
+            Entity entity = (Entity) this.merchant;
             entity.getLevel().playLocalSound(entity.getX(), entity.getY(), entity.getZ(), this.merchant.getNotifyTradeSound(), SoundSource.NEUTRAL, 1.0F, 1.0F, false);
         }
     }
@@ -405,6 +410,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
 
     /**
      * This is callback for offers request in FETCHING_SALES state.
+     *
      * @param sellAllowed
      * @param offers
      */
@@ -414,6 +420,8 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         }
 
         this.container.handleOffers(offers);
+        this.registerOffersCanvases();
+
         this.update();
     }
 
@@ -426,6 +434,34 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         this.assertStateFail(State.SERVER_AUTHENTICATION);
     }
 
+    public void handleServerAuthenticationRetry() {
+        this.assertStateSuccess(State.CLIENT_AUTHORIZATION);
+    }
+
+    public void registerOffersCanvases() {
+        if (this.merchant.isClientSide() && this.getContainer().getOffers() != null) {
+            // Maybe delegate that to some kind of ClientSalesManager?
+            ICanvasTracker tracker = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().getLevel());
+
+            for (PaintingMerchantOffer offer : this.getContainer().getOffers()) {
+                PaintingData paintingData = offer.getPaintingData();
+                paintingData.setManaged(true);
+
+                tracker.registerCanvasData(offer.getCanvasCode(), paintingData);
+            }
+        }
+    }
+
+    public void unregisterOffersCanvases() {
+        if (this.merchant.isClientSide() && this.getContainer().getOffers() != null) {
+            ICanvasTracker tracker = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().getLevel());
+
+            for (PaintingMerchantOffer offer : this.getContainer().getOffers()) {
+                tracker.unregisterCanvasData(offer.getCanvasCode());
+            }
+        }
+    }
+
     /*
      * Helpers
      */
@@ -435,10 +471,12 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
      */
     public void removed(Player player) {
         super.removed(player);
-        this.merchant.setTradingPlayer((Player)null);
+        this.merchant.setTradingPlayer((Player) null);
 
         if (!this.merchant.isClientSide()) {
-            if (!player.isAlive() || player instanceof ServerPlayer && ((ServerPlayer)player).hasDisconnected()) {
+            this.unregisterOffersCanvases();
+
+            if (!player.isAlive() || player instanceof ServerPlayer && ((ServerPlayer) player).hasDisconnected()) {
                 ItemStack itemstack = this.container.removeItemNoUpdate(PaintingMerchantContainer.INPUT_SLOT);
                 if (!itemstack.isEmpty()) {
                     player.drop(itemstack, false);
@@ -502,6 +540,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
 
         /**
          * Wrong? Or side effected
+         *
          * @param player
          * @param stack
          */
@@ -580,9 +619,13 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         };
 
         public abstract State success();
+
         public abstract State fail();
+
         public State error() {
             return ERROR;
-        };
+        }
+
+        ;
     }
 }

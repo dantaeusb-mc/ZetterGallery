@@ -1,16 +1,13 @@
 package me.dantaeusb.zettergallery.container;
 
-import me.dantaeusb.zetter.canvastracker.ICanvasTracker;
 import me.dantaeusb.zetter.core.Helper;
 import me.dantaeusb.zetter.core.ZetterItems;
 import com.google.common.collect.Lists;
 import me.dantaeusb.zetter.item.PaintingItem;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
-import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.core.ZetterGalleryVillagerTrades;
 import me.dantaeusb.zettergallery.gallery.ConnectionManager;
-import me.dantaeusb.zettergallery.network.packet.SGallerySalesPacket;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.core.NonNullList;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,7 +19,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.item.trading.MerchantOffer;
-import net.minecraftforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -79,20 +75,6 @@ public class PaintingMerchantContainer implements Container {
         this.saleAllowed = true;
         this.offers = offers;
         this.updateCurrentOffer();
-
-        if (this.merchant.isClientSide()) {
-            // Maybe delegate that to some kind of ClientSalesManager?
-            ICanvasTracker tracker = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().getLevel());
-
-            // @todo: unregister on GUI close
-            for (PaintingMerchantOffer offer : offers) {
-                tracker.registerCanvasData(offer.getCanvasCode(), offer.getPaintingData());
-            }
-        } else {
-            // sync with client when updating, calls the same method on client side
-            SGallerySalesPacket salesPacket = new SGallerySalesPacket(saleAllowed, offers);
-            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.merchant.getTradingPlayer()), salesPacket);
-        }
     }
 
     public boolean isSaleAllowed() {
@@ -117,15 +99,11 @@ public class PaintingMerchantContainer implements Container {
         return this.offers != null && this.offers.size() > 0;
     }
 
-    public boolean canProceed() {
-        return this.canProceed;
-    }
-
     public void finishSale() {
-        if (this.canProceed && this.getCurrentOffer() != null) {
+        if (this.getCurrentOffer() != null && this.getCurrentOffer().isReady()) {
             PaintingMerchantOffer offer = this.getCurrentOffer();
 
-            this.setItem(OUTPUT_SLOT, offer.getOfferResult());
+            this.setItem(OUTPUT_SLOT, offer.getOfferResult(this.merchant.getTradingPlayer().level));
 
             this.merchant.notifyTrade(this.getMerchantOffer(offer));
         }
@@ -150,8 +128,10 @@ public class PaintingMerchantContainer implements Container {
                 // Reset item if we were selling item
                 this.updateCurrentOffer();
 
-                this.canProceed = false;
-            }  else {
+                if (this.getCurrentOffer() != null) {
+                    this.getCurrentOffer().unfulfilled();
+                }
+            } else {
                 if (inputStack.getItem() == ZetterItems.PAINTING) {
                     // Current offer is to sell this painting, and we can proceed if validated
                     final String canvasCode = PaintingItem.getPaintingCode(inputStack);
@@ -165,22 +145,18 @@ public class PaintingMerchantContainer implements Container {
                         ConnectionManager.getInstance().validateSale(
                                 (ServerPlayer) this.merchant.getTradingPlayer(),
                                 offer,
-                                () -> {
-                                    offer.markReady();
-                                },
-                                (error) -> {
-                                    offer.markError(error);
-                                }
+                                offer::ready,
+                                offer::markError
                         );
                     }
 
                     this.currentOffer = offer;
-                } else {
+                } else if (inputStack.getItem() == Items.EMERALD) {
                     this.updateCurrentOffer();
 
-                    this.canProceed = inputStack.getItem() == Items.EMERALD
-                            && this.currentOffer != null
-                            && inputStack.getCount() >= this.currentOffer.getPrice();
+                    if (this.getCurrentOffer() != null && this.getCurrentOffer().getPrice() <= inputStack.getCount()) {
+                        this.getCurrentOffer().ready();
+                    }
                 }
             }
 

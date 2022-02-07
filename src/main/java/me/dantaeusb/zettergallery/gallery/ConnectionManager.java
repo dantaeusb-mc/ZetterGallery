@@ -99,6 +99,8 @@ public class ConnectionManager {
                         error.accept(exception.getMessage());
                     }
             );
+
+            return;
         }
 
         if (this.playerTokenStorage.hasPlayerToken(player) && this.playerTokenStorage.getPlayerToken(player).valid()) {
@@ -124,9 +126,7 @@ public class ConnectionManager {
                     (response) -> {
                         retry.accept(response.crossAuthCode.code);
                     },
-                    (exception) -> {
-                        error.accept(exception);
-                    }
+                    error::accept
             );
         }
     }
@@ -278,26 +278,22 @@ public class ConnectionManager {
     }
 
     private void requestCrossAuthCode(ServerPlayer player, Consumer<PlayerToken> tokenConsumer, Consumer<String> errorCallback) {
-        if (this.status == ConnectionStatus.READY) {
-            this.connection.requestPlayerToken(
-                    this.playerTokenStorage.getPlayerTokenString(player),
-                    (response) -> {
-                        PlayerToken playerReservedToken = new PlayerToken(response.token, response.issued, response.notAfter);
+        this.connection.requestPlayerToken(
+                this.playerTokenStorage.getPlayerTokenString(player),
+                (response) -> {
+                    PlayerToken playerReservedToken = new PlayerToken(response.token, response.issued, response.notAfter);
 
-                        if (response.crossAuthorizationCode != null) {
-                            playerReservedToken.setCrossAuthCode(response.crossAuthorizationCode.code, response.crossAuthorizationCode.issued, response.crossAuthorizationCode.notAfter);
-                        }
-
-                        this.playerTokenStorage.setPlayerToken(player, playerReservedToken);
-                        tokenConsumer.accept(playerReservedToken);
-                    },
-                    (exception) -> {
-                        errorCallback.accept(exception.getMessage());
+                    if (response.crossAuthorizationCode != null) {
+                        playerReservedToken.setCrossAuthCode(response.crossAuthorizationCode.code, response.crossAuthorizationCode.issued, response.crossAuthorizationCode.notAfter);
                     }
-            );
-        }
 
-        errorCallback.accept(this.errorMessage);
+                    this.playerTokenStorage.setPlayerToken(player, playerReservedToken);
+                    tokenConsumer.accept(playerReservedToken);
+                },
+                (exception) -> {
+                    errorCallback.accept(exception.getMessage());
+                }
+        );
     }
 
     private void requestServerToken(Consumer<Token> success, Consumer<Exception> error) {

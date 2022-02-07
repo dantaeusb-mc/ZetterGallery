@@ -93,12 +93,12 @@ dependencies {
     minecraft 'net.minecraftforge:forge:1.18.1-39.0.0'
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    implementation fg.deobf("com.dantaeusb.zetter:Zetter:0.13.1-1.18.1-beta")
+    implementation fg.deobf("com.dantaeusb.zetter:Zetter:0.13.2-1.18.1-beta")
 }
 
 mixin {
-    add sourceSets.main, 'mixins.zettergallery.refmap.json'
-    config 'mixins.zettergallery.json'
+    add sourceSets.main, 'zettergallery.mixins.refmap.json'
+    config 'zettergallery.mixins.json'
 
     debug.verbose = true
     debug.export = true
