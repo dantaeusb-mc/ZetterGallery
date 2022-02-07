@@ -8,6 +8,7 @@ public class ServerResponse {
     public String ip;
     public String title;
     public String motd;
+    public ServerToken token;
 
     public static class ServerToken {
         public String token;

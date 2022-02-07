@@ -63,7 +63,7 @@ public class SGallerySalesPacket {
 
                 GalleryPaintingData paintingData = GalleryPaintingData.create(uuid, authorName, title, resolution, sizeW * resolution.getNumeric(), sizeH * resolution.getNumeric(), color);
 
-                offers.add(new PaintingMerchantOffer(paintingData, price));
+                offers.add(PaintingMerchantOffer.createOfferFromPaintingData(paintingData, price));
 
                 i++;
             }

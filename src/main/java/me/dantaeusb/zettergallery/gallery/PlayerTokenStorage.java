@@ -1,4 +1,4 @@
-package me.dantaeusb.zettergallery.network.http;
+package me.dantaeusb.zettergallery.gallery;
 
 import net.minecraft.server.level.ServerPlayer;
 
@@ -10,7 +10,7 @@ import java.util.UUID;
 public class PlayerTokenStorage {
     private static PlayerTokenStorage instance;
 
-    private final HashMap<UUID, PlayerTokenEntry> playerTokenMap = new HashMap<>();
+    private final HashMap<UUID, PlayerToken> playerTokenMap = new HashMap<>();
 
     public PlayerTokenStorage() {
     }
@@ -23,8 +23,8 @@ public class PlayerTokenStorage {
         return instance;
     }
 
-    public void setPlayerToken(ServerPlayer playerEntity, String token) {
-        this.playerTokenMap.put(playerEntity.getUUID(), new PlayerTokenEntry(token));
+    public void setPlayerToken(ServerPlayer playerEntity, PlayerToken token) {
+        this.playerTokenMap.put(playerEntity.getUUID(), token);
     }
 
     public boolean hasPlayerToken(ServerPlayer playerEntity) {
@@ -35,7 +35,17 @@ public class PlayerTokenStorage {
         this.playerTokenMap.remove(playerEntity.getUUID());
     }
 
-    public @Nullable String getPlayerToken(ServerPlayer playerEntity) {
+    public @Nullable PlayerToken getPlayerToken(ServerPlayer playerEntity) {
+        UUID playerId = playerEntity.getUUID();
+
+        if (!this.playerTokenMap.containsKey(playerId)) {
+            return null;
+        }
+
+        return this.playerTokenMap.get(playerId);
+    }
+
+    public @Nullable String getPlayerTokenString(ServerPlayer playerEntity) {
         UUID playerId = playerEntity.getUUID();
 
         if (!this.playerTokenMap.containsKey(playerId)) {
@@ -43,19 +53,5 @@ public class PlayerTokenStorage {
         }
 
         return this.playerTokenMap.get(playerId).token;
-    }
-
-    private static class PlayerTokenEntry {
-        public final String token;
-        public Timestamp lastUsed;
-
-        PlayerTokenEntry(String token) {
-            this.token = token;
-            this.lastUsed = new Timestamp(System.currentTimeMillis());
-        }
-
-        public boolean validate() {
-            return System.currentTimeMillis() - this.lastUsed.getTime() > 1000 * 60 * 60;
-        }
     }
 }

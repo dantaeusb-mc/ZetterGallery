@@ -23,7 +23,6 @@ public class ZetterGalleryNetwork {
     public static final byte GALLERY_AUTHORIZATION_REQUEST = 50;
     public static final byte GALLERY_AUTHORIZATION_CHECK = 51;
     public static final byte GALLERY_AUTHORIZATION_RESPONSE = 52;
-    public static final byte GALLERY_OFFERS_REQUEST = 53;
     public static final byte GALLERY_OFFERS_RESPONSE = 54;
     public static final byte GALLERY_SELECT_OFFER = 55;
     public static final byte GALLERY_UPDATE_OFFER = 56;
@@ -55,11 +54,6 @@ public class ZetterGalleryNetwork {
                 SGalleryAuthorizationResponsePacket::writePacketData, SGalleryAuthorizationResponsePacket::readPacketData,
                 SGalleryAuthorizationResponsePacket::handle,
                 Optional.of(PLAY_TO_CLIENT));
-
-        simpleChannel.registerMessage(GALLERY_OFFERS_REQUEST, CGalleryOffersRequestPacket.class,
-                CGalleryOffersRequestPacket::writePacketData, CGalleryOffersRequestPacket::readPacketData,
-                CGalleryOffersRequestPacket::handle,
-                Optional.of(PLAY_TO_SERVER));
 
         simpleChannel.registerMessage(GALLERY_OFFERS_RESPONSE, SGallerySalesPacket.class,
                 SGallerySalesPacket::writePacketData, SGallerySalesPacket::readPacketData,

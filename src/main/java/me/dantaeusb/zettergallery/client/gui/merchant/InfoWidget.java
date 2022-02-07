@@ -150,7 +150,11 @@ public class InfoWidget extends AbstractWidget implements Widget {
     }
 
     public boolean canProceed() {
-        return this.parentScreen.canProceed();
+        if (this.parentScreen.getCurrentOffer() == null) {
+            return false;
+        }
+
+        return this.parentScreen.getCurrentOffer().isReady();
     }
 
     @Override

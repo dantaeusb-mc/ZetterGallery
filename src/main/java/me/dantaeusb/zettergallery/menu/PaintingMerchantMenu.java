@@ -4,10 +4,11 @@ import me.dantaeusb.zetter.core.ZetterItems;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.core.ZetterGalleryMenus;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
-import me.dantaeusb.zettergallery.network.http.GalleryConnection;
+import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.network.packet.CGalleryAuthorizationCheckPacket;
-import me.dantaeusb.zettergallery.network.packet.CGalleryOffersRequestPacket;
 import me.dantaeusb.zettergallery.network.packet.CGalleryProceedOfferPacket;
+import me.dantaeusb.zettergallery.network.packet.SGalleryAuthorizationRequestPacket;
+import me.dantaeusb.zettergallery.network.packet.SGalleryAuthorizationResponsePacket;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,6 +24,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.Merchant;
+import net.minecraftforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -37,6 +39,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     public static final int PLAYER_INVENTORY_XPOS = 8;
     public static final int PLAYER_INVENTORY_YPOS = 154;
 
+    private final Player player;
     private final Merchant merchant;
     private final PaintingMerchantContainer container;
 
@@ -53,6 +56,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     private PaintingMerchantMenu(int windowID, Inventory invPlayer, Merchant merchant) {
         super(ZetterGalleryMenus.PAINTING_MERCHANT, windowID);
 
+        this.player = invPlayer.player;
         this.merchant = merchant;
         this.container = new PaintingMerchantContainer(merchant);
         this.container.addListener(this);
@@ -87,11 +91,11 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
                 this.addSlot(new Slot(invPlayer, slotNumber,  xpos, ypos));
             }
         }
+
+        this.update();
     }
 
     public static PaintingMerchantMenu createMenuServerSide(int windowID, Inventory playerInventory, Merchant merchant) {
-        GalleryConnection.getInstance().authenticateServerPlayer((ServerPlayer) playerInventory.player);
-
         return new PaintingMerchantMenu(windowID, playerInventory, merchant);
     }
 
@@ -197,10 +201,6 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         return this.container.hasOffers() && !this.state.equals(State.ERROR);
     }
 
-    public boolean canProceed() {
-        return this.container.canProceed() && !this.state.equals(State.ERROR);
-    }
-
     /**
      * Start sell/purchase process - send message to the server that player
      * intents to buy a paiting
@@ -214,9 +214,20 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
             PaintingMerchantOffer offer = this.container.getCurrentOffer();
 
             if (offer.isSaleOffer()) {
-                GalleryConnection.getInstance().sell((ServerPlayer) this.merchant.getTradingPlayer(), offer.getPaintingData());
+                ConnectionManager.getInstance().registerSale(
+                        (ServerPlayer) this.player,
+                        (GalleryPaintingData) offer.getPaintingData(),
+                        this::finalizeCheckout,
+                        offer::markError
+                );
             } else {
-                GalleryConnection.getInstance().purchase((ServerPlayer) this.merchant.getTradingPlayer(), ((GalleryPaintingData) offer.getPaintingData()).getUUID(), offer.getPrice());
+                ConnectionManager.getInstance().registerPurchase(
+                        (ServerPlayer) this.player,
+                        ((GalleryPaintingData) offer.getPaintingData()).getUUID(),
+                        offer.getPrice(),
+                        this::finalizeCheckout,
+                        offer::markError
+                );
             }
         }
 
@@ -277,6 +288,54 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     }
 
     /**
+     * General callback for all state changes. If something has to be
+     * done in new state, no matter which state we came from
+     */
+    public void update() {
+        switch (this.state) {
+            case SERVER_AUTHENTICATION:
+                if (!this.player.level.isClientSide()) {
+                    ConnectionManager.getInstance().authorizeServerPlayer(
+                            (ServerPlayer) this.player,
+                            // to FETCHING_SALES
+                            this::handleServerAuthenticationSuccess,
+                            // to CLIENT_AUTHORIZATION
+                            this::handleServerAuthenticationFail,
+                            this::handleError
+                    );
+                }
+                break;
+            case CLIENT_AUTHORIZATION:
+                if (!this.player.level.isClientSide()) {
+                    // Server
+                    SGalleryAuthorizationRequestPacket authorizationRequestPacket = new SGalleryAuthorizationRequestPacket(this.crossAuthorizationCode);
+                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), authorizationRequestPacket);
+                }
+                break;
+            case FETCHING_OFFERS:
+                if (!this.player.level.isClientSide()) {
+                    SGalleryAuthorizationResponsePacket authorizationResponsePacket = new SGalleryAuthorizationResponsePacket(true, true);
+                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), authorizationResponsePacket);
+
+                    ConnectionManager.getInstance().requestOffers(
+                            (ServerPlayer) this.player,
+                            (PaintingMerchantMenu) this,
+                            (offers) -> {
+                                this.handleOffers(true, offers);
+                            },
+                            this::handleError
+                    );
+                }
+                break;
+            case RETRY:
+            case READY:
+            default:
+                break;
+        }
+
+    }
+
+    /**
      * Say to server that player is back in game after they left
      * for authorization link. This should make server to check
      * authorization for player token again, and will send
@@ -292,60 +351,35 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     }
 
     /**
-     * This is callback for successful SERVER_AUTHENTICATION.
-     * We can proceed with FETCHING_SALES
-     * @param canBuy
-     * @param canSell
+     * Assert that we are in given state, and if everything
+     * is correct, change to the next state by
+     * success path
+     * @param assertState
      */
-    public void handleServerAuthenticationSuccess(boolean canBuy, boolean canSell) {
-        if (this.state == State.SERVER_AUTHENTICATION) {
-
-
+    private void assertStateSuccess(State assertState) {
+        if (this.state == assertState) {
             this.state = this.state.success();
+        } else {
+            this.state = this.state.error();
         }
 
-        this.updateLoadingState();
+        this.update();
     }
 
     /**
-     * This is callback for non-successful SERVER_AUTHENTICATION.
-     * We need player to authorize us and go to CLIENT_AUTHORIZATION
-     * status
-     * @param canBuy
-     * @param canSell
+     * Assert that we are in given state, and if everything
+     * is correct, change to the next state by
+     * fail path
+     * @param assertState
      */
-    public void handleServerAuthenticationFail(String token) {
-        if (this.state == State.SERVER_AUTHENTICATION) {
-            this.crossAuthorizationCode = token;
+    private void assertStateFail(State assertState) {
+        if (this.state == assertState) {
             this.state = this.state.fail();
+        } else {
+            this.state = this.state.error();
         }
 
-        this.updateLoadingState();
-    }
-
-    /**
-     * This is callback for offers request in FETCHING_SALES state.
-     * @param sellAllowed
-     * @param offers
-     */
-    public void handleOffers(boolean sellAllowed, List<PaintingMerchantOffer> offers) {
-        if (this.state == State.FETCHING_SALES) {
-            this.state = this.state.success();
-        }
-
-        this.container.handleOffers(offers);
-        this.updateLoadingState();
-    }
-
-    /**
-     * General callback for all state changes. If something has to be
-     * done in new state, no matter which state we came from
-     */
-    public void updateLoadingState() {
-        if (this.state == State.FETCHING_SALES) {
-            CGalleryOffersRequestPacket offersRequestPacket = new CGalleryOffersRequestPacket();
-            ZetterGalleryNetwork.simpleChannel.sendToServer(offersRequestPacket);
-        }
+        this.update();
     }
 
     /**
@@ -364,6 +398,37 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
             entity.getLevel().playLocalSound(entity.getX(), entity.getY(), entity.getZ(), this.merchant.getNotifyTradeSound(), SoundSource.NEUTRAL, 1.0F, 1.0F, false);
         }
     }
+
+    /*
+     * Event handling
+     */
+
+    /**
+     * This is callback for offers request in FETCHING_SALES state.
+     * @param sellAllowed
+     * @param offers
+     */
+    public void handleOffers(boolean sellAllowed, List<PaintingMerchantOffer> offers) {
+        if (this.state == State.FETCHING_OFFERS) {
+            this.state = this.state.success();
+        }
+
+        this.container.handleOffers(offers);
+        this.update();
+    }
+
+    public void handleServerAuthenticationSuccess(boolean canBuy, boolean canSell) {
+        this.assertStateSuccess(State.SERVER_AUTHENTICATION);
+    }
+
+    public void handleServerAuthenticationFail(String crossAuthorizationCode) {
+        this.crossAuthorizationCode = crossAuthorizationCode;
+        this.assertStateFail(State.SERVER_AUTHENTICATION);
+    }
+
+    /*
+     * Helpers
+     */
 
     /**
      * Called when the container is closed.
@@ -450,7 +515,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         SERVER_AUTHENTICATION {
             @Override
             public State success() {
-                return FETCHING_SALES;
+                return FETCHING_OFFERS;
             }
 
             @Override
@@ -469,7 +534,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
                 return ERROR;
             }
         },
-        FETCHING_SALES {
+        FETCHING_OFFERS {
             @Override
             public State success() {
                 return READY;

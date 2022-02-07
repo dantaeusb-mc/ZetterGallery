@@ -10,5 +10,24 @@ public class AuthTokenResponse {
     public String type;
 
     @Nullable
-    public CrossAuthorizationRequestResponse crossAuthorizationCode;
+    public CrossAuthorization crossAuthorizationCode;
+
+    public AuthTokenResponse(String token, Date issued, Date notAfter, String type) {
+        this.token = token;
+        this.issued = issued;
+        this.notAfter = notAfter;
+        this.type = type;
+    }
+
+    public static class CrossAuthorization {
+        public String code;
+        public Date issued;
+        public Date notAfter;
+
+        public CrossAuthorization(String code, Date issued, Date notAfter) {
+            this.code = code;
+            this.issued = issued;
+            this.notAfter = notAfter;
+        }
+    }
 }

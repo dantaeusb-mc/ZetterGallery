@@ -20,35 +20,46 @@ public class PaintingMerchantOffer {
     /**
      * If we're ready to make a transaction
      */
-    private boolean loading;
+    private State state;
 
     /**
      * Describe error or action
      */
     private String message;
 
-    public PaintingMerchantOffer(PaintingsResponse.PaintingItem paintingItem) {
-        this.canvasCode = GalleryPaintingData.getCanvasCode(paintingItem.uuid);
-        this.price = paintingItem.price;
-        this.saleOffer = false;
-
-        this.paintingData = this.createOfferDataFromItem(paintingItem);
-    }
-
-    public PaintingMerchantOffer(GalleryPaintingData paintingData, int price) {
-        this.canvasCode = GalleryPaintingData.getCanvasCode(paintingData.getUUID());
-        this.price = price;
-        this.saleOffer = false;
-
-        this.paintingData = paintingData;
-    }
-
-    public PaintingMerchantOffer(String canvasCode, PaintingData paintingData, int price) {
+    private PaintingMerchantOffer(String canvasCode, PaintingData paintingData, int price, boolean sale) {
         this.canvasCode = canvasCode;
-        this.price = price;
-        this.saleOffer = true;
-
         this.paintingData = paintingData;
+        this.price = price;
+        this.saleOffer = sale;
+        this.state = sale ? State.WAITING : State.READY;
+    }
+
+    public static PaintingMerchantOffer createOfferFromResponse(PaintingsResponse.PaintingItem paintingItem) {
+        return new PaintingMerchantOffer(
+                GalleryPaintingData.getCanvasCode(paintingItem.uuid),
+                PaintingMerchantOffer.createOfferDataFromItem(paintingItem),
+                paintingItem.price,
+                false
+        );
+    }
+
+    public static PaintingMerchantOffer createOfferFromPlayersPainting(String canvasCode, PaintingData paintingData, int price) {
+        return new PaintingMerchantOffer(
+                canvasCode,
+                paintingData,
+                price,
+                true
+        );
+    }
+
+    public static PaintingMerchantOffer createOfferFromPaintingData(GalleryPaintingData paintingData, int price) {
+        return new PaintingMerchantOffer(
+                GalleryPaintingData.getCanvasCode(paintingData.getUUID()),
+                paintingData,
+                price,
+                false
+        );
     }
 
     public PaintingData getPaintingData() {
@@ -87,12 +98,29 @@ public class PaintingMerchantOffer {
         }
     }
 
+    public boolean isReady() {
+        return this.state == State.READY;
+    }
+
+    public boolean isError() {
+        return this.state == State.ERROR;
+    }
+
+    public void markReady() {
+        this.state = State.READY;
+    }
+
+    public void markError(String error) {
+        this.state = State.ERROR;
+    }
+
+
     /**
      * N.B. Data sent with RGBA format and stored in ARGB
      * @param paintingItem
      * @return
      */
-    private GalleryPaintingData createOfferDataFromItem(PaintingsResponse.PaintingItem paintingItem) {
+    private static GalleryPaintingData createOfferDataFromItem(PaintingsResponse.PaintingItem paintingItem) {
         final AbstractCanvasData.Resolution resolution = AbstractCanvasData.Resolution.x16;
         final int paintingSize = (paintingItem.sizeH * resolution.getNumeric()) * (paintingItem.sizeW * resolution.getNumeric());
         byte[] canvasData = new byte[paintingSize * 4];
@@ -106,5 +134,11 @@ public class PaintingMerchantOffer {
         }
 
         return GalleryPaintingData.create(paintingItem.uuid, paintingItem.author.nickname, paintingItem.name, resolution, paintingItem.sizeH * resolution.getNumeric(), paintingItem.sizeW * resolution.getNumeric(), canvasData);
+    }
+
+    public enum State {
+        WAITING,
+        READY,
+        ERROR,
     }
 }

@@ -1,11 +1,8 @@
 package me.dantaeusb.zettergallery.network;
 
-import me.dantaeusb.zettergallery.ZetterGallery;
-import me.dantaeusb.zettergallery.gallery.SalesManager;
+import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
-import me.dantaeusb.zettergallery.network.http.GalleryConnection;
 import me.dantaeusb.zettergallery.network.packet.CGalleryAuthorizationCheckPacket;
-import me.dantaeusb.zettergallery.network.packet.CGalleryOffersRequestPacket;
 import me.dantaeusb.zettergallery.network.packet.CGalleryProceedOfferPacket;
 import me.dantaeusb.zettergallery.network.packet.CGallerySelectOfferPacket;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
@@ -14,16 +11,23 @@ import net.minecraft.server.level.ServerPlayer;
 import java.util.UUID;
 
 public class ServerHandler {
+    /**
+     * This means that client says that player might be authorized the server,
+     * so the new check must be done. This will call check, and move menu
+     * to according state after that, either repeating check or continuing to offers
+     * @param packetIn
+     * @param sendingPlayer
+     */
     public static void processGalleryAuthenticationRequest(final CGalleryAuthorizationCheckPacket packetIn, ServerPlayer sendingPlayer) {
-        GalleryConnection.getInstance().checkPlayerToken((ServerPlayer) sendingPlayer);
-    }
-
-    public static void processGalleryOffersRequest(final CGalleryOffersRequestPacket packetIn, ServerPlayer sendingPlayer) {
         if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
-            SalesManager.getInstance().requestOffers(sendingPlayer, (PaintingMerchantMenu) sendingPlayer.containerMenu);
-        } else {
-            // @todo: which player
-            ZetterGallery.LOG.error("Player requested offers, but don't have painting merchant container opened");
+            PaintingMerchantMenu menu = (PaintingMerchantMenu) sendingPlayer.containerMenu;
+
+            ConnectionManager.getInstance().authorizeServerPlayer(
+                    sendingPlayer,
+                    menu::handleServerAuthenticationSuccess,
+                    menu::handleServerAuthenticationFail,
+                    menu::handleError
+            );
         }
     }
 
@@ -35,7 +39,7 @@ public class ServerHandler {
             // @todo: Might be different type
             UUID paintingUuid = ((GalleryPaintingData) paintingMerchantMenu.getCurrentOffer().getPaintingData()).getUUID();
 
-            GalleryConnection.getInstance().registerImpression(sendingPlayer, paintingUuid);
+            ConnectionManager.getInstance().registerImpression(sendingPlayer, paintingUuid, null, null);
         }
     }
 

@@ -315,10 +315,6 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         this.menu.startCheckout();
     }
 
-    public boolean canProceed() {
-        return this.menu.canProceed();
-    }
-
     public int getOffersCount() {
         return this.menu.getOffersCount();
     }

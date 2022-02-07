@@ -23,7 +23,7 @@ public class PlayerFeed {
 
         for (String feedName : response.feeds.keySet()) {
             for (PaintingsResponse.PaintingItem item : response.feeds.get(feedName)) {
-                PaintingMerchantOffer offer = new PaintingMerchantOffer(item);
+                PaintingMerchantOffer offer = PaintingMerchantOffer.createOfferFromResponse(item);
 
                 offers.add(offer);
             }

@@ -6,4 +6,10 @@ public class CrossAuthorizationRequestResponse {
     public String code;
     public Date issued;
     public Date notAfter;
+
+    public CrossAuthorizationRequestResponse(String code, Date issued, Date notAfter) {
+        this.code = code;
+        this.issued = issued;
+        this.notAfter = notAfter;
+    }
 }

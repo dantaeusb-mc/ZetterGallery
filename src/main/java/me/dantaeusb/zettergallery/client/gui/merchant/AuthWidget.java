@@ -66,7 +66,7 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
 
                 this.drawConnectButton(matrixStack, mouseX, mouseY);
                 break;
-            case FETCHING_SALES:
+            case FETCHING_OFFERS:
                 drawCenteredString(matrixStack, this.font, FETCHING_SALES_TEXT, this.x + this.width / 2, this.y + 96, Color.white.getRGB());
 
                 this.drawLoading(matrixStack);
