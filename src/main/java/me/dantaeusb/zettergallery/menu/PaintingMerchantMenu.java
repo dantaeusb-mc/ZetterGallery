@@ -92,7 +92,8 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
             }
         }
 
-        this.update();
+        // We don't call this.update() here because it can use callback before menu created on client
+        // Instead, we hook for PlayerContainerEvent.Open event in ZetterGalleryGameEvents.
     }
 
     public static PaintingMerchantMenu createMenuServerSide(int windowID, Inventory playerInventory, Merchant merchant) {
@@ -331,6 +332,11 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
                     ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), salesPacket);
 
                     break;
+                case ERROR:
+                    SGalleryErrorPacket errorPacket = new SGalleryErrorPacket(this.error);
+                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), errorPacket);
+
+                    break;
                 default:
                     break;
             }
@@ -395,6 +401,8 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     public void handleError(String error) {
         this.state = this.state.error();
         this.error = error;
+
+        this.update();
     }
 
     private void playTradeSound() {
@@ -423,6 +431,14 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         this.registerOffersCanvases();
 
         this.update();
+    }
+
+    public void handleOfferState(PaintingMerchantOffer.State state, String message) {
+        if (state == PaintingMerchantOffer.State.ERROR) {
+            this.getCurrentOffer().markError(message);
+        } else if (state == PaintingMerchantOffer.State.READY) {
+            this.getCurrentOffer().ready();
+        }
     }
 
     public void handleServerAuthenticationSuccess(boolean canBuy, boolean canSell) {

@@ -9,12 +9,17 @@ import me.dantaeusb.zetter.item.PaintingItem;
 import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
+import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
+import me.dantaeusb.zettergallery.network.packet.SGalleryOfferStatePacket;
+import me.dantaeusb.zettergallery.network.packet.SGallerySalesPacket;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.network.PacketDistributor;
 
 public class PaintingMerchantOffer {
     private final String canvasCode;
@@ -90,7 +95,7 @@ public class PaintingMerchantOffer {
     }
 
     public String getMessage() {
-        return this.getMessage();
+        return this.message;
     }
 
     public ItemStack getOfferResult(Level level) {
@@ -153,10 +158,36 @@ public class PaintingMerchantOffer {
     }
 
     public enum State {
-        PENDING, // painting data is not yet received
-        WAITING,
-        UNFULFILLED,
-        READY,
-        ERROR,
+        PENDING("pending"), // painting data is not yet received
+        WAITING("waiting"),
+        UNFULFILLED("unfulfilled"),
+        READY("ready"),
+        ERROR("error");
+
+        private final String value;
+
+        State(String value) {
+            this.value = value;
+        }
+
+        public static State fromValue(String value) {
+            if (value != null) {
+                for (State state : values()) {
+                    if (state.value.equals(value)) {
+                        return state;
+                    }
+                }
+            }
+
+            return getDefault();
+        }
+
+        public String toValue() {
+            return value;
+        }
+
+        public static State getDefault() {
+            return PENDING;
+        }
     }
 }

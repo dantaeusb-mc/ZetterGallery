@@ -29,6 +29,7 @@ public class ZetterGalleryNetwork {
     public static final byte GALLERY_PROCEED_OFFER = 57;
     public static final byte GALLERY_MERCHANT_INFO = 58;
     public static final byte GALLERY_ERROR = 60;
+    public static final byte GALLERY_OFFER_STATE = 61;
 
     @SubscribeEvent
     @SuppressWarnings("unused")
@@ -78,6 +79,11 @@ public class ZetterGalleryNetwork {
         simpleChannel.registerMessage(GALLERY_ERROR, SGalleryErrorPacket.class,
                 SGalleryErrorPacket::writePacketData, SGalleryErrorPacket::readPacketData,
                 SGalleryErrorPacket::handle,
+                Optional.of(PLAY_TO_CLIENT));
+
+        simpleChannel.registerMessage(GALLERY_OFFER_STATE, SGalleryOfferStatePacket.class,
+                SGalleryOfferStatePacket::writePacketData, SGalleryOfferStatePacket::readPacketData,
+                SGalleryOfferStatePacket::handle,
                 Optional.of(PLAY_TO_CLIENT));
     }
 

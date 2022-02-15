@@ -58,4 +58,12 @@ public class ClientHandler {
             ((PaintingMerchantMenu) player.containerMenu).handleError(packetIn.getMessage());
         }
     }
+
+    public static void processPaintingOfferState(final SGalleryOfferStatePacket packetIn, Level world) {
+        Player player = Minecraft.getInstance().player;
+
+        if (player.containerMenu instanceof PaintingMerchantMenu) {
+            ((PaintingMerchantMenu) player.containerMenu).handleOfferState(packetIn.getState(), packetIn.getMessage());
+        }
+    }
 }

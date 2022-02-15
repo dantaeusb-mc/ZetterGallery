@@ -1,5 +1,6 @@
 package me.dantaeusb.zettergallery.gallery;
 
+import me.dantaeusb.zetter.Zetter;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.gallery.salesmanager.PlayerFeed;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
@@ -11,7 +12,12 @@ import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import me.dantaeusb.zettergallery.util.EventConsumer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.forgespi.language.IModInfo;
+import org.apache.maven.artifact.versioning.ArtifactVersion;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -31,10 +37,21 @@ public class ConnectionManager {
     private ServerInfo serverInfo;
 
     private Token serverToken;
+    private UUID serverUuid;
     private PlayerTokenStorage playerTokenStorage = PlayerTokenStorage.getInstance();
 
     private ConnectionStatus status = ConnectionStatus.WAITING;
     private String errorMessage = "Connection is not ready";
+
+    private long errorTimestamp;
+
+    /**
+     * Player feed cache
+     */
+    private final HashMap<UUID, PlayerFeed> playerFeeds = new HashMap<>();
+
+    private long nextCycleEpoch;
+    private String cycleSeed;
 
     private ConnectionManager() {
         this.connection = new GalleryConnection();
@@ -51,8 +68,26 @@ public class ConnectionManager {
         return instance;
     }
 
+    public void update() {
+        if (this.nextCycleEpoch == 0L) {
+            return;
+        }
+
+        long unixTime = System.currentTimeMillis();
+
+        if (this.playerFeeds.size() > 0 && unixTime > this.nextCycleEpoch) {
+            this.playerFeeds.clear();
+        }
+    }
+
     public void handleServerStart(MinecraftServer server) {
         this.serverInfo = ServerInfo.createMultiplayerServer("%servername%", server.getMotd());
+    }
+
+    public void handleServerStop(MinecraftServer server) {
+        if (this.status == ConnectionStatus.READY) {
+            this.dropServerToken();
+        }
     }
 
     public GalleryConnection getConnection() {
@@ -67,16 +102,12 @@ public class ConnectionManager {
         WAITING,
         READY,
         ERROR,
+        ERROR_RETRY,
     }
 
     /*
      * Player
      */
-
-    /**
-     * Player feed cache
-     */
-    private final HashMap<UUID, PlayerFeed> playerFeeds = new HashMap<>();
 
     /**
      * Start server player authorization flow. If we have a token
@@ -205,7 +236,7 @@ public class ConnectionManager {
 
         if (this.playerFeeds.containsKey(player.getUUID())) {
             PlayerFeed feed = this.playerFeeds.get(player.getUUID());
-            List<PaintingMerchantOffer> offers = this.getOffersFromFeed(feed, paintingMerchantMenu.getMerchantId(), paintingMerchantMenu.getMerchantLevel());
+            List<PaintingMerchantOffer> offers = this.getOffersFromFeed(this.cycleSeed, feed, paintingMerchantMenu.getMerchantId(), paintingMerchantMenu.getMerchantLevel());
 
             success.accept(offers);
         } else {
@@ -213,8 +244,11 @@ public class ConnectionManager {
             this.getConnection().getPlayerFeed(
                     this.playerTokenStorage.getPlayerTokenString(player),
                     (response) -> {
+                        this.cycleSeed = response.cycleInfo.seed;
+                        this.nextCycleEpoch = response.cycleInfo.endsAt.getTime();
+
                         PlayerFeed feed = this.createPlayerFeed(player, response);
-                        List<PaintingMerchantOffer> offers = this.getOffersFromFeed(feed, paintingMerchantMenu.getMerchantId(), paintingMerchantMenu.getMerchantLevel());
+                        List<PaintingMerchantOffer> offers = this.getOffersFromFeed(this.cycleSeed, feed, paintingMerchantMenu.getMerchantId(), paintingMerchantMenu.getMerchantLevel());
 
                         success.accept(offers);
                     },
@@ -241,8 +275,11 @@ public class ConnectionManager {
      * @param merchantLevel
      * @return
      */
-    private List<PaintingMerchantOffer> getOffersFromFeed(PlayerFeed feed, UUID merchantId, int merchantLevel) {
-        Random rng = new Random(feed.getPlayer().getUUID().getMostSignificantBits() ^ merchantId.getMostSignificantBits());
+    private List<PaintingMerchantOffer> getOffersFromFeed(String seed, PlayerFeed feed, UUID merchantId, int merchantLevel) {
+        ByteBuffer buffer = ByteBuffer.wrap(seed.getBytes(StandardCharsets.UTF_8), 0, 8);
+        long seedLong = buffer.getLong();
+
+        Random rng = new Random(seedLong ^ feed.getPlayer().getUUID().getMostSignificantBits() ^ merchantId.getMostSignificantBits());
 
         final int totalCount = feed.getOffersCount();
 
@@ -253,30 +290,34 @@ public class ConnectionManager {
         Collections.shuffle(available, rng);
         available = available.subList(0, showCount);
 
-        return available.stream().map(feed.getOffers()::get).collect(Collectors.toList());
+        List<PaintingMerchantOffer> randomOffers = available.stream().map(feed.getOffers()::get).collect(Collectors.toList());
+
+        // Remove duplicates from offers list if there are same paintings in different feeds
+        List<String> offerIds = new LinkedList<>();
+        List<PaintingMerchantOffer> offers = new LinkedList<>();
+
+        for (PaintingMerchantOffer offer : randomOffers) {
+            if (offerIds.contains(offer.getCanvasCode())) {
+                continue;
+            }
+
+            offerIds.add(offer.getCanvasCode());
+            offers.add(offer);
+        }
+
+         return offers;
     }
 
-    /**
+    /*
      * Server
      */
 
-    public void registerServer() {
-        if (this.status != ConnectionStatus.READY) {
-            this.requestServerToken(
-                    (response) -> {
-                    },
-                    (exception) -> {
-                    }
-            );
-        }
-    }
-
-    public void handleServerShutdown() {
-        if (this.status == ConnectionStatus.READY) {
-
-        }
-    }
-
+    /**
+     * Request cross-auth token for particular player for this server
+     * @param player
+     * @param tokenConsumer
+     * @param errorCallback
+     */
     private void requestCrossAuthCode(ServerPlayer player, Consumer<PlayerToken> tokenConsumer, Consumer<String> errorCallback) {
         this.connection.requestPlayerToken(
                 this.playerTokenStorage.getPlayerTokenString(player),
@@ -296,6 +337,11 @@ public class ConnectionManager {
         );
     }
 
+    /**
+     * Request token for current server, register it in Zetter Gallery
+     * @param success
+     * @param error
+     */
     private void requestServerToken(Consumer<Token> success, Consumer<Exception> error) {
         if (this.status == ConnectionStatus.ERROR) {
             if (error != null) {
@@ -305,11 +351,25 @@ public class ConnectionManager {
             return;
         }
 
+        if (this.status == ConnectionStatus.ERROR_RETRY) {
+            // 30 seconds since error passed
+            if (System.currentTimeMillis() > this.errorTimestamp + 30 * 1000) {
+                this.status = ConnectionStatus.WAITING;
+            } else {
+                if (error != null) {
+                    error.accept(new RuntimeException(this.errorMessage));
+                }
+
+                return;
+            }
+        }
+
         this.connection.registerServer(
                 this.serverInfo,
                 (response) -> {
                     Token serverToken = new Token(response.token.token, response.token.issued, response.token.notAfter);
                     this.serverToken = serverToken;
+                    this.serverUuid = response.uuid;
                     this.status = ConnectionStatus.READY;
 
                     if (success != null) {
@@ -317,11 +377,37 @@ public class ConnectionManager {
                     }
                 },
                 (exception) -> {
-                    this.errorMessage = exception.getMessage();
-                    this.status = ConnectionStatus.ERROR;
+                    Zetter.LOG.error(exception);
+
+                    // Invalid version is unrecoverable
+                    if (exception instanceof GalleryException && ((GalleryException) exception).getCode() == 403) {
+                        this.errorMessage = exception.getMessage();
+                        this.status = ConnectionStatus.ERROR;
+
+                        error.accept(exception);
+                        return;
+                    }
+
+                    this.errorMessage = "Cannot connect to Zetter Gallery. Please try again later.";
+                    this.status = ConnectionStatus.ERROR_RETRY;
+                    this.errorTimestamp = System.currentTimeMillis();
 
                     error.accept(exception);
                 }
+        );
+    }
+
+    /**
+     * Discard current token
+     */
+    private void dropServerToken() {
+        this.playerTokenStorage.flush();
+
+        this.connection.unregisterServer(
+                this.serverToken.token,
+                this.serverUuid,
+                (message) -> {},
+                Zetter.LOG::error
         );
     }
 }

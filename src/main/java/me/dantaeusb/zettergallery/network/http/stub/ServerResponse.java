@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.UUID;
 
 public class ServerResponse {
+    public UUID uuid;
     public String ip;
     public String title;
     public String motd;

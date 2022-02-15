@@ -15,9 +15,13 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 
 import javax.annotation.Nullable;
 import java.awt.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class AuthWidget extends AbstractWidget implements Widget, GuiEventListener {
 
@@ -76,9 +80,21 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
                         Component.nullToEmpty(this.parentScreen.getMenu().getError()) :
                         UNKNOWN_ERROR_TEXT;
 
-                // stack, font, x, y, color
-                drawCenteredString(matrixStack, this.font, errorMessage, this.x + this.width / 2, this.y + 82, Color.white.getRGB());
-                drawCenteredString(matrixStack, this.font, TRY_AGAIN_TEXT, this.x + this.width / 2, this.y + 96, Color.white.getRGB());
+                // 176 (window width - 16x2 (padding) - 2 (borders))
+                List<FormattedCharSequence> lines = this.font.split(errorMessage, 142);
+                int i = 0;
+
+                for (FormattedCharSequence line : lines) {
+                    // stack, font, x, y, color
+                    drawCenteredString(
+                            matrixStack,
+                            this.font,
+                            line,
+                            this.x + this.width / 2,
+                            this.y + 82 + (i++ * 13),
+                            Color.white.getRGB()
+                    );
+                }
 
                 break;
         }

@@ -6,8 +6,10 @@ import com.google.common.collect.Lists;
 import me.dantaeusb.zetter.item.PaintingItem;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
+import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.core.ZetterGalleryVillagerTrades;
 import me.dantaeusb.zettergallery.gallery.ConnectionManager;
+import me.dantaeusb.zettergallery.network.packet.SGalleryOfferStatePacket;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.core.NonNullList;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,6 +21,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraftforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -117,9 +120,6 @@ public class PaintingMerchantContainer implements Container {
         return 0;
     }
 
-    /**
-     * @todo: Use offers from villager trades
-     */
     public void setChanged() {
         ItemStack inputStack = this.getInputSlot();
 
@@ -142,11 +142,22 @@ public class PaintingMerchantContainer implements Container {
 
                     // Ask Gallery if we can sell this painting
                     if (!this.merchant.isClientSide()) {
+                        // @todo: this could be better
                         ConnectionManager.getInstance().validateSale(
                                 (ServerPlayer) this.merchant.getTradingPlayer(),
                                 offer,
-                                offer::ready,
-                                offer::markError
+                                () -> {
+                                    offer.ready();
+
+                                    SGalleryOfferStatePacket offerStatePacket = new SGalleryOfferStatePacket(PaintingMerchantOffer.State.READY, "Ready");
+                                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.merchant.getTradingPlayer()), offerStatePacket);
+                                },
+                                (errorMessage) -> {
+                                    offer.markError(errorMessage);
+
+                                    SGalleryOfferStatePacket offerStatePacket = new SGalleryOfferStatePacket(PaintingMerchantOffer.State.ERROR, errorMessage);
+                                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.merchant.getTradingPlayer()), offerStatePacket);
+                                }
                         );
                     }
 

@@ -23,6 +23,14 @@ public class PlayerTokenStorage {
         return instance;
     }
 
+    public int getSize() {
+        return this.playerTokenMap.size();
+    }
+
+    public void flush() {
+        this.playerTokenMap.clear();
+    }
+
     public void setPlayerToken(ServerPlayer playerEntity, PlayerToken token) {
         this.playerTokenMap.put(playerEntity.getUUID(), token);
     }

@@ -7,13 +7,15 @@ public class RegisterRequest {
 
     public String title;
     public String motd;
+    public String galleryVersion;
 
     public List<String> rating;
 
-    public RegisterRequest(boolean singleplayer, String title, String motd) {
+    public RegisterRequest(boolean singleplayer, String title, String motd, String galleryVersion) {
         this.singleplayer = singleplayer;
         this.title = title;
         this.motd = motd;
+        this.galleryVersion = galleryVersion;
 
         /*
          * Defaults: Low effort, fantasy violence, fear

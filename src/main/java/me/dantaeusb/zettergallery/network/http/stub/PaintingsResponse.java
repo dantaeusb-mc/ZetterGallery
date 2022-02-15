@@ -4,16 +4,12 @@ import com.google.gson.*;
 import com.google.gson.annotations.JsonAdapter;
 
 import java.lang.reflect.Type;
-import java.util.Base64;
-import java.util.Map;
-import java.util.UUID;
-import java.util.Vector;
+import java.util.*;
 
 public class PaintingsResponse {
-    public String seed;
-
     // Can't have enums, look for https://github.com/google/gson/issues/501
     public Map<String, Vector<PaintingItem>> feeds;
+    public CycleInfo cycleInfo;
 
     public static class PaintingItem {
         public UUID uuid;
@@ -45,6 +41,18 @@ public class PaintingsResponse {
         public Author(UUID uuid, String nickname) {
             this.uuid = uuid;
             this.nickname = nickname;
+        }
+    }
+
+    public static class CycleInfo {
+        public String seed;
+        public Date startsAt;
+        public Date endsAt;
+
+        public CycleInfo(String seed, Date startsAt, Date endsAt) {
+            this.seed = seed;
+            this.startsAt = startsAt;
+            this.endsAt = endsAt;
         }
     }
 
