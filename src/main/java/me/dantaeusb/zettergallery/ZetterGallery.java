@@ -1,5 +1,7 @@
 package me.dantaeusb.zettergallery;
 
+import me.dantaeusb.zetter.core.ZetterContainerMenus;
+import me.dantaeusb.zettergallery.core.ZetterGalleryContainerMenus;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -25,5 +27,7 @@ public class ZetterGallery
         instance = this;
 
         MOD_EVENT_BUS = FMLJavaModLoadingContext.get().getModEventBus();
+
+        ZetterGalleryContainerMenus.init(MOD_EVENT_BUS);
     }
 }

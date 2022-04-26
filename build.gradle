@@ -14,7 +14,7 @@ apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'maven-publish'
 apply from: 'https://raw.githubusercontent.com/SizableShrimp/Forge-Class-Remapper/main/classremapper.gradle'
 
-version = '0.1.0-1.18.1-alpha'
+version = '0.1.0-1.18.2-alpha'
 group = 'com.dantaeusb.zettergallery' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'zettergallery'
 
@@ -22,11 +22,13 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 minecraft {
-    mappings channel: 'official', version: '1.18.1'
+    mappings channel: 'official', version: '1.18.2'
 
     runs {
         client {
             workingDirectory project.file('run')
+
+            arg "-mixin.config=mixins.zettergallery.json"
 
             // Recommended logging data for a userdev environment
             property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
@@ -43,6 +45,8 @@ minecraft {
 
         server {
             workingDirectory project.file('run')
+
+            arg "-mixin.config=mixins.zettergallery.json"
 
             // Recommended logging data for a userdev environment
             property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
@@ -85,20 +89,20 @@ repositories {
     maven {
         // for Zetter
         name "dantaeusb"
-        url "../../Zetter/1.18/mcmodsrepo"
+        url "../../../Mod/1.18.1/mcmodsrepo"
     }
 }
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.18.1-39.0.0'
+    minecraft 'net.minecraftforge:forge:1.18.2-40.1.0'
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    implementation fg.deobf("com.dantaeusb.zetter:Zetter:0.13.2-1.18.1-beta")
+    implementation fg.deobf("com.dantaeusb.zetter:Zetter:0.14.1-1.18.2-beta")
 }
 
 mixin {
-    add sourceSets.main, 'zettergallery.mixins.refmap.json'
-    config 'zettergallery.mixins.json'
+    add sourceSets.main, 'mixins.zettergallery.refmap.json'
+    config 'mixins.zettergallery.json'
 
     debug.verbose = true
     debug.export = true
@@ -114,7 +118,8 @@ jar {
             "Implementation-Title": project.name,
             "Implementation-Version": project.version,
             "Implementation-Vendor" :"dantaeusb",
-            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+            "MixinConfigs" : "mixins.zettergallery.json"
         ])
     }
 }

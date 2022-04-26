@@ -23,7 +23,7 @@ public class ZetterGalleryVillagers {
     @SubscribeEvent
     @SuppressWarnings("unused")
     public static void onVillagerPoiTypeRegister(final RegistryEvent.Register<PoiType> event) {
-        PAINTING_MERCHANT_POI = new PoiType("painting_merchant", getAllStates(ZetterBlocks.ARTIST_TABLE), 1, 1);
+        PAINTING_MERCHANT_POI = new PoiType("painting_merchant", getAllStates(ZetterBlocks.ARTIST_TABLE.get()), 1, 1);
         PAINTING_MERCHANT_POI.setRegistryName(ZetterGallery.MOD_ID, "painting_merchant");
         event.getRegistry().register(PAINTING_MERCHANT_POI);
     }

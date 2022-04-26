@@ -28,7 +28,7 @@ import java.util.function.Consumer;
  */
 public class GalleryConnection {
     private static final String API_VERSION = "v1";
-    private static final String BASE_URI = "http://127.0.0.1/";
+    private static final String BASE_URI = "https://api.zetter.gallery/";
     private static final String SERVERS_ENDPOINT = "servers";
     private static final String TOKEN_ENDPOINT = "auth/token";
     private static final String CHECK_ENDPOINT = "auth/token/check";

@@ -102,7 +102,7 @@ public class PaintingMerchantOffer {
         if (this.saleOffer) {
             return new ItemStack(Items.EMERALD, this.price);
         } else {
-            ItemStack painting = new ItemStack(ZetterItems.PAINTING);
+            ItemStack painting = new ItemStack(ZetterItems.PAINTING.get());
 
             ICanvasTracker canvasTracker = Helper.getWorldCanvasTracker(level);
             canvasTracker.registerCanvasData(this.canvasCode, this.paintingData);

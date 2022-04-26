@@ -132,7 +132,7 @@ public class PaintingMerchantContainer implements Container {
                     this.getCurrentOffer().unfulfilled();
                 }
             } else {
-                if (inputStack.getItem() == ZetterItems.PAINTING) {
+                if (inputStack.getItem() == ZetterItems.PAINTING.get()) {
                     // Current offer is to sell this painting, and we can proceed if validated
                     final String canvasCode = PaintingItem.getPaintingCode(inputStack);
                     PaintingData paintingData = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().level).getCanvasData(canvasCode, PaintingData.class);

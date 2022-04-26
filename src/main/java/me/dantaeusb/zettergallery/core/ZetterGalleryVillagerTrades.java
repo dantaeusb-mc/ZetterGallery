@@ -37,7 +37,7 @@ public class ZetterGalleryVillagerTrades {
                 (entity, random) -> new MerchantOffer(
                         new ItemStack(Items.EMERALD, 4),
                         ItemStack.EMPTY,
-                        new ItemStack(ZetterItems.PAINTING, 1),
+                        new ItemStack(ZetterItems.PAINTING.get(), 1),
                         4,
                         2,
                         0.05F
@@ -45,7 +45,7 @@ public class ZetterGalleryVillagerTrades {
             );
             trades.get(1).add(
                 (entity, random) -> new MerchantOffer(
-                        new ItemStack(ZetterItems.PAINTING, 1),
+                        new ItemStack(ZetterItems.PAINTING.get(), 1),
                         ItemStack.EMPTY,
                         new ItemStack(Items.EMERALD, 4),
                         16,

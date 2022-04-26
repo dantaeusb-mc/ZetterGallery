@@ -5,7 +5,7 @@ import me.dantaeusb.zetter.core.Helper;
 import me.dantaeusb.zetter.core.ZetterItems;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
-import me.dantaeusb.zettergallery.core.ZetterGalleryMenus;
+import me.dantaeusb.zettergallery.core.ZetterGalleryContainerMenus;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.network.packet.*;
@@ -54,7 +54,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     private String error;
 
     private PaintingMerchantMenu(int windowID, Inventory invPlayer, Merchant merchant) {
-        super(ZetterGalleryMenus.PAINTING_MERCHANT, windowID);
+        super(ZetterGalleryContainerMenus.PAINTING_MERCHANT.get(), windowID);
 
         this.player = invPlayer.player;
         this.merchant = merchant;
@@ -163,7 +163,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
 
                 // Inventory
             } else {
-                if (sourceStack.getItem() == ZetterItems.PALETTE) {
+                if (sourceStack.getItem() == ZetterItems.PALETTE.get()) {
                     if (!this.moveItemStackTo(sourceStack, 0, 1, false)) {
                         return ItemStack.EMPTY;
                     }
@@ -531,7 +531,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
                 return true;
             }
 
-            if (stack.getItem() == ZetterItems.PAINTING && PaintingMerchantMenu.this.isSaleAllowed()) {
+            if (stack.getItem() == ZetterItems.PAINTING.get() && PaintingMerchantMenu.this.isSaleAllowed()) {
                 return true;
             }
 
