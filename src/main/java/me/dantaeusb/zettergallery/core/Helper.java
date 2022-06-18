@@ -8,7 +8,7 @@ public class Helper {
     public static final String GALLERY_SCHEME = "https";
     public static final String GALLERY_HOST = "zetter.gallery";
     public static final String GALLERY_AUTH_SERVER_ENDPOINT = "auth/cross";
-    public static final int GALLERY_PORT = 8080;
+    public static final int GALLERY_PORT = 443;
 
     public static final int GALLERY_CROSS_AUTH_CODE_LENGTH = 12;
 

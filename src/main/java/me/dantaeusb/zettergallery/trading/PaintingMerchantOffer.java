@@ -21,6 +21,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.PacketDistributor;
 
+import java.util.Optional;
+
 public class PaintingMerchantOffer {
     private final String canvasCode;
     private final int price;
@@ -36,7 +38,7 @@ public class PaintingMerchantOffer {
     /**
      * Describe error or action
      */
-    private String message;
+    private Optional<String> message = Optional.empty();
 
     private PaintingMerchantOffer(String canvasCode, PaintingData paintingData, int price, boolean sale) {
         this.canvasCode = canvasCode;
@@ -94,7 +96,7 @@ public class PaintingMerchantOffer {
         return this.price;
     }
 
-    public String getMessage() {
+    public Optional<String> getMessage() {
         return this.message;
     }
 
@@ -112,6 +114,10 @@ public class PaintingMerchantOffer {
 
             return painting;
         }
+    }
+
+    public boolean isLoading() {
+        return this.state == State.PENDING || this.state == State.WAITING;
     }
 
     public boolean isReady() {
@@ -132,7 +138,7 @@ public class PaintingMerchantOffer {
 
     public void markError(String error) {
         this.state = State.ERROR;
-        this.message = error;
+        this.message = Optional.of(error);
     }
 
 
@@ -158,11 +164,11 @@ public class PaintingMerchantOffer {
     }
 
     public enum State {
-        PENDING("pending"), // painting data is not yet received
-        WAITING("waiting"),
-        UNFULFILLED("unfulfilled"),
-        READY("ready"),
-        ERROR("error");
+        PENDING("pending"), // Painting data not ready
+        WAITING("waiting"), // Painting waiting for validation / no data received
+        UNFULFILLED("unfulfilled"), //
+        READY("ready"), // Ready for checkout
+        ERROR("error"); // Error occurred, checkout not possible
 
         private final String value;
 

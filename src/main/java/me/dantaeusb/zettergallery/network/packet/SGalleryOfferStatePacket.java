@@ -16,12 +16,18 @@ import java.util.function.Supplier;
  * @todo: Add offer ID or something
  */
 public class SGalleryOfferStatePacket {
+    private final String canvasCode;
     private final PaintingMerchantOffer.State state;
     private final String message;
 
-    public SGalleryOfferStatePacket(PaintingMerchantOffer.State state, String message) {
+    public SGalleryOfferStatePacket(String canvasCode, PaintingMerchantOffer.State state, String message) {
+        this.canvasCode = canvasCode;
         this.state = state;
         this.message = message;
+    }
+
+    public String getCanvasCode() {
+        return this.canvasCode;
     }
 
     public PaintingMerchantOffer.State getState() {
@@ -37,10 +43,11 @@ public class SGalleryOfferStatePacket {
      */
     public static SGalleryOfferStatePacket readPacketData(FriendlyByteBuf networkBuffer) {
         try {
+            String canvasCode = networkBuffer.readUtf(32767);
             String state = networkBuffer.readUtf(32767);
             String message = networkBuffer.readUtf(32767);
 
-            return new SGalleryOfferStatePacket(PaintingMerchantOffer.State.fromValue(state), message);
+            return new SGalleryOfferStatePacket(canvasCode, PaintingMerchantOffer.State.fromValue(state), message);
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
             ZetterGallery.LOG.warn("Exception while reading SGalleryAuthenticationPacket: " + e);
             return null;

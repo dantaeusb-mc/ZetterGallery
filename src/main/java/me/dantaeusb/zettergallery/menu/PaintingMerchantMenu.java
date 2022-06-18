@@ -215,7 +215,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
             if (offer.isSaleOffer()) {
                 ConnectionManager.getInstance().registerSale(
                         (ServerPlayer) this.player,
-                        (GalleryPaintingData) offer.getPaintingData(),
+                        (PaintingData) offer.getPaintingData(),
                         this::finalizeCheckout,
                         offer::markError
                 );
@@ -433,7 +433,21 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         this.update();
     }
 
-    public void handleOfferState(PaintingMerchantOffer.State state, String message) {
+    /**
+     * Handle the change of the current offers status,
+     * used to sync status when server asks to validate
+     * painting for sale
+     *
+     * @param canvasCode
+     * @param state
+     * @param message
+     */
+    public void handleOfferState(String canvasCode, PaintingMerchantOffer.State state, String message) {
+        // If canvas code of the offer has changed since packet was formed, disregard it
+        if (this.getCurrentOffer() == null || !this.getCurrentOffer().getCanvasCode().equals(canvasCode)) {
+            return;
+        }
+
         if (state == PaintingMerchantOffer.State.ERROR) {
             this.getCurrentOffer().markError(message);
         } else if (state == PaintingMerchantOffer.State.READY) {

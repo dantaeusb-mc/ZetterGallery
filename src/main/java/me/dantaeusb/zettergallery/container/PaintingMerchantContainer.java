@@ -41,7 +41,6 @@ public class PaintingMerchantContainer implements Container {
 
     private boolean locked = false;
     private boolean saleAllowed = false;
-    private boolean canProceed = false;
     private int currentOfferIndex;
 
     @Nullable
@@ -120,6 +119,14 @@ public class PaintingMerchantContainer implements Container {
         return 0;
     }
 
+    /**
+     * Called when items in container are changed,
+     * i.e. when slot is clicked and onput or output changed
+     *
+     * Warning: this called multiple times, so in order
+     * to prevent event spamming and data inconsistency, check
+     * that offer is changed!
+     */
     public void setChanged() {
         ItemStack inputStack = this.getInputSlot();
 
@@ -135,33 +142,39 @@ public class PaintingMerchantContainer implements Container {
                 if (inputStack.getItem() == ZetterItems.PAINTING.get()) {
                     // Current offer is to sell this painting, and we can proceed if validated
                     final String canvasCode = PaintingItem.getPaintingCode(inputStack);
+
+                    /**
+                     * If item was not changed, there's no need
+                     * to update offer and send packet
+                     */
+                    if (this.currentOffer != null && this.currentOffer.isSaleOffer() && this.currentOffer.getCanvasCode().equals(canvasCode)) {
+                        return;
+                    }
+
                     PaintingData paintingData = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().level).getCanvasData(canvasCode, PaintingData.class);
                     PaintingMerchantOffer offer = PaintingMerchantOffer.createOfferFromPlayersPainting(canvasCode, paintingData, 4);
 
-                    this.canProceed = true;
+                    this.currentOffer = offer;
 
                     // Ask Gallery if we can sell this painting
                     if (!this.merchant.isClientSide()) {
-                        // @todo: this could be better
                         ConnectionManager.getInstance().validateSale(
-                                (ServerPlayer) this.merchant.getTradingPlayer(),
-                                offer,
-                                () -> {
-                                    offer.ready();
+                            (ServerPlayer) this.merchant.getTradingPlayer(),
+                            offer,
+                            () -> {
+                                offer.ready();
 
-                                    SGalleryOfferStatePacket offerStatePacket = new SGalleryOfferStatePacket(PaintingMerchantOffer.State.READY, "Ready");
-                                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.merchant.getTradingPlayer()), offerStatePacket);
-                                },
-                                (errorMessage) -> {
-                                    offer.markError(errorMessage);
+                                SGalleryOfferStatePacket offerStatePacket = new SGalleryOfferStatePacket(offer.getCanvasCode(), PaintingMerchantOffer.State.READY, "Ready");
+                                ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.merchant.getTradingPlayer()), offerStatePacket);
+                            },
+                            (errorMessage) -> {
+                                offer.markError(errorMessage);
 
-                                    SGalleryOfferStatePacket offerStatePacket = new SGalleryOfferStatePacket(PaintingMerchantOffer.State.ERROR, errorMessage);
-                                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.merchant.getTradingPlayer()), offerStatePacket);
-                                }
+                                SGalleryOfferStatePacket offerStatePacket = new SGalleryOfferStatePacket(offer.getCanvasCode(), PaintingMerchantOffer.State.ERROR, errorMessage);
+                                ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.merchant.getTradingPlayer()), offerStatePacket);
+                            }
                         );
                     }
-
-                    this.currentOffer = offer;
                 } else if (inputStack.getItem() == Items.EMERALD) {
                     this.updateCurrentOffer();
 
@@ -207,6 +220,8 @@ public class PaintingMerchantContainer implements Container {
         }
 
         if (index >= this.offers.size()) {
+            ZetterGallery.LOG.error("There's no offer with such index");
+            return;
         }
 
         this.currentOfferIndex = index;

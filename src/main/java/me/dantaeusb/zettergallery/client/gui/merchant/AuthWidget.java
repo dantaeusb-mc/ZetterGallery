@@ -123,8 +123,8 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
     private static final int LOADING_UPOS = 276;
     private static final int LOADING_VPOS = 0;
 
-    private void drawLoading(PoseStack matrixStack) {
-
+    private void drawLoading(PoseStack matrixStack)
+    {
         this.minecraft.getTextureManager().bindForSetup(LOADING_RESOURCE);
 
         final int animation = this.tick % 40;

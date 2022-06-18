@@ -63,7 +63,7 @@ public class ClientHandler {
         Player player = Minecraft.getInstance().player;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
-            ((PaintingMerchantMenu) player.containerMenu).handleOfferState(packetIn.getState(), packetIn.getMessage());
+            ((PaintingMerchantMenu) player.containerMenu).handleOfferState(packetIn.getCanvasCode(), packetIn.getState(), packetIn.getMessage());
         }
     }
 }

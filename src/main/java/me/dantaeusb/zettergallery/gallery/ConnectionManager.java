@@ -1,6 +1,7 @@
 package me.dantaeusb.zettergallery.gallery;
 
 import me.dantaeusb.zetter.Zetter;
+import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.gallery.salesmanager.PlayerFeed;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
@@ -68,6 +69,10 @@ public class ConnectionManager {
         return instance;
     }
 
+    /**
+     * Check that current feed is not outdated, and update if it is
+     * @todo: Update if player has trading screen opened
+     */
     public void update() {
         if (this.nextCycleEpoch == 0L) {
             return;
@@ -214,7 +219,7 @@ public class ConnectionManager {
         );
     }
 
-    public void registerSale(ServerPlayer player, GalleryPaintingData paintingData, EventConsumer success, Consumer<String> error) {
+    public void registerSale(ServerPlayer player, PaintingData paintingData, EventConsumer success, Consumer<String> error) {
         ConnectionManager.getInstance().getConnection().sell(
                 this.playerTokenStorage.getPlayerTokenString(player),
                 paintingData,
