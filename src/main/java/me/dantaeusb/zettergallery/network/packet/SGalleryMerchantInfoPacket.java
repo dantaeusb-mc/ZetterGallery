@@ -42,7 +42,7 @@ public class SGalleryMerchantInfoPacket {
 
             return new SGalleryMerchantInfoPacket(merchantId, merchantLevel);
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
-            ZetterGallery.LOG.warn("Exception while reading SGalleryAuthenticationPacket: " + e);
+            ZetterGallery.LOG.warn("Exception while reading SGalleryMerchantInfoPacket: " + e);
             return null;
         }
     }

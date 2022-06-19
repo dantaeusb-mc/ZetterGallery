@@ -211,9 +211,14 @@ public class ConnectionManager {
             return;
         }
 
+        if (offer.getPaintingData().isEmpty()) {
+            error.accept("Painting data not ready");
+            return;
+        }
+
         ConnectionManager.getInstance().getConnection().validate(
                 this.playerTokenStorage.getPlayerTokenString(player),
-                offer.getPaintingData(),
+                offer.getPaintingData().get(),
                 (response) -> success.accept(),
                 (exception) -> error.accept(exception.getMessage())
         );

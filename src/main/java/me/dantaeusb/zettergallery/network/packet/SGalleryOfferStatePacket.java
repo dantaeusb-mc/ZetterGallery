@@ -12,9 +12,6 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-/**
- * @todo: Add offer ID or something
- */
 public class SGalleryOfferStatePacket {
     private final String canvasCode;
     private final PaintingMerchantOffer.State state;
@@ -49,7 +46,7 @@ public class SGalleryOfferStatePacket {
 
             return new SGalleryOfferStatePacket(canvasCode, PaintingMerchantOffer.State.fromValue(state), message);
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
-            ZetterGallery.LOG.warn("Exception while reading SGalleryAuthenticationPacket: " + e);
+            ZetterGallery.LOG.warn("Exception while reading SGalleryOfferStatePacket: " + e);
             return null;
         }
     }
@@ -58,6 +55,7 @@ public class SGalleryOfferStatePacket {
      * Writes the raw packet data to the data stream.
      */
     public void writePacketData(FriendlyByteBuf networkBuffer) {
+        networkBuffer.writeUtf(this.canvasCode, 32767);
         networkBuffer.writeUtf(this.state.toValue(), 32767);
         networkBuffer.writeUtf(this.message, 32767);
     }

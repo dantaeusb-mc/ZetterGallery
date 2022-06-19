@@ -34,7 +34,7 @@ public class SGalleryErrorPacket {
 
             return new SGalleryErrorPacket(message);
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
-            ZetterGallery.LOG.warn("Exception while reading SGalleryAuthenticationPacket: " + e);
+            ZetterGallery.LOG.warn("Exception while reading SGalleryErrorPacket: " + e);
             return null;
         }
     }

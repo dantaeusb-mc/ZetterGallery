@@ -170,9 +170,10 @@ public class PreviewWidget extends AbstractWidget implements Widget, GuiEventLis
         }
 
         String canvasCode = offer.getCanvasCode();
-        PaintingData offerPaintingData = offer.getPaintingData();
 
-        if (offerPaintingData != null) {
+        if (offer.getPaintingData().isPresent()) {
+            PaintingData offerPaintingData = offer.getPaintingData().get();
+
             float maxSize = Math.max(offerPaintingData.getHeight(), offerPaintingData.getWidth()) / 16.0F;
             float scale = 4.0F / maxSize;
 

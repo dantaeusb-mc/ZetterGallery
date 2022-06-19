@@ -32,7 +32,7 @@ public class SGalleryAuthorizationRequestPacket {
 
             return new SGalleryAuthorizationRequestPacket(crossAuthorizationCode);
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
-            ZetterGallery.LOG.warn("Exception while reading SGalleryAuthenticationPacket: " + e);
+            ZetterGallery.LOG.warn("Exception while reading SGalleryAuthorizationRequestPacket: " + e);
             return null;
         }
     }

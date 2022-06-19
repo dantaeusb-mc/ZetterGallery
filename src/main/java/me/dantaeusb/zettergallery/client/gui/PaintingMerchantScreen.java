@@ -306,9 +306,6 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
 
     private void updateCurrentOfferIndex(int newOffersIndex) {
         this.menu.updateCurrentOfferIndex(newOffersIndex);
-
-        CGallerySelectOfferPacket selectOfferPacket = new CGallerySelectOfferPacket(newOffersIndex);
-        ZetterGalleryNetwork.simpleChannel.sendToServer(selectOfferPacket);
     }
 
     public void proceed() {

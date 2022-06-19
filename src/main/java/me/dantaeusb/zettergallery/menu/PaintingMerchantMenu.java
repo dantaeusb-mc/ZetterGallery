@@ -1,5 +1,6 @@
 package me.dantaeusb.zettergallery.menu;
 
+import me.dantaeusb.zetter.Zetter;
 import me.dantaeusb.zetter.canvastracker.ICanvasTracker;
 import me.dantaeusb.zetter.core.Helper;
 import me.dantaeusb.zetter.core.ZetterItems;
@@ -213,16 +214,27 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
             PaintingMerchantOffer offer = this.container.getCurrentOffer();
 
             if (offer.isSaleOffer()) {
+                if (offer.getPaintingData().isEmpty()) {
+                    Zetter.LOG.error("Painting data is not ready for checkout");
+                    return;
+                }
+
                 ConnectionManager.getInstance().registerSale(
                         (ServerPlayer) this.player,
-                        (PaintingData) offer.getPaintingData(),
+                        (PaintingData) offer.getPaintingData().get(),
                         this::finalizeCheckout,
                         offer::markError
                 );
             } else {
+                // Should never happen, theoretically
+                if (offer.getPaintingData().isEmpty()) {
+                    Zetter.LOG.error("Painting data is not ready for checkout");
+                    return;
+                }
+
                 ConnectionManager.getInstance().registerPurchase(
                         (ServerPlayer) this.player,
-                        ((GalleryPaintingData) offer.getPaintingData()).getUUID(),
+                        ((GalleryPaintingData) offer.getPaintingData().get()).getUUID(),
                         offer.getPrice(),
                         this::finalizeCheckout,
                         offer::markError
@@ -256,6 +268,11 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
 
     public void updateCurrentOfferIndex(int index) {
         this.container.setCurrentOfferIndex(index);
+
+        if (this.merchant.getTradingPlayer().getLevel().isClientSide()) {
+            CGallerySelectOfferPacket selectOfferPacket = new CGallerySelectOfferPacket(index);
+            ZetterGalleryNetwork.simpleChannel.sendToServer(selectOfferPacket);
+        }
     }
 
     public int getCurrentOfferIndex() {
@@ -474,7 +491,11 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
             ICanvasTracker tracker = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().getLevel());
 
             for (PaintingMerchantOffer offer : this.getContainer().getOffers()) {
-                PaintingData paintingData = offer.getPaintingData();
+                if (offer.getPaintingData().isEmpty()) {
+                    throw new IllegalStateException("Painting doesn't have data to be registered");
+                }
+
+                PaintingData paintingData = offer.getPaintingData().get();
                 paintingData.setManaged(true);
 
                 tracker.registerCanvasData(offer.getCanvasCode(), paintingData);

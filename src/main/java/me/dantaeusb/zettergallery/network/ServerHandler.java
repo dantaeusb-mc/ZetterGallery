@@ -31,8 +31,15 @@ public class ServerHandler {
             PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)sendingPlayer.containerMenu;
             paintingMerchantMenu.updateCurrentOfferIndex(packetIn.getOfferIndex());
 
-            // @todo: Might be different type
-            UUID paintingUuid = ((GalleryPaintingData) paintingMerchantMenu.getCurrentOffer().getPaintingData()).getUUID();
+            if (paintingMerchantMenu.getCurrentOffer() == null) {
+                throw new IllegalStateException("Selected offer is empty");
+            }
+
+            if (paintingMerchantMenu.getCurrentOffer().getPaintingData().isEmpty()) {
+                throw new IllegalStateException("Painting doesn't have data to register impression");
+            }
+
+            UUID paintingUuid = ((GalleryPaintingData) paintingMerchantMenu.getCurrentOffer().getPaintingData().get()).getUUID();
 
             ConnectionManager.getInstance().registerImpression(sendingPlayer, paintingUuid, null, null);
         }

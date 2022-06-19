@@ -83,12 +83,16 @@ public class SGallerySalesPacket {
         networkBuffer.writeInt(this.offers.size());
 
         for (PaintingMerchantOffer merchantOffer : this.offers) {
-            if (merchantOffer.isSaleOffer() || !(merchantOffer.getPaintingData() instanceof GalleryPaintingData)) {
+            if (
+                merchantOffer.isSaleOffer()
+                || merchantOffer.getPaintingData().isEmpty()
+                || !(merchantOffer.getPaintingData().get() instanceof GalleryPaintingData)
+            ) {
                 ZetterGallery.LOG.error("Trying to send sell offer over the net");
                 return;
             }
 
-            GalleryPaintingData paintingData = (GalleryPaintingData) merchantOffer.getPaintingData();
+            GalleryPaintingData paintingData = (GalleryPaintingData) merchantOffer.getPaintingData().get();
 
             int resolution = paintingData.getResolution().getNumeric();
             byte[] color = new byte[paintingData.getColorDataBuffer().remaining()];

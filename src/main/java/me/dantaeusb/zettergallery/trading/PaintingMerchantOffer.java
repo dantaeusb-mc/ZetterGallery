@@ -20,6 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.PacketDistributor;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -28,7 +29,7 @@ public class PaintingMerchantOffer {
     private final int price;
     private final boolean saleOffer;
 
-    private final PaintingData paintingData;
+    private PaintingData paintingData;
 
     /**
      * If we're ready to make a transaction
@@ -38,9 +39,9 @@ public class PaintingMerchantOffer {
     /**
      * Describe error or action
      */
-    private Optional<String> message = Optional.empty();
+    private String message;
 
-    private PaintingMerchantOffer(String canvasCode, PaintingData paintingData, int price, boolean sale) {
+    private PaintingMerchantOffer(String canvasCode, @Nullable PaintingData paintingData, int price, boolean sale) {
         this.canvasCode = canvasCode;
         this.paintingData = paintingData;
         this.price = price;
@@ -80,8 +81,17 @@ public class PaintingMerchantOffer {
         );
     }
 
-    public PaintingData getPaintingData() {
-        return this.paintingData;
+    public void updatePaintingData(PaintingData paintingData) {
+        if (this.paintingData != null) {
+            Zetter.LOG.error("Trying to update offer data which already has data");
+            return;
+        }
+
+        this.paintingData = paintingData;
+    }
+
+    public Optional<PaintingData> getPaintingData() {
+        return this.paintingData == null ? Optional.empty() : Optional.of(this.paintingData);
     }
 
     public String getCanvasCode() {
@@ -97,7 +107,7 @@ public class PaintingMerchantOffer {
     }
 
     public Optional<String> getMessage() {
-        return this.message;
+        return this.message == null ? Optional.empty() : Optional.of(this.message);
     }
 
     public ItemStack getOfferResult(Level level) {
@@ -138,7 +148,7 @@ public class PaintingMerchantOffer {
 
     public void markError(String error) {
         this.state = State.ERROR;
-        this.message = Optional.of(error);
+        this.message = error;
     }
 
 

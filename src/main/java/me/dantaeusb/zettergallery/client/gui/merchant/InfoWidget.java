@@ -19,6 +19,7 @@ import net.minecraft.world.item.Items;
 
 import javax.annotation.Nullable;
 import java.awt.*;
+import java.util.Optional;
 
 public class InfoWidget extends AbstractWidget implements Widget {
     private static final ResourceLocation BUTTON_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade_button.png");
@@ -57,10 +58,11 @@ public class InfoWidget extends AbstractWidget implements Widget {
             return;
         }
 
-        PaintingData offerPaintingData = offer.getPaintingData();
-        if (offerPaintingData == null) {
+        if (offer.getPaintingData().isEmpty()) {
             return;
         }
+
+        PaintingData offerPaintingData = offer.getPaintingData().get();
 
         final boolean hovered = isPointInRegion(0, 0, OFFER_BUTTON_WIDTH, OFFER_BUTTON_HEIGHT, mouseX, mouseY);
 

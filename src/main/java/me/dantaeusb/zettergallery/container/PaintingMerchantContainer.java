@@ -9,7 +9,9 @@ import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.core.ZetterGalleryVillagerTrades;
 import me.dantaeusb.zettergallery.gallery.ConnectionManager;
+import me.dantaeusb.zettergallery.network.packet.CGallerySelectOfferPacket;
 import me.dantaeusb.zettergallery.network.packet.SGalleryOfferStatePacket;
+import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.core.NonNullList;
 import net.minecraft.server.level.ServerPlayer;
@@ -120,6 +122,20 @@ public class PaintingMerchantContainer implements Container {
     }
 
     /**
+     * Usually called on client to sync painting data
+     * on current offer if it was not available
+     * at the time of offer creating
+     */
+    public void updateCurrentOfferPaintingData(String canvasCode, PaintingData paintingData) {
+        // If offer has changed
+        if (this.getCurrentOffer() == null || !this.getCurrentOffer().getCanvasCode().equals(canvasCode)) {
+            return;
+        }
+
+        this.currentOffer.updatePaintingData(paintingData);
+    }
+
+    /**
      * Called when items in container are changed,
      * i.e. when slot is clicked and onput or output changed
      *
@@ -226,6 +242,11 @@ public class PaintingMerchantContainer implements Container {
 
         this.currentOfferIndex = index;
         this.currentOffer = this.offers.get(index);
+
+        if (this.merchant.getTradingPlayer().getLevel().isClientSide()) {
+            CGallerySelectOfferPacket selectOfferPacket = new CGallerySelectOfferPacket(index);
+            ZetterGalleryNetwork.simpleChannel.sendToServer(selectOfferPacket);
+        }
     }
 
     /**
