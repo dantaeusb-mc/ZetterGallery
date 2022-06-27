@@ -170,7 +170,7 @@ public class PaintingMerchantOffer {
             // Skip alpha, it should not be used anyway
         }
 
-        return GalleryPaintingData.create(paintingItem.uuid, paintingItem.author.nickname, paintingItem.name, resolution, paintingItem.sizeH * resolution.getNumeric(), paintingItem.sizeW * resolution.getNumeric(), canvasData);
+        return GalleryPaintingData.create(paintingItem.uuid, paintingItem.author.nickname, paintingItem.name, resolution, paintingItem.sizeW * resolution.getNumeric(), paintingItem.sizeH * resolution.getNumeric(), canvasData);
     }
 
     public enum State {

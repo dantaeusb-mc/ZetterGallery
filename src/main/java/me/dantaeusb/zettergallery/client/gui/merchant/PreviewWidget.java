@@ -164,6 +164,9 @@ public class PreviewWidget extends AbstractWidget implements Widget, GuiEventLis
     }
 
     private void renderOfferPainting(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        final int PAINTING_PREVIEW_OFFSET_X = 14;
+        final int PAINTING_PREVIEW_OFFSET_Y = 12;
+
         PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
         if (offer == null) {
             return;
@@ -177,8 +180,21 @@ public class PreviewWidget extends AbstractWidget implements Widget, GuiEventLis
             float maxSize = Math.max(offerPaintingData.getHeight(), offerPaintingData.getWidth()) / 16.0F;
             float scale = 4.0F / maxSize;
 
+            final float scaledWidth = offerPaintingData.getWidth() * scale;
+            final float scaledHeight = offerPaintingData.getHeight() * scale;
+
+            float aspectRatio = scaledWidth / scaledHeight;
+            int offsetX = PAINTING_PREVIEW_OFFSET_X;
+            int offsetY = PAINTING_PREVIEW_OFFSET_Y;
+
+            if (aspectRatio > 1.0F) {
+                offsetY += Math.round((64.0F - scaledHeight) / 2.0F);
+            } else if (aspectRatio < 1.0F) {
+                offsetX += Math.round((64.0F - scaledWidth) / 2.0F);
+            }
+
             matrixStack.pushPose();
-            matrixStack.translate(this.x + 14, this.y + 12, 1.0F);
+            matrixStack.translate(this.x + offsetX, this.y + offsetY, 1.0F);
             matrixStack.scale(scale, scale, 1.0F);
 
             MultiBufferSource.BufferSource renderBuffers = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());

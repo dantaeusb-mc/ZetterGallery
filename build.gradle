@@ -9,12 +9,15 @@ buildscript {
         classpath 'org.spongepowered:mixingradle:0.7.+'
     }
 }
+
 apply plugin: 'net.minecraftforge.gradle'
+// Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+apply from: "https://moddingtutorials.org/applesilicon.gradle"
 apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'maven-publish'
 apply from: 'https://raw.githubusercontent.com/SizableShrimp/Forge-Class-Remapper/main/classremapper.gradle'
 
-version = '0.2.1-1.18.2-beta'
+version = '0.3.0-1.18.2-rc'
 group = 'com.dantaeusb.zettergallery' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'zettergallery'
 
@@ -89,7 +92,7 @@ repositories {
     maven {
         // for Zetter
         name "dantaeusb"
-        url "../../../Mod/1.18.1/mcmodsrepo"
+        url "../../../Zetter/1.18/mcmodsrepo"
     }
 }
 
@@ -97,7 +100,7 @@ dependencies {
     minecraft 'net.minecraftforge:forge:1.18.2-40.1.0'
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    implementation fg.deobf("com.dantaeusb.zetter:Zetter:0.14.3-1.18.2-beta")
+    implementation fg.deobf("com.dantaeusb.zetter:Zetter:0.14.4-1.18.2-beta")
 }
 
 mixin {
@@ -114,7 +117,7 @@ jar {
         attributes([
             "Specification-Title": "ZetterGallery",
             "Specification-Vendor": "dantaeusb",
-            "Specification-Version": "0.2.1-beta",
+            "Specification-Version": "0.3.0-rc",
             "Implementation-Title": project.name,
             "Implementation-Version": project.version,
             "Implementation-Vendor" :"dantaeusb",
