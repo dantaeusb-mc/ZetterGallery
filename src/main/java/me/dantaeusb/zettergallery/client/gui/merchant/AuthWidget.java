@@ -12,6 +12,7 @@ import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.texture.Tickable;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -120,12 +121,12 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
     private static final int LOADING_HEIGHT = 10;
     private static final int LOADING_XPOS = (WIDTH / 2) - (LOADING_WIDTH / 2);
     private static final int LOADING_YPOS = 78;
-    private static final int LOADING_UPOS = 276;
-    private static final int LOADING_VPOS = 0;
+    private static final int LOADING_UPOS = 176;
+    private static final int LOADING_VPOS = 28;
 
     private void drawLoading(PoseStack matrixStack)
     {
-        this.minecraft.getTextureManager().bindForSetup(LOADING_RESOURCE);
+        RenderSystem.setShaderTexture(0, LOADING_RESOURCE);
 
         final int animation = this.tick % 40;
         int frame = animation / 10; // 0-3

@@ -6,8 +6,6 @@ import me.dantaeusb.zettergallery.client.gui.merchant.PreviewWidget;
 import me.dantaeusb.zettergallery.client.gui.merchant.AuthWidget;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.core.Helper;
-import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
-import me.dantaeusb.zettergallery.network.packet.CGallerySelectOfferPacket;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -39,7 +37,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
 
     private static final Component LEVEL_SEPARATOR = new TextComponent(" - ");
 
-    private AuthWidget statusWidget;
+    private AuthWidget authWidget;
     private PreviewWidget previewWidget;
     private InfoWidget infoWidget;
 
@@ -75,11 +73,11 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     protected void init() {
         super.init();
 
-        this.statusWidget = new AuthWidget(this, this.getGuiLeft() + AUTH_POSITION_X, this.getGuiTop() + AUTH_POSITION_Y);
+        this.authWidget = new AuthWidget(this, this.getGuiLeft() + AUTH_POSITION_X, this.getGuiTop() + AUTH_POSITION_Y);
         this.previewWidget = new PreviewWidget(this, this.getGuiLeft() + PREVIEW_POSITION_X, this.getGuiTop() + PREVIEW_POSITION_Y);
         this.infoWidget = new InfoWidget(this, this.getGuiLeft() + INFO_POSITION_X, this.getGuiTop() + INFO_POSITION_Y);
 
-        this.addWidget(this.statusWidget);
+        this.addWidget(this.authWidget);
         this.addWidget(this.previewWidget);
         this.addWidget(this.infoWidget);
 
@@ -176,6 +174,9 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
                 this.waitingForAuth = false;
             }
         }
+
+        this.authWidget.tick();
+        this.infoWidget.tick();
     }
 
     private void renderProgressBar(PoseStack poseStack) {
@@ -268,7 +269,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
             this.previewWidget.render(poseStack, mouseX, mouseY, partialTicks);
             this.infoWidget.render(poseStack, mouseX, mouseY, partialTicks);
         } else {
-            this.statusWidget.render(poseStack, mouseX, mouseY, partialTicks);
+            this.authWidget.render(poseStack, mouseX, mouseY, partialTicks);
         }
     }
 

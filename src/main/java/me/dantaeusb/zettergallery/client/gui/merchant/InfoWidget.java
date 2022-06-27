@@ -141,7 +141,6 @@ public class InfoWidget extends AbstractWidget implements Widget {
             this.font.drawShadow(matrixStack, priceString, this.x + this.width - 22 - priceWidth, this.y + 12, Color.white.getRGB()); // -21 - 4 padding to text + 3 emerald item padding
 
             if (hovered) {
-
                 final int xOverlayPos = OFFER_BUTTON_WIDTH / 2 - priceWidth / 2 - 3;
                 final int yOverlayPos = 9;
 
@@ -172,7 +171,7 @@ public class InfoWidget extends AbstractWidget implements Widget {
     private static final int LOADING_VPOS = 0;
 
     private void drawLoading(PoseStack matrixStack) {
-        this.minecraft.getTextureManager().bindForSetup(BUTTON_RESOURCE);
+        RenderSystem.setShaderTexture(0, BUTTON_RESOURCE);
 
         final int animation = this.tick % 40;
         int frame = animation / 10; // 0-3
