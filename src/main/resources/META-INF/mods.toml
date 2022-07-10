@@ -44,7 +44,7 @@ description='''
 [[dependencies.zetter_gallery]]
     modId="zetter"
     mandatory=true
-    versionRange="[0.14.0-1.18.2-beta,)"
+    versionRange="[0.15.1-1.18.2-beta,)"
     ordering="NONE"
     side="BOTH"
 

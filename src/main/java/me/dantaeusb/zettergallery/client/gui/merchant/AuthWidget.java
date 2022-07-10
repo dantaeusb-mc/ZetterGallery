@@ -1,6 +1,7 @@
 package me.dantaeusb.zettergallery.client.gui.merchant;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import me.dantaeusb.zetter.core.tools.Color;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
@@ -19,10 +20,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 
 import javax.annotation.Nullable;
-import java.awt.*;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class AuthWidget extends AbstractWidget implements Widget, GuiEventListener {
 

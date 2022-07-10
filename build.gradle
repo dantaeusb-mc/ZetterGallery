@@ -17,7 +17,7 @@ apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'maven-publish'
 apply from: 'https://raw.githubusercontent.com/SizableShrimp/Forge-Class-Remapper/main/classremapper.gradle'
 
-version = '0.3.0-1.18.2-rc'
+version = '0.3.1-1.18.2-rc'
 group = 'com.dantaeusb.zettergallery' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'zettergallery'
 
@@ -100,7 +100,7 @@ dependencies {
     minecraft 'net.minecraftforge:forge:1.18.2-40.1.0'
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    implementation fg.deobf("com.dantaeusb.zetter:Zetter:0.14.4-1.18.2-beta")
+    implementation fg.deobf("com.dantaeusb.zetter:Zetter:0.15.1-1.18.2-rc")
 }
 
 mixin {
@@ -117,7 +117,7 @@ jar {
         attributes([
             "Specification-Title": "ZetterGallery",
             "Specification-Vendor": "dantaeusb",
-            "Specification-Version": "0.3.0-rc",
+            "Specification-Version": "0.3.1-rc",
             "Implementation-Title": project.name,
             "Implementation-Version": project.version,
             "Implementation-Vendor" :"dantaeusb",

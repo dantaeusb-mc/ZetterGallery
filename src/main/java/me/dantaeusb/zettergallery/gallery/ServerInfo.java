@@ -1,6 +1,7 @@
 package me.dantaeusb.zettergallery.gallery;
 
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.forgespi.language.IModInfo;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
@@ -27,13 +28,17 @@ public class ServerInfo {
     }
 
     private static String getGalleryVersion() {
-        IModInfo zetterGalleryModInfo = ModList.get().getMods().stream()
-                .filter(mod -> mod.getModId().equals("zettergallery"))
-                .findAny()
-                .orElse(null);
+        if (FMLEnvironment.production) {
+            IModInfo zetterGalleryModInfo = ModList.get().getMods().stream()
+                    .filter(mod -> mod.getModId().equals("zettergallery"))
+                    .findAny()
+                    .orElse(null);
 
-        ArtifactVersion modVersion = zetterGalleryModInfo.getVersion();
+            ArtifactVersion modVersion = zetterGalleryModInfo.getVersion();
 
-        return modVersion.getMajorVersion() + "." + modVersion.getIncrementalVersion() + "." + modVersion.getMinorVersion();
+            return modVersion.getMajorVersion() + "." + modVersion.getMinorVersion() + "." + modVersion.getIncrementalVersion();
+        }
+
+        return "1.0.0";
     }
 }

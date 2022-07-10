@@ -1,5 +1,6 @@
 package me.dantaeusb.zettergallery.client.gui;
 
+import me.dantaeusb.zetter.core.tools.Color;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.merchant.InfoWidget;
 import me.dantaeusb.zettergallery.client.gui.merchant.PreviewWidget;
@@ -24,7 +25,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nullable;
-import java.awt.*;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -40,6 +40,8 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     private AuthWidget authWidget;
     private PreviewWidget previewWidget;
     private InfoWidget infoWidget;
+
+    private int tick = 0;
 
     /**
      * Flag is activated after player pressed log in link in authorization window
@@ -113,43 +115,11 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
         this.renderBackground(poseStack);
 
-        if (this.menu.getState() == PaintingMerchantMenu.State.READY) {
-            super.render(poseStack, mouseX, mouseY, partialTicks);
-        } else {
-            this.cleanRender(poseStack, mouseX, mouseY, partialTicks);
-        }
+        super.render(poseStack, mouseX, mouseY, partialTicks);
 
         this.renderProgressBar(poseStack);
 
         this.renderTooltip(poseStack, mouseX, mouseY);
-    }
-
-    /**
-     * Copied from parent class and adjusted to not draw slots
-     * @param poseStack
-     * @param mouseX
-     * @param mouseY
-     * @param partialTicks
-     */
-    public void cleanRender(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
-        int i = this.leftPos;
-        int j = this.topPos;
-        this.renderBg(poseStack, partialTicks, mouseX, mouseY);net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.ContainerScreenEvent.DrawBackground(this, poseStack, mouseX, mouseY));
-        RenderSystem.disableDepthTest();
-        PoseStack poseStack1 = RenderSystem.getModelViewStack();
-        poseStack1.pushPose();
-        poseStack1.translate(i, j, 0.0D);
-        RenderSystem.applyModelViewMatrix();
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        this.hoveredSlot = null;
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-
-        this.renderLabels(poseStack1, mouseX, mouseY);
-        net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.client.event.ContainerScreenEvent.DrawForeground(this, poseStack1, mouseX, mouseY));
-
-        poseStack1.popPose();
-        RenderSystem.applyModelViewMatrix();
-        RenderSystem.enableDepthTest();
     }
 
     @Override
@@ -160,6 +130,8 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     @Override
     public void containerTick() {
         super.containerTick();
+
+        this.tick++;
 
         if (this.waitingForBrowser) {
             if (!Minecraft.getInstance().isWindowActive()) {
@@ -266,6 +238,18 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         blit(poseStack, this.leftPos, this.topPos, this.getBlitOffset(), 0.0F, 0.0F, this.imageWidth, this.imageHeight, 256, 256);
 
         if (this.menu.getState() == PaintingMerchantMenu.State.READY) {
+            // Suggest paintings or emeralds for sale
+            final int SELL_SLOT_X = 15;
+            final int SELL_SLOT_Y = 83;
+            final int SELL_SLOT_U = 212;
+            final int SELL_SLOT_V = 0;
+            final int SELL_SLOT_WIDTH = 16;
+            final int SELL_SLOT_HEIGHT = 16;
+            final int sellSlotVOffset = this.tick % 40 > 19 ? SELL_SLOT_HEIGHT : 0;
+
+            blit(poseStack, this.leftPos + SELL_SLOT_X, this.topPos + SELL_SLOT_Y, SELL_SLOT_U, SELL_SLOT_V + sellSlotVOffset, SELL_SLOT_WIDTH, SELL_SLOT_HEIGHT);
+
+            // Widgets
             this.previewWidget.render(poseStack, mouseX, mouseY, partialTicks);
             this.infoWidget.render(poseStack, mouseX, mouseY, partialTicks);
         } else {

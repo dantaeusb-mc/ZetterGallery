@@ -2,6 +2,7 @@ package me.dantaeusb.zettergallery.client.gui.merchant;
 
 import me.dantaeusb.zetter.client.renderer.CanvasRenderer;
 import com.mojang.blaze3d.systems.RenderSystem;
+import me.dantaeusb.zetter.core.tools.Color;
 import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
@@ -21,7 +22,6 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nullable;
-import java.awt.*;
 
 public class PreviewWidget extends AbstractWidget implements Widget, GuiEventListener {
     private static final ResourceLocation READY_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade.png");

@@ -1,6 +1,7 @@
 package me.dantaeusb.zettergallery.client.gui.merchant;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import me.dantaeusb.zetter.core.tools.Color;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
@@ -18,8 +19,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 import javax.annotation.Nullable;
-import java.awt.*;
-import java.util.Optional;
 
 public class InfoWidget extends AbstractWidget implements Widget {
     private static final ResourceLocation BUTTON_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade_button.png");

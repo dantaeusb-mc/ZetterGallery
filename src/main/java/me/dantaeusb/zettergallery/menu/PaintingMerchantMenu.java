@@ -80,7 +80,16 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
 
         // Add the players hotbar to the gui - the [xpos, ypos] location of each item
         for (int x = 0; x < HOTBAR_SLOT_COUNT; x++) {
-            this.addSlot(new Slot(invPlayer, x, HOTBAR_XPOS + SLOT_X_SPACING * x, HOTBAR_YPOS));
+            this.addSlot(new Slot(invPlayer, x, HOTBAR_XPOS + SLOT_X_SPACING * x, HOTBAR_YPOS) {
+                @Override
+                public boolean isActive() {
+                    if (PaintingMerchantMenu.this.state == State.READY) {
+                        return super.isActive();
+                    }
+
+                    return false;
+                }
+            });
         }
 
         // Add the rest of the players inventory to the gui
@@ -89,7 +98,16 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
                 int slotNumber = HOTBAR_SLOT_COUNT + y * PLAYER_INVENTORY_COLUMN_COUNT + x;
                 int xpos = PLAYER_INVENTORY_XPOS + x * SLOT_X_SPACING;
                 int ypos = PLAYER_INVENTORY_YPOS + y * SLOT_Y_SPACING;
-                this.addSlot(new Slot(invPlayer, slotNumber, xpos, ypos));
+                this.addSlot(new Slot(invPlayer, slotNumber, xpos, ypos) {
+                    @Override
+                    public boolean isActive() {
+                        if (PaintingMerchantMenu.this.state == State.READY) {
+                            return super.isActive();
+                        }
+
+                        return false;
+                    }
+                });
             }
         }
 
