@@ -24,7 +24,7 @@ public class ZetterGalleryGameEvents {
      */
     @SubscribeEvent
     public static void onPlayerContainerOpened(PlayerContainerEvent.Open event) {
-        if (event.getPlayer().level.isClientSide()) {
+        if (event.getEntity().level.isClientSide()) {
             return;
         }
 

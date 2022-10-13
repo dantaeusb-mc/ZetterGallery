@@ -13,9 +13,7 @@ import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.client.renderer.texture.Tickable;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 
@@ -38,14 +36,14 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
 
     private int tick = 0;
 
-    private static final Component AUTHENTICATING_TEXT = new TranslatableComponent("container.zettergallery.merchant.authenticating");
-    private static final Component LOGIN_REQUEST_TEXT = new TranslatableComponent("container.zettergallery.merchant.login_request");
-    private static final Component FETCHING_SALES_TEXT = new TranslatableComponent("container.zettergallery.merchant.fetching_sales");
-    private static final Component UNKNOWN_ERROR_TEXT = new TranslatableComponent("container.zettergallery.merchant.unknown_error");
-    private static final Component TRY_AGAIN_TEXT = new TranslatableComponent("container.zettergallery.merchant.try_again");
+    private static final Component AUTHENTICATING_TEXT = Component.translatable("container.zettergallery.merchant.authenticating");
+    private static final Component LOGIN_REQUEST_TEXT = Component.translatable("container.zettergallery.merchant.login_request");
+    private static final Component FETCHING_SALES_TEXT = Component.translatable("container.zettergallery.merchant.fetching_sales");
+    private static final Component UNKNOWN_ERROR_TEXT = Component.translatable("container.zettergallery.merchant.unknown_error");
+    private static final Component TRY_AGAIN_TEXT = Component.translatable("container.zettergallery.merchant.try_again");
 
     public AuthWidget(PaintingMerchantScreen parentScreen, int x, int y) {
-        super(x, y, WIDTH, HEIGHT, new TranslatableComponent("container.zetter.painting.status"));
+        super(x, y, WIDTH, HEIGHT, Component.translatable("container.zetter.painting.status"));
 
         this.parentScreen = parentScreen;
 

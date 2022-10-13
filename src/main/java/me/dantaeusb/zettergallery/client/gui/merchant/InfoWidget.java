@@ -13,7 +13,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -36,7 +36,7 @@ public class InfoWidget extends AbstractWidget implements Widget {
     static final int HEIGHT = 32;
 
     public InfoWidget(PaintingMerchantScreen parentScreen, int x, int y) {
-        super(x, y, WIDTH, HEIGHT, new TranslatableComponent("container.zetter.painting.info"));
+        super(x, y, WIDTH, HEIGHT, Component.translatable("container.zetter.painting.info"));
 
         this.parentScreen = parentScreen;
 
@@ -106,7 +106,7 @@ public class InfoWidget extends AbstractWidget implements Widget {
         }
 
         // @todo: cache this and size
-        TranslatableComponent actionString = new TranslatableComponent(this.parentScreen.getCurrentOffer().isSaleOffer() ? "container.zettergallery.merchant.sell" : "container.zettergallery.merchant.buy");
+        Component actionString = Component.translatable(this.parentScreen.getCurrentOffer().isSaleOffer() ? "container.zettergallery.merchant.sell" : "container.zettergallery.merchant.buy");
         final int actionWidth = this.font.width(actionString);
 
         String priceString = String.valueOf(offer.getPrice());
@@ -120,7 +120,7 @@ public class InfoWidget extends AbstractWidget implements Widget {
         int widthBlocks = offerPaintingData.getWidth() / offerPaintingData.getResolution().getNumeric();
         int heightBlocks = offerPaintingData.getHeight() / offerPaintingData.getResolution().getNumeric();
         // Account for RTL?
-        TranslatableComponent blockSize = (new TranslatableComponent("item.zetter.painting.size", Integer.toString(widthBlocks), Integer.toString(heightBlocks)));
+        Component blockSize = (Component.translatable("item.zetter.painting.size", Integer.toString(widthBlocks), Integer.toString(heightBlocks)));
 
         if (this.isLoading()) {
             this.drawLoading(matrixStack);
@@ -135,7 +135,7 @@ public class InfoWidget extends AbstractWidget implements Widget {
         }
 
         if (this.canProceed()) {
-            this.font.drawShadow(matrixStack, offerPaintingData.getPaintingName(), this.x + 8, this.y + 7, Color.white.getRGB());
+            this.font.drawShadow(matrixStack, offerPaintingData.getPaintingTitle(), this.x + 8, this.y + 7, Color.white.getRGB());
             this.font.drawShadow(matrixStack, offerPaintingData.getAuthorName() + ", " + blockSize.getString(), this.x + 8, this.y + 7 + 11, Color.white.getRGB());
             this.font.drawShadow(matrixStack, priceString, this.x + this.width - 22 - priceWidth, this.y + 12, Color.white.getRGB()); // -21 - 4 padding to text + 3 emerald item padding
 
@@ -158,7 +158,7 @@ public class InfoWidget extends AbstractWidget implements Widget {
                 this.font.drawShadow(matrixStack, actionString, this.x + this.width / 2.0F - (actionWidth / 2.0F), this.y + 12, Color.white.getRGB());
             }
         } else {
-            this.font.draw(matrixStack, offerPaintingData.getPaintingName(), this.x + 8, this.y + 7, Color.darkGray.getRGB());
+            this.font.draw(matrixStack, offerPaintingData.getPaintingTitle(), this.x + 8, this.y + 7, Color.darkGray.getRGB());
             this.font.draw(matrixStack, offerPaintingData.getAuthorName() + ", " + blockSize.getString(), this.x + 8, this.y + 7 + 11, Color.darkGray.getRGB());
             this.font.draw(matrixStack, priceString, this.x + this.width - 22 - priceWidth, this.y + 12, Color.darkGray.getRGB());
         }

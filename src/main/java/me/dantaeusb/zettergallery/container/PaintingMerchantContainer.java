@@ -11,7 +11,6 @@ import me.dantaeusb.zettergallery.core.ZetterGalleryVillagerTrades;
 import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.network.packet.CGallerySelectOfferPacket;
 import me.dantaeusb.zettergallery.network.packet.SGalleryOfferStatePacket;
-import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.core.NonNullList;
 import net.minecraft.server.level.ServerPlayer;
@@ -243,7 +242,7 @@ public class PaintingMerchantContainer implements Container {
         this.currentOfferIndex = index;
         this.currentOffer = this.offers.get(index);
 
-        if (this.merchant.getTradingPlayer().getLevel().isClientSide()) {
+        if (this.merchant.getTradingPlayer().level.isClientSide()) {
             CGallerySelectOfferPacket selectOfferPacket = new CGallerySelectOfferPacket(index);
             ZetterGalleryNetwork.simpleChannel.sendToServer(selectOfferPacket);
         }

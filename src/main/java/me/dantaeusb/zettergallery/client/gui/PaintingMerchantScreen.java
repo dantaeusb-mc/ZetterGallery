@@ -15,8 +15,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.npc.VillagerData;
@@ -35,7 +33,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     private static final ResourceLocation LOADING_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade_loading.png");
     private static final ResourceLocation READY_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade.png");
 
-    private static final Component LEVEL_SEPARATOR = new TextComponent(" - ");
+    private static final Component LEVEL_SEPARATOR = Component.literal(" - ");
 
     private AuthWidget authWidget;
     private PreviewWidget previewWidget;
@@ -216,7 +214,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
 
         // Draw level
         if (merchantLevel > 0 && merchantLevel <= 5) {
-            Component levelText = this.title.copy().append(LEVEL_SEPARATOR).append(new TranslatableComponent("merchant.level." + merchantLevel));
+            Component levelText = this.title.copy().append(LEVEL_SEPARATOR).append(Component.translatable("merchant.level." + merchantLevel));
             int textWidth = this.font.width(levelText);
             int textPos = this.imageWidth / 2 - textWidth / 2;
             this.font.draw(poseStack, levelText, (float)textPos, 6.0F, Color.darkGray.getRGB());

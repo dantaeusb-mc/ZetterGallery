@@ -120,7 +120,7 @@ public class PaintingMerchantOffer {
             canvasTracker.registerCanvasData(this.canvasCode, this.paintingData);
             // @todo: this spawns event that will replace offer
 
-            PaintingItem.setPaintingData(painting, this.canvasCode, this.paintingData, 1);
+            PaintingItem.storePaintingData(painting, this.canvasCode, this.paintingData, 1);
 
             return painting;
         }

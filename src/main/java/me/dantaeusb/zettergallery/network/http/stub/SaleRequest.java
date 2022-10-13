@@ -19,7 +19,7 @@ public class SaleRequest {
     public SaleRequest(PaintingData paintingData) {
         final int resolution = paintingData.getResolution().getNumeric();
 
-        this.name = paintingData.getPaintingName();
+        this.name = paintingData.getPaintingTitle();
         this.resolution = resolution;
         this.sizeH = paintingData.getHeight() / resolution;
         this.sizeW = paintingData.getWidth() / resolution;

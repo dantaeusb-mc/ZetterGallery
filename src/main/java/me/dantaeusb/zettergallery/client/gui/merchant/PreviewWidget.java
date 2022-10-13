@@ -18,7 +18,7 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nullable;
@@ -37,7 +37,7 @@ public class PreviewWidget extends AbstractWidget implements Widget, GuiEventLis
     static final int HEIGHT = 78;
 
     public PreviewWidget(PaintingMerchantScreen parentScreen, int x, int y) {
-        super(x, y, WIDTH, HEIGHT, new TranslatableComponent("container.zettergallery.merchant.preview"));
+        super(x, y, WIDTH, HEIGHT, Component.translatable("container.zettergallery.merchant.preview"));
 
         this.parentScreen = parentScreen;
 
@@ -154,7 +154,7 @@ public class PreviewWidget extends AbstractWidget implements Widget, GuiEventLis
         PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
 
         if (offer.isSaleOffer()) {
-            drawCenteredString(matrixStack, this.font, new TranslatableComponent("container.zettergallery.merchant.sell"), this.x + this.width / 2, this.y + COUNT_TEXT_YPOS, Color.white.getRGB());
+            drawCenteredString(matrixStack, this.font, Component.translatable("container.zettergallery.merchant.sell"), this.x + this.width / 2, this.y + COUNT_TEXT_YPOS, Color.white.getRGB());
         } else {
             int currentOffer = this.parentScreen.getCurrentOfferIndex() + 1;
             int offersCount = this.parentScreen.getOffersCount();
