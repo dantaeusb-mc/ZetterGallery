@@ -4,6 +4,7 @@ import me.dantaeusb.zetter.core.ZetterBlocks;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import com.google.common.collect.ImmutableSet;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.PoiTypeTags;
 import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.level.block.Block;

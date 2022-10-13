@@ -35,7 +35,7 @@ public abstract class VillagerMixin extends AbstractVillager {
     //(Lnet/minecraft/world/entity/player/Player;)V
     @Inject(method = "startTrading", at = @At("HEAD"), cancellable = true)
     private void startTrading(Player player, CallbackInfo ci) {
-        if (this.getVillagerData().getProfession().equals(ZetterGalleryVillagers.PAINTING_MERCHANT)) {
+        if (this.getVillagerData().getProfession().equals(ZetterGalleryVillagers.PAINTING_MERCHANT.get())) {
             ci.cancel();
 
             this.updateSpecialPrices(player);
