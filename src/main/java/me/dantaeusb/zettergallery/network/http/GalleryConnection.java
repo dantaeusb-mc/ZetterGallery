@@ -344,14 +344,7 @@ public class GalleryConnection {
     }
 
     protected static <T> T makeRequest(URL uri, String method, Class<T> classOfT, @Nullable String token, @Nullable Object input) throws IOException, GalleryException {
-        Proxy proxy = RealmsClientConfig.getProxy();
-        final HttpURLConnection connection;
-
-        if (proxy != null) {
-            connection = (HttpURLConnection) uri.openConnection(proxy);
-        } else {
-            connection = (HttpURLConnection) uri.openConnection();
-        }
+        final HttpURLConnection connection = (HttpURLConnection) uri.openConnection();
 
         if (token != null) {
             connection.setRequestProperty("Authorization", "Bearer " + token);
