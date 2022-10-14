@@ -10,30 +10,31 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 
+import java.util.Objects;
 import java.util.Set;
 
-@Mod.EventBusSubscriber(modid = ZetterGallery.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ZetterGalleryVillagers {
-    public static PoiType PAINTING_MERCHANT_POI;
-    public static VillagerProfession PAINTING_MERCHANT;
+    private static final DeferredRegister<PoiType> POI_TYPES = DeferredRegister.create(ForgeRegistries.POI_TYPES, ZetterGallery.MOD_ID);
+    private static final DeferredRegister<VillagerProfession> VILLAGER_PROFESSIONS = DeferredRegister.create(ForgeRegistries.PROFESSIONS, ZetterGallery.MOD_ID);
 
-    @SubscribeEvent
-    @SuppressWarnings("unused")
-    public static void onVillagerPoiTypeRegister(final RegistryEvent.Register<PoiType> event) {
-        PAINTING_MERCHANT_POI = new PoiType("painting_merchant", getAllStates(ZetterBlocks.ARTIST_TABLE.get()), 1, 1);
-        PAINTING_MERCHANT_POI.setRegistryName(ZetterGallery.MOD_ID, "painting_merchant");
-        event.getRegistry().register(PAINTING_MERCHANT_POI);
-    }
+    public static final RegistryObject<PoiType> PAINTING_MERCHANT_POI = POI_TYPES.register("artist_table", () -> new PoiType("artist_table", getAllStates(ZetterBlocks.ARTIST_TABLE.get()), 1, 1));
+    public static final RegistryObject<VillagerProfession> PAINTING_MERCHANT = VILLAGER_PROFESSIONS.register("painting_merchant", () -> new VillagerProfession(
+            "painting_merchant",
+            PAINTING_MERCHANT_POI.get(),
+            ImmutableSet.of(),
+            ImmutableSet.of(),
+            SoundEvents.VILLAGER_AMBIENT
+    ));
 
-    @SubscribeEvent
-    @SuppressWarnings("unused")
-    public static void onVillagerProfessionRegister(final RegistryEvent.Register<VillagerProfession> event) {
-        PAINTING_MERCHANT = new VillagerProfession(ZetterGallery.MOD_ID + ":painting_merchant", PAINTING_MERCHANT_POI, ImmutableSet.of(), ImmutableSet.of(), SoundEvents.VILLAGER_AMBIENT);
-        PAINTING_MERCHANT.setRegistryName(ZetterGallery.MOD_ID, "painting_merchant");
-        event.getRegistry().register(PAINTING_MERCHANT);
+    public static void init(IEventBus bus) {
+        POI_TYPES.register(bus);
+        VILLAGER_PROFESSIONS.register(bus);
     }
 
     private static Set<BlockState> getAllStates(Block block) {

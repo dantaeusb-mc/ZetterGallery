@@ -17,7 +17,7 @@ apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'maven-publish'
 apply from: 'https://raw.githubusercontent.com/SizableShrimp/Forge-Class-Remapper/main/classremapper.gradle'
 
-version = '0.3.2-1.18.2-rc'
+version = '0.3.4-1.18.2-rc'
 group = 'com.dantaeusb.zettergallery' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'zettergallery'
 
@@ -117,7 +117,7 @@ jar {
         attributes([
             "Specification-Title": "ZetterGallery",
             "Specification-Vendor": "dantaeusb",
-            "Specification-Version": "0.3.2-rc",
+            "Specification-Version": "0.3.4-rc",
             "Implementation-Title": project.name,
             "Implementation-Version": project.version,
             "Implementation-Vendor" :"dantaeusb",

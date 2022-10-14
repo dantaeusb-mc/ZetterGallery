@@ -32,7 +32,7 @@ public class ZetterGalleryVillagerTrades {
     public static void registerTrades(VillagerTradesEvent event) {
         Int2ObjectMap<List<VillagerTrades.ItemListing>> trades = event.getTrades();
 
-        if (event.getType() == ZetterGalleryVillagers.PAINTING_MERCHANT) {
+        if (event.getType() == ZetterGalleryVillagers.PAINTING_MERCHANT.get()) {
             trades.get(1).add(
                 (entity, random) -> new MerchantOffer(
                         new ItemStack(Items.EMERALD, 4),
