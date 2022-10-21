@@ -1,11 +1,8 @@
 package me.dantaeusb.zettergallery.core;
 
-import me.dantaeusb.zetter.event.CanvasRegisterEvent;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
-import net.minecraft.client.Minecraft;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -29,7 +26,7 @@ public class ZetterGalleryGameEvents {
         }
 
         if (event.getContainer() instanceof PaintingMerchantMenu) {
-            ((PaintingMerchantMenu) event.getContainer()).update();
+            ((PaintingMerchantMenu) event.getContainer()).updateAuthorizationState();
         }
     }
 }

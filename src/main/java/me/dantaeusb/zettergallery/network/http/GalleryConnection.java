@@ -4,11 +4,9 @@ import com.google.gson.JsonSyntaxException;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import com.google.gson.Gson;
-import com.mojang.realmsclient.client.RealmsClientConfig;
 import me.dantaeusb.zettergallery.gallery.PlayerTokenStorage;
 import me.dantaeusb.zettergallery.gallery.ServerInfo;
 import me.dantaeusb.zettergallery.network.http.stub.*;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.thread.BlockableEventLoop;
 import net.minecraftforge.common.util.LogicalSidedProvider;
 import net.minecraftforge.fml.LogicalSide;
@@ -48,11 +46,7 @@ public class GalleryConnection {
         this.poolExecutor = Executors.newSingleThreadExecutor();
     }
 
-    public void revalidateCookieStorage() {
-        //this.cookieStorage
-    }
-
-    public void registerServer(ServerInfo serverInfo, Consumer<ServerResponse> successConsumer, Consumer<Exception> errorConsumer) {
+    public void registerServer(ServerInfo serverInfo, Consumer<ServerResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -66,16 +60,19 @@ public class GalleryConnection {
                 ServerResponse response = makeRequest(authUri, "POST", ServerResponse.class, (String) null, request);
 
                 executor.submitAsync(() -> successConsumer.accept(response));
-            } catch (Exception e) {
-                // We don't expect errors here so we're treating it as connection issue
-                ZetterGallery.LOG.error("Unable to request token for player, Gallery returned error: " + e.getMessage());
+            } catch (GalleryException e) {
+                ZetterGallery.LOG.error(String.format("Unable to request token for server, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
 
-                executor.submitAsync(() -> errorConsumer.accept(e));
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
+            } catch (Exception e) {
+                ZetterGallery.LOG.error(String.format("Unable to request token for server: %s", e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
             }
         });
     }
 
-    public void unregisterServer(String serverToken, UUID serverUuid, Consumer<GenericMessageResponse> successConsumer, Consumer<Exception> errorConsumer) {
+    public void unregisterServer(String serverToken, UUID serverUuid, Consumer<GenericMessageResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -88,11 +85,14 @@ public class GalleryConnection {
                 GenericMessageResponse response = makeRequest(authUri, "DELETE", GenericMessageResponse.class, serverToken, null);
 
                 executor.submitAsync(() -> successConsumer.accept(response));
-            } catch (Exception e) {
-                // We don't expect errors here so we're treating it as connection issue
-                ZetterGallery.LOG.error("Unable to request token for player, Gallery returned error: " + e.getMessage());
+            } catch (GalleryException e) {
+                ZetterGallery.LOG.error(String.format("Unable to drop server token, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
 
-                executor.submitAsync(() -> errorConsumer.accept(e));
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
+            } catch (Exception e) {
+                ZetterGallery.LOG.error(String.format("Unable to drop server token: %s", e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
             }
         });
     }
@@ -103,9 +103,9 @@ public class GalleryConnection {
      * authorize server to perform tasks on player's
      * behalf
      *
-     * @param playerEntity
+     *
      */
-    public void requestPlayerToken(String token, Consumer<AuthTokenResponse> successConsumer, Consumer<Exception> errorConsumer) {
+    public void requestPlayerToken(@Nullable String token, Consumer<AuthTokenResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -121,11 +121,14 @@ public class GalleryConnection {
                 AuthTokenResponse response = makeRequest(authUri, "GET", AuthTokenResponse.class, token, null);
 
                 executor.submitAsync(() -> successConsumer.accept(response));
-            } catch (Exception e) {
-                // We don't expect errors here so we're treating it as connection issue
-                ZetterGallery.LOG.error("Unable to request token for player: " + e.getMessage());
+            } catch (GalleryException e) {
+                ZetterGallery.LOG.error(String.format("Unable to request player token, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
 
-                executor.submitAsync(() -> errorConsumer.accept(e));
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
+            } catch (Exception e) {
+                ZetterGallery.LOG.error(String.format("Unable to request player token: %s", e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
             }
         });
     }
@@ -135,9 +138,8 @@ public class GalleryConnection {
      * and check player's privileges
      * (are they banned from submitting lewd pics)
      *
-     * @param playerEntity
      */
-    public void checkPlayerToken(String token, Consumer<AuthCheckResponse> successConsumer, Consumer<Exception> errorConsumer) {
+    public void checkPlayerToken(String token, Consumer<AuthCheckResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -149,11 +151,14 @@ public class GalleryConnection {
                 AuthCheckResponse response = makeRequest(checkUri, "GET", AuthCheckResponse.class, token, null);
 
                 executor.submitAsync(() -> successConsumer.accept(response));
-            } catch (Exception e) {
-                ZetterGallery.LOG.error("Unable to authenticate player: " + e.getMessage());
+            } catch (GalleryException e) {
+                ZetterGallery.LOG.error(String.format("Unable to request player token, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
 
-                // @todo: translate
-                executor.submitAsync(() -> errorConsumer.accept(e));
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
+            } catch (Exception e) {
+                ZetterGallery.LOG.error(String.format("Unable to request player token: %s", e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
             }
         });
     }
@@ -162,9 +167,8 @@ public class GalleryConnection {
      * Deactivates player's token. Usually
      * happens on player log-out event.
      *
-     * @param playerEntity
      */
-    public void dropPlayerToken(String token, Consumer<GenericMessageResponse> success, Consumer<Exception> error) {
+    public void dropPlayerToken(String token, Consumer<GenericMessageResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -175,11 +179,15 @@ public class GalleryConnection {
                 final URL checkUri = GalleryConnection.getUri(DROP_ENDPOINT);
                 GenericMessageResponse response = makeRequest(checkUri, "GET", GenericMessageResponse.class, token, null);
 
-                executor.submitAsync(() -> success.accept(response));
-            } catch (Exception e) {
-                ZetterGallery.LOG.error("Unable to drop token for player: " + e.getMessage());
+                executor.submitAsync(() -> successConsumer.accept(response));
+            } catch (GalleryException e) {
+                ZetterGallery.LOG.error(String.format("Unable to drop player token, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
 
-                executor.submitAsync(() -> error.accept(e));
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
+            } catch (Exception e) {
+                ZetterGallery.LOG.error(String.format("Unable to drop player token: %s", e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
             }
         });
     }
@@ -187,9 +195,8 @@ public class GalleryConnection {
     /**
      * Retrieves player's personal feed on Zetter Gallery
      *
-     * @param playerEntity
      */
-    public void getPlayerFeed(String token, Consumer<PaintingsResponse> success, Consumer<Exception> error) {
+    public void getPlayerFeed(String token, Consumer<PaintingsResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -200,11 +207,15 @@ public class GalleryConnection {
                 final URL saleUri = GalleryConnection.getUri(PAINTINGS_FEED_ENDPOINT);
                 PaintingsResponse response = makeRequest(saleUri, "GET", PaintingsResponse.class, token, null);
 
-                executor.submitAsync(() -> success.accept(response));
-            } catch (Exception e) {
-                ZetterGallery.LOG.error("Unable to authenticate player: " + e.getMessage());
+                executor.submitAsync(() -> successConsumer.accept(response));
+            } catch (GalleryException e) {
+                ZetterGallery.LOG.error(String.format("Unable to request player feed, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
 
-                executor.submitAsync(() -> error.accept(e));
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
+            } catch (Exception e) {
+                ZetterGallery.LOG.error(String.format("Unable to request player feed: %s", e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
             }
         });
     }
@@ -212,10 +223,8 @@ public class GalleryConnection {
     /**
      * Register that player sees a painting
      *
-     * @param playerEntity
-     * @param paintingData
      */
-    public void registerImpression(String token, UUID paintingUuid, Consumer<GenericMessageResponse> success, Consumer<Exception> error) {
+    public void registerImpression(String token, UUID paintingUuid, Consumer<GenericMessageResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -226,11 +235,15 @@ public class GalleryConnection {
                 final URL saleUri = GalleryConnection.getUri(PAINTINGS_ENDPOINT + "/" + paintingUuid.toString() + "/" + PAINTINGS_IMPRESSION_ENDPOINT);
                 GenericMessageResponse response = makeRequest(saleUri, "POST", GenericMessageResponse.class, token, null);
 
-                executor.submitAsync(() -> success.accept(response));
-            } catch (Exception e) {
-                ZetterGallery.LOG.error("Unable to register painting impression: " + e.getMessage());
+                executor.submitAsync(() -> successConsumer.accept(response));
+            } catch (GalleryException e) {
+                ZetterGallery.LOG.error(String.format("Unable to register player impression, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
 
-                executor.submitAsync(() -> error.accept(e));
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
+            } catch (Exception e) {
+                ZetterGallery.LOG.error(String.format("Unable to register player impression: %s", e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
             }
         });
     }
@@ -238,11 +251,10 @@ public class GalleryConnection {
     /**
      * Purchases painting on behalf of player
      *
-     * @param playerEntity player who is purchasing painting
      * @param paintingUuid uuid of purchased painting
      * @param price price in emeralds, 1-10
      */
-    public void purchase(String token, UUID paintingUuid, int price, Consumer<GenericMessageResponse> success, Consumer<Exception> error) {
+    public void registerPurchase(String token, UUID paintingUuid, int price, Consumer<GenericMessageResponse> success, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -256,10 +268,14 @@ public class GalleryConnection {
                 GenericMessageResponse response = makeRequest(saleUri, "POST", GenericMessageResponse.class, token, request);
 
                 executor.submitAsync(() -> success.accept(response));
-            } catch (Exception e) {
-                ZetterGallery.LOG.error("Unable to purchase painting: " + e.getMessage());
+            } catch (GalleryException e) {
+                ZetterGallery.LOG.error(String.format("Unable to register player purchase, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
 
-                executor.submitAsync(() -> error.accept(e));
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
+            } catch (Exception e) {
+                ZetterGallery.LOG.error(String.format("Unable to register player purchase: %s", e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
             }
         });
     }
@@ -270,7 +286,7 @@ public class GalleryConnection {
      * @param token
      * @param paintingData
      */
-    public void validate(String token, PaintingData paintingData, Consumer<PaintingsResponse> success, Consumer<Exception> error) {
+    public void validatePainting(String token, PaintingData paintingData, Consumer<PaintingsResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -286,11 +302,15 @@ public class GalleryConnection {
 
                 PaintingsResponse response = makeRequest(validateUri, "POST", PaintingsResponse.class, token, request);
 
-                executor.submitAsync(() -> success.accept(response));
-            } catch (Exception e) {
-                ZetterGallery.LOG.error("Unable to validate painting: " + e.getMessage());
+                executor.submitAsync(() -> successConsumer.accept(response));
+            } catch (GalleryException e) {
+                ZetterGallery.LOG.error(String.format("Unable to validate player painting, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
 
-                executor.submitAsync(() -> error.accept(e));
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
+            } catch (Exception e) {
+                ZetterGallery.LOG.error(String.format("Unable to validate player painting: %s", e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
             }
         });
     }
@@ -301,7 +321,7 @@ public class GalleryConnection {
      * @param token
      * @param paintingData
      */
-    public void sell(String token, PaintingData paintingData, Consumer<PaintingsResponse> success, Consumer<Exception> error) {
+    public void sellPainting(String token, PaintingData paintingData, Consumer<PaintingsResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -314,11 +334,15 @@ public class GalleryConnection {
                 final URL saleUri = GalleryConnection.getUri(PAINTINGS_ENDPOINT);
                 PaintingsResponse response = makeRequest(saleUri, "POST", PaintingsResponse.class, token, request);
 
-                executor.submitAsync(() -> success.accept(response));
-            } catch (Exception e) {
-                ZetterGallery.LOG.error("Unable to sell painting: " + e.getMessage());
+                executor.submitAsync(() -> successConsumer.accept(response));
+            } catch (GalleryException e) {
+                ZetterGallery.LOG.error(String.format("Unable to sell player painting, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
 
-                executor.submitAsync(() -> error.accept(e));
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
+            } catch (Exception e) {
+                ZetterGallery.LOG.error(String.format("Unable to sell player painting: %s", e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
             }
         });
     }

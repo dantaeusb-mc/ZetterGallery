@@ -6,16 +6,13 @@ import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.gallery.salesmanager.PlayerFeed;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryConnection;
+import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.network.http.GalleryException;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
-import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import me.dantaeusb.zettergallery.util.EventConsumer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.forgespi.language.IModInfo;
-import org.apache.maven.artifact.versioning.ArtifactVersion;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -34,12 +31,13 @@ import java.util.stream.IntStream;
 public class ConnectionManager {
     private static ConnectionManager instance;
 
-    private GalleryConnection connection;
+    private final GalleryConnection connection;
+    private final PlayerTokenStorage playerTokenStorage = PlayerTokenStorage.getInstance();
+
     private ServerInfo serverInfo;
 
     private Token serverToken;
     private UUID serverUuid;
-    private PlayerTokenStorage playerTokenStorage = PlayerTokenStorage.getInstance();
 
     private ConnectionStatus status = ConnectionStatus.WAITING;
     private String errorMessage = "Connection is not ready";
@@ -122,18 +120,18 @@ public class ConnectionManager {
      * to game after authorizing server, another call for this method
      * will be received and we'll be checking token access.
      *
+     * @todo: kinda weird that retry awaits for auth code
+     *
      * @param player
      */
-    public void authorizeServerPlayer(ServerPlayer player, BiConsumer<Boolean, Boolean> success, Consumer<String> retry, Consumer<String> error) {
+    public void authorizeServerPlayer(ServerPlayer player, BiConsumer<Boolean, Boolean> successConsumer, Consumer<String> retry, Consumer<GalleryError> errorConsumer) {
         // @todo: check status here?
         if (this.status != ConnectionStatus.READY) {
             this.requestServerToken(
                     (token) -> {
-                        this.authorizeServerPlayer(player, success, retry, error);
+                        this.authorizeServerPlayer(player, successConsumer, retry, errorConsumer);
                     },
-                    (exception) -> {
-                        error.accept(exception.getMessage());
-                    }
+                    errorConsumer
             );
 
             return;
@@ -145,24 +143,27 @@ public class ConnectionManager {
             this.connection.checkPlayerToken(
                     this.playerTokenStorage.getPlayerTokenString(player),
                     (response) -> {
-                        success.accept(true, true);
+                        successConsumer.accept(true, true);
                     },
-                    (exception) -> {
-                        if (exception instanceof GalleryException) {
+                    (error) -> {
+                        error.setClientMessage("Unable to authorize");
+
+                        if (error.getCode() >= 400 && error.getCode() < 500) {
                             retry.accept(this.playerTokenStorage.getPlayerToken(player).crossAuthCode.code);
-                        } else {
-                            error.accept("Unable to authorize");
                         }
-                        // @todo: depends on exception
+
+                        // @todo: [HIGH] Check that token is removed properly
+                        this.playerTokenStorage.removePlayerToken(player);
+
                     }
             );
         } else {
-            this.requestCrossAuthCode(
+            this.requestPlayerToken(
                     player,
                     (response) -> {
                         retry.accept(response.crossAuthCode.code);
                     },
-                    error::accept
+                    errorConsumer
             );
         }
     }
@@ -171,69 +172,66 @@ public class ConnectionManager {
      * Paintings
      */
 
-    public void registerImpression(ServerPlayer player, UUID paintingUuid, EventConsumer success, EventConsumer error) {
+    public void registerImpression(ServerPlayer player, UUID paintingUuid, EventConsumer successConsumer, EventConsumer errorConsumer) {
         ConnectionManager.getInstance().getConnection().registerImpression(
                 this.playerTokenStorage.getPlayerTokenString(player),
                 paintingUuid,
                 (response) -> {
-                    success.accept();
+                    successConsumer.accept();
                 },
                 (exception) -> {
-                    error.accept();
+                    // throw away error data, we cannot do anything about unregestired impression
+                    errorConsumer.accept();
                 }
         );
     }
 
-    public void registerPurchase(ServerPlayer player, UUID paintingUuid, int price, EventConsumer success, Consumer<String> error) {
-        ConnectionManager.getInstance().getConnection().purchase(
+    public void registerPurchase(ServerPlayer player, UUID paintingUuid, int price, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
+        ConnectionManager.getInstance().getConnection().registerPurchase(
                 this.playerTokenStorage.getPlayerTokenString(player),
                 paintingUuid,
                 price,
                 (response) -> {
-                    success.accept();
+                    successConsumer.accept();
                 },
-                (exception) -> {
-                    error.accept(exception.getMessage());
-                }
+                errorConsumer
         );
     }
 
-    public void validateSale(ServerPlayer player, PaintingMerchantOffer offer, EventConsumer success, Consumer<String> error) {
+    public void validateSale(ServerPlayer player, PaintingMerchantOffer offer, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
         PlayerFeed playerFeed = this.playerFeeds.get(player.getUUID());
 
         if (playerFeed == null) {
-            error.accept("Unable to load feed");
+            errorConsumer.accept(new GalleryError(GalleryError.PLAYER_FEED_UNAVAILABLE, "Unable to load feed"));
             return;
         }
 
         if (!playerFeed.isSaleAllowed()) {
-            error.accept("Sale is not allowed on this server");
+            errorConsumer.accept(new GalleryError(GalleryError.SERVER_SALE_DISALLOWED, "Sale is not allowed on this server"));
             return;
         }
 
         if (offer.getPaintingData().isEmpty()) {
-            error.accept("Painting data not ready");
+            errorConsumer.accept(new GalleryError(GalleryError.SERVER_RECEIVED_INVALID_PAINTING_DATA, "Painting data not ready"));
             return;
         }
 
-        ConnectionManager.getInstance().getConnection().validate(
+        ConnectionManager.getInstance().getConnection().validatePainting(
                 this.playerTokenStorage.getPlayerTokenString(player),
                 offer.getPaintingData().get(),
-                (response) -> success.accept(),
-                (exception) -> error.accept(exception.getMessage())
+                (response) -> successConsumer.accept(),
+                errorConsumer
         );
     }
 
-    public void registerSale(ServerPlayer player, PaintingData paintingData, EventConsumer success, Consumer<String> error) {
-        ConnectionManager.getInstance().getConnection().sell(
+    public void registerSale(ServerPlayer player, PaintingData paintingData, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
+        ConnectionManager.getInstance().getConnection().sellPainting(
                 this.playerTokenStorage.getPlayerTokenString(player),
                 paintingData,
                 (response) -> {
-                    success.accept();
+                    successConsumer.accept();
                 },
-                (exception) -> {
-                    error.accept(exception.getMessage());
-                }
+                errorConsumer
         );
     }
 
@@ -241,14 +239,14 @@ public class ConnectionManager {
      * Feed
      */
 
-    public void requestOffers(ServerPlayer player, PaintingMerchantMenu paintingMerchantMenu, Consumer<List<PaintingMerchantOffer>> success, Consumer<String> error) {
+    public void requestOffers(ServerPlayer player, PaintingMerchantMenu paintingMerchantMenu, Consumer<List<PaintingMerchantOffer>> successConsumer, Consumer<GalleryError> errorConsumer) {
         PaintingMerchantContainer container = paintingMerchantMenu.getContainer();
 
         if (this.playerFeeds.containsKey(player.getUUID())) {
             PlayerFeed feed = this.playerFeeds.get(player.getUUID());
             List<PaintingMerchantOffer> offers = this.getOffersFromFeed(this.cycleSeed, feed, paintingMerchantMenu.getMerchantId(), paintingMerchantMenu.getMerchantLevel());
 
-            success.accept(offers);
+            successConsumer.accept(offers);
         } else {
             // Will call handlePlayerFeed on response, which call handleOffers
             this.getConnection().getPlayerFeed(
@@ -260,11 +258,9 @@ public class ConnectionManager {
                         PlayerFeed feed = this.createPlayerFeed(player, response);
                         List<PaintingMerchantOffer> offers = this.getOffersFromFeed(this.cycleSeed, feed, paintingMerchantMenu.getMerchantId(), paintingMerchantMenu.getMerchantLevel());
 
-                        success.accept(offers);
+                        successConsumer.accept(offers);
                     },
-                    (exception) -> {
-                        error.accept(exception.getMessage());
-                    }
+                    errorConsumer
             );
         }
     }
@@ -326,9 +322,9 @@ public class ConnectionManager {
      * Request cross-auth token for particular player for this server
      * @param player
      * @param tokenConsumer
-     * @param errorCallback
+     * @param errorConsumer
      */
-    private void requestCrossAuthCode(ServerPlayer player, Consumer<PlayerToken> tokenConsumer, Consumer<String> errorCallback) {
+    private void requestPlayerToken(ServerPlayer player, Consumer<PlayerToken> tokenConsumer, Consumer<GalleryError> errorConsumer) {
         this.connection.requestPlayerToken(
                 this.playerTokenStorage.getPlayerTokenString(player),
                 (response) -> {
@@ -341,21 +337,19 @@ public class ConnectionManager {
                     this.playerTokenStorage.setPlayerToken(player, playerReservedToken);
                     tokenConsumer.accept(playerReservedToken);
                 },
-                (exception) -> {
-                    errorCallback.accept(exception.getMessage());
-                }
+                errorConsumer
         );
     }
 
     /**
      * Request token for current server, register it in Zetter Gallery
      * @param success
-     * @param error
+     * @param errorConsumer
      */
-    private void requestServerToken(Consumer<Token> success, Consumer<Exception> error) {
+    private void requestServerToken(Consumer<Token> success, Consumer<GalleryError> errorConsumer) {
         if (this.status == ConnectionStatus.ERROR) {
-            if (error != null) {
-                error.accept(new RuntimeException(this.errorMessage));
+            if (errorConsumer != null) {
+                errorConsumer.accept(new GalleryError(GalleryError.SERVER_INVALID_VERSION, this.errorMessage));
             }
 
             return;
@@ -366,8 +360,8 @@ public class ConnectionManager {
             if (System.currentTimeMillis() > this.errorTimestamp + 30 * 1000) {
                 this.status = ConnectionStatus.WAITING;
             } else {
-                if (error != null) {
-                    error.accept(new RuntimeException(this.errorMessage));
+                if (errorConsumer != null) {
+                    errorConsumer.accept(new GalleryError(GalleryError.SERVER_INVALID_VERSION, this.errorMessage));
                 }
 
                 return;
@@ -386,15 +380,13 @@ public class ConnectionManager {
                         success.accept(serverToken);
                     }
                 },
-                (exception) -> {
-                    Zetter.LOG.error(exception);
-
+                (error) -> {
                     // Invalid version is unrecoverable
-                    if (exception instanceof GalleryException && ((GalleryException) exception).getCode() == 403) {
-                        this.errorMessage = exception.getMessage();
+                    if (error.getCode() == 403) {
+                        this.errorMessage = error.getMessage();
                         this.status = ConnectionStatus.ERROR;
 
-                        error.accept(exception);
+                        errorConsumer.accept(error);
                         return;
                     }
 
@@ -402,7 +394,7 @@ public class ConnectionManager {
                     this.status = ConnectionStatus.ERROR_RETRY;
                     this.errorTimestamp = System.currentTimeMillis();
 
-                    error.accept(exception);
+                    errorConsumer.accept(error);
                 }
         );
     }

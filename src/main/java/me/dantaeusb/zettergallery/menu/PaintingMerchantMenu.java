@@ -9,6 +9,7 @@ import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.core.ZetterGalleryContainerMenus;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.gallery.ConnectionManager;
+import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.network.packet.*;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
@@ -37,7 +38,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     private static final int PLAYER_INVENTORY_ROW_COUNT = 3;
     private static final int PLAYER_INVENTORY_COLUMN_COUNT = 9;
 
-    public static final int PLAYER_INVENTORY_XPOS = 8;
+    public static final int PLAYER_INVENTORY_XPOS = 24;
     public static final int PLAYER_INVENTORY_YPOS = 154;
 
     private final Player player;
@@ -47,12 +48,13 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     private UUID merchantId;
     private int merchantLevel;
 
-    private State state = State.SERVER_AUTHENTICATION;
+    private OfferLoadingState offerLoadingState = OfferLoadingState.LOADING;
+    private PlayerAuthorizationState playerAuthorizationState = PlayerAuthorizationState.SERVER_AUTHENTICATION;
     @Nullable
     private String crossAuthorizationCode;
 
     @Nullable
-    private String error;
+    private GalleryError error;
 
     private PaintingMerchantMenu(int windowID, Inventory invPlayer, Merchant merchant) {
         super(ZetterGalleryContainerMenus.PAINTING_MERCHANT.get(), windowID);
@@ -63,33 +65,24 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         this.container.addListener(this);
 
         // gui position of the player material slots
-        final int INPUT_XPOS = 15;
-        final int INPUT_YPOS = 83;
+        final int INPUT_XPOS = 119;
+        final int INPUT_YPOS = 119;
 
         // gui position of the player material slots
-        final int OUTPUT_XPOS = 149;
-        final int OUTPUT_YPOS = 83;
+        final int OUTPUT_XPOS = 180;
+        final int OUTPUT_YPOS = 119;
 
         this.addSlot(new PaintingMerchantMenu.SlotInput(this.container, 0, INPUT_XPOS, INPUT_YPOS));
         this.addSlot(new PaintingMerchantMenu.SlotOutput(this.container, 1, OUTPUT_XPOS, OUTPUT_YPOS));
 
         final int SLOT_X_SPACING = 18;
         final int SLOT_Y_SPACING = 18;
-        final int HOTBAR_XPOS = 8;
+        final int HOTBAR_XPOS = 24;
         final int HOTBAR_YPOS = 212;
 
         // Add the players hotbar to the gui - the [xpos, ypos] location of each item
         for (int x = 0; x < HOTBAR_SLOT_COUNT; x++) {
-            this.addSlot(new Slot(invPlayer, x, HOTBAR_XPOS + SLOT_X_SPACING * x, HOTBAR_YPOS) {
-                @Override
-                public boolean isActive() {
-                    if (PaintingMerchantMenu.this.state == State.READY) {
-                        return super.isActive();
-                    }
-
-                    return false;
-                }
-            });
+            this.addSlot(new Slot(invPlayer, x, HOTBAR_XPOS + SLOT_X_SPACING * x, HOTBAR_YPOS));
         }
 
         // Add the rest of the players inventory to the gui
@@ -98,16 +91,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
                 int slotNumber = HOTBAR_SLOT_COUNT + y * PLAYER_INVENTORY_COLUMN_COUNT + x;
                 int xpos = PLAYER_INVENTORY_XPOS + x * SLOT_X_SPACING;
                 int ypos = PLAYER_INVENTORY_YPOS + y * SLOT_Y_SPACING;
-                this.addSlot(new Slot(invPlayer, slotNumber, xpos, ypos) {
-                    @Override
-                    public boolean isActive() {
-                        if (PaintingMerchantMenu.this.state == State.READY) {
-                            return super.isActive();
-                        }
-
-                        return false;
-                    }
-                });
+                this.addSlot(new Slot(invPlayer, slotNumber, xpos, ypos));
             }
         }
 
@@ -216,7 +200,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
      */
 
     public boolean hasOffers() {
-        return this.container.hasOffers() && !this.state.equals(State.ERROR);
+        return this.container.hasOffers() && !this.playerAuthorizationState.equals(PlayerAuthorizationState.ERROR);
     }
 
     /**
@@ -301,12 +285,15 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         return this.container.isSaleAllowed();
     }
 
-    public State getState() {
-        return this.state;
+    public OfferLoadingState getOfferLoadingState() {
+        return this.offerLoadingState;
     }
 
-    public @Nullable
-    String getError() {
+    public PlayerAuthorizationState getPlayerAuthorizationState() {
+        return this.playerAuthorizationState;
+    }
+
+    public @Nullable GalleryError getError() {
         return this.error;
     }
 
@@ -328,53 +315,76 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
      *
      * Move to the state machine enum?
      */
-    public void update() {
-        if (!this.player.level.isClientSide()) {
-            switch (this.state) {
-                case SERVER_AUTHENTICATION:
-                    ConnectionManager.getInstance().authorizeServerPlayer(
-                            (ServerPlayer) this.player,
-                            // to FETCHING_SALES
-                            this::handleServerAuthenticationSuccess,
-                            // to CLIENT_AUTHORIZATION
-                            this::handleServerAuthenticationFail,
-                            this::handleError
-                    );
-                    break;
-                case CLIENT_AUTHORIZATION:
-                    // Server
-                    SGalleryAuthorizationRequestPacket authorizationRequestPacket = new SGalleryAuthorizationRequestPacket(this.crossAuthorizationCode);
-                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), authorizationRequestPacket);
-                    break;
-                case FETCHING_OFFERS:
-                    SGalleryAuthorizationResponsePacket authorizationResponsePacket = new SGalleryAuthorizationResponsePacket(true, true);
-                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), authorizationResponsePacket);
+    public void updateAuthorizationState() {
+        if (this.player.level.isClientSide()) {
+            return;
+        }
 
-                    ConnectionManager.getInstance().requestOffers(
-                            (ServerPlayer) this.player,
-                            this,
-                            (offers) -> {
-                                this.handleOffers(true, offers);
-                            },
-                            this::handleError
-                    );
-                    break;
-                case RETRY:
-                    break;
-                case READY:
-                    // sync with client when updating, calls the same method on client side
-                    SGallerySalesPacket salesPacket = new SGallerySalesPacket(this.isSaleAllowed(), this.getContainer().getOffers());
-                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), salesPacket);
+        switch (this.playerAuthorizationState) {
+            case SERVER_AUTHENTICATION:
+                ConnectionManager.getInstance().authorizeServerPlayer(
+                        (ServerPlayer) this.player,
+                        // to LOGGED_IN
+                        this::handleServerAuthenticationSuccess,
+                        // to CLIENT_AUTHORIZATION
+                        this::handleServerAuthenticationFail,
+                        this::handleError
+                );
+                break;
+            case CLIENT_AUTHORIZATION:
+                // Server
+                SGalleryAuthorizationRequestPacket authorizationRequestPacket = new SGalleryAuthorizationRequestPacket(this.crossAuthorizationCode);
+                ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), authorizationRequestPacket);
+                break;
+            case LOGGED_IN:
+                // sync with client when updating, calls the same method on client side
+                SGallerySalesPacket salesPacket = new SGallerySalesPacket(this.isSaleAllowed(), this.getContainer().getOffers());
+                ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), salesPacket);
 
-                    break;
-                case ERROR:
-                    SGalleryErrorPacket errorPacket = new SGalleryErrorPacket(this.error);
-                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), errorPacket);
+                break;
+            case ERROR:
+                assert this.error != null;
+                SGalleryErrorPacket errorPacket = new SGalleryErrorPacket(this.error);
+                ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), errorPacket);
 
-                    break;
-                default:
-                    break;
-            }
+                break;
+            default:
+                break;
+        }
+    }
+
+    public void updateOffersState() {
+        if (this.player.level.isClientSide()) {
+            return;
+        }
+
+        switch (this.offerLoadingState) {
+            case LOADING:
+                SGalleryAuthorizationResponsePacket authorizationResponsePacket = new SGalleryAuthorizationResponsePacket(true, true);
+                ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), authorizationResponsePacket);
+
+                ConnectionManager.getInstance().requestOffers(
+                        (ServerPlayer) this.player,
+                        this,
+                        (offers) -> {
+                            this.handleOffers(true, offers);
+                        },
+                        this::handleError
+                );
+                break;
+            case LOADED:
+                // sync with client when updating, calls the same method on client side
+                SGallerySalesPacket salesPacket = new SGallerySalesPacket(this.isSaleAllowed(), this.getContainer().getOffers());
+                ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), salesPacket);
+
+                break;
+            case ERROR:
+                SGalleryErrorPacket errorPacket = new SGalleryErrorPacket(this.error);
+                ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), errorPacket);
+
+                break;
+            default:
+                break;
         }
     }
 
@@ -390,7 +400,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         CGalleryAuthorizationCheckPacket authenticationCheckPacket = new CGalleryAuthorizationCheckPacket();
         ZetterGalleryNetwork.simpleChannel.sendToServer(authenticationCheckPacket);
 
-        this.state = this.state.success();
+        this.playerAuthorizationState = this.playerAuthorizationState.success();
     }
 
     /**
@@ -400,14 +410,14 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
      *
      * @param assertState
      */
-    private void assertStateSuccess(State assertState) {
-        if (this.state == assertState) {
-            this.state = this.state.success();
+    private void assertStateSuccess(PlayerAuthorizationState assertState) {
+        if (this.playerAuthorizationState == assertState) {
+            this.playerAuthorizationState = this.playerAuthorizationState.success();
         } else {
-            this.state = this.state.error();
+            this.playerAuthorizationState = this.playerAuthorizationState.error();
         }
 
-        this.update();
+        this.updateAuthorizationState();
     }
 
     /**
@@ -417,14 +427,14 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
      *
      * @param assertState
      */
-    private void assertStateFail(State assertState) {
-        if (this.state == assertState) {
-            this.state = this.state.fail();
+    private void assertStateFail(PlayerAuthorizationState assertState) {
+        if (this.playerAuthorizationState == assertState) {
+            this.playerAuthorizationState = this.playerAuthorizationState.fail();
         } else {
-            this.state = this.state.error();
+            this.playerAuthorizationState = this.playerAuthorizationState.error();
         }
 
-        this.update();
+        this.updateAuthorizationState();
     }
 
     /**
@@ -433,11 +443,11 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
      *
      * @param error
      */
-    public void handleError(String error) {
-        this.state = this.state.error();
+    public void handleError(GalleryError error) {
+        this.playerAuthorizationState = this.playerAuthorizationState.error();
         this.error = error;
 
-        this.update();
+        this.updateAuthorizationState();
     }
 
     private void playTradeSound() {
@@ -458,14 +468,14 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
      * @param offers
      */
     public void handleOffers(boolean sellAllowed, List<PaintingMerchantOffer> offers) {
-        if (this.state == State.FETCHING_OFFERS) {
-            this.state = this.state.success();
+        if (this.offerLoadingState == OfferLoadingState.LOADING) {
+            this.playerAuthorizationState = this.playerAuthorizationState.success();
         }
 
         this.container.handleOffers(offers);
         this.registerOffersCanvases();
 
-        this.update();
+        this.updateAuthorizationState();
     }
 
     /**
@@ -484,23 +494,23 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         }
 
         if (state == PaintingMerchantOffer.State.ERROR) {
-            this.getCurrentOffer().markError(message);
+            this.getCurrentOffer().markError(new GalleryError(GalleryError.CLIENT_INVALID_OFFER, message));
         } else if (state == PaintingMerchantOffer.State.READY) {
             this.getCurrentOffer().ready();
         }
     }
 
     public void handleServerAuthenticationSuccess(boolean canBuy, boolean canSell) {
-        this.assertStateSuccess(State.SERVER_AUTHENTICATION);
+        this.assertStateSuccess(PlayerAuthorizationState.SERVER_AUTHENTICATION);
     }
 
     public void handleServerAuthenticationFail(String crossAuthorizationCode) {
         this.crossAuthorizationCode = crossAuthorizationCode;
-        this.assertStateFail(State.SERVER_AUTHENTICATION);
+        this.assertStateFail(PlayerAuthorizationState.SERVER_AUTHENTICATION);
     }
 
     public void handleServerAuthenticationRetry() {
-        this.assertStateSuccess(State.CLIENT_AUTHORIZATION);
+        this.assertStateSuccess(PlayerAuthorizationState.CLIENT_AUTHORIZATION);
     }
 
     public void registerOffersCanvases() {
@@ -619,82 +629,102 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         }
     }
 
-    public enum State {
-        SERVER_AUTHENTICATION {
+    public enum OfferLoadingState {
+        LOADING {
             @Override
-            public State success() {
-                return FETCHING_OFFERS;
+            public OfferLoadingState success() {
+                return LOADED;
             }
 
             @Override
-            public State fail() {
+            public OfferLoadingState fail() {
+                return ERROR;
+            }
+        },
+        LOADED {
+            @Override
+            public OfferLoadingState success() {
+                return LOADED;
+            }
+
+            @Override
+            public OfferLoadingState fail() {
+                return ERROR;
+            }
+        },
+        ERROR {
+            @Override
+            public OfferLoadingState success() {
+                return this;
+            }
+
+            @Override
+            public OfferLoadingState fail() {
+                return this;
+            }
+        };
+
+        public abstract OfferLoadingState success();
+
+        public abstract OfferLoadingState fail();
+
+        public OfferLoadingState error() {
+            return ERROR;
+        }
+    }
+
+    public enum PlayerAuthorizationState {
+        SERVER_AUTHENTICATION {
+            @Override
+            public PlayerAuthorizationState success() {
+                return LOGGED_IN;
+            }
+
+            @Override
+            public PlayerAuthorizationState fail() {
                 return CLIENT_AUTHORIZATION;
             }
         },
         CLIENT_AUTHORIZATION {
             @Override
-            public State success() {
+            public PlayerAuthorizationState success() {
                 return SERVER_AUTHENTICATION;
             }
 
             @Override
-            public State fail() {
+            public PlayerAuthorizationState fail() {
                 return ERROR;
             }
         },
-        FETCHING_OFFERS {
+        LOGGED_IN {
             @Override
-            public State success() {
-                return READY;
+            public PlayerAuthorizationState success() {
+                return LOGGED_IN;
             }
 
             @Override
-            public State fail() {
-                return CLIENT_AUTHORIZATION;
-            }
-        },
-        READY {
-            @Override
-            public State success() {
-                return READY;
-            }
-
-            @Override
-            public State fail() {
-                return RETRY;
-            }
-        },
-        RETRY {
-            @Override
-            public State success() {
-                return READY;
-            }
-
-            @Override
-            public State fail() {
-                return this;
+            public PlayerAuthorizationState fail() {
+                return SERVER_AUTHENTICATION;
             }
         },
         ERROR {
             @Override
-            public State success() {
+            public PlayerAuthorizationState success() {
                 return this;
             }
 
             @Override
-            public State fail() {
+            public PlayerAuthorizationState fail() {
                 return this;
             }
         };
 
-        public abstract State success();
+        public abstract PlayerAuthorizationState success();
 
-        public abstract State fail();
+        public abstract PlayerAuthorizationState fail();
 
-        public State error() {
+        public PlayerAuthorizationState error() {
             return ERROR;
         }
-
-        ;
     }
 }

@@ -10,6 +10,7 @@ import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
+import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import me.dantaeusb.zettergallery.network.packet.SGalleryOfferStatePacket;
 import me.dantaeusb.zettergallery.network.packet.SGallerySalesPacket;
@@ -146,9 +147,9 @@ public class PaintingMerchantOffer {
         this.state = State.READY;
     }
 
-    public void markError(String error) {
+    public void markError(GalleryError error) {
         this.state = State.ERROR;
-        this.message = error;
+        this.message = error.getClientMessage();
     }
 
 

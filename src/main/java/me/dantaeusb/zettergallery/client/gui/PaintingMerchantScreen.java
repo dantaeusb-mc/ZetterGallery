@@ -3,7 +3,8 @@ package me.dantaeusb.zettergallery.client.gui;
 import me.dantaeusb.zetter.core.tools.Color;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.merchant.InfoWidget;
-import me.dantaeusb.zettergallery.client.gui.merchant.PreviewWidget;
+import me.dantaeusb.zettergallery.client.gui.merchant.PaginatorWidget;
+import me.dantaeusb.zettergallery.client.gui.merchant.PaintingPreviewWidget;
 import me.dantaeusb.zettergallery.client.gui.merchant.AuthWidget;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.core.Helper;
@@ -29,14 +30,13 @@ import java.net.URISyntaxException;
 
 @OnlyIn(Dist.CLIENT)
 public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerchantMenu> {
-    // This is the resource location for the background image
-    private static final ResourceLocation LOADING_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade_loading.png");
-    private static final ResourceLocation READY_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade.png");
+    public static final ResourceLocation GUI_TEXTURE_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade.png");
 
     private static final Component LEVEL_SEPARATOR = Component.literal(" - ");
 
     private AuthWidget authWidget;
-    private PreviewWidget previewWidget;
+    private PaintingPreviewWidget previewWidget;
+    private PaginatorWidget paginatorWidget;
     private InfoWidget infoWidget;
 
     private int tick = 0;
@@ -57,28 +57,33 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         super(merchantContainer, playerInventory, title);
 
         this.imageHeight = 236;
-        this.imageWidth = 176;
+        this.imageWidth = 208;
     }
 
-    static final int AUTH_POSITION_X = 7;
-    static final int AUTH_POSITION_Y = 7;
+    static final int AUTH_POSITION_X = 6;
+    static final int AUTH_POSITION_Y = 114;
 
-    static final int PREVIEW_POSITION_X = 42;
-    static final int PREVIEW_POSITION_Y = 25;
+    static final int PREVIEW_POSITION_X = 11;
+    static final int PREVIEW_POSITION_Y = 30;
 
-    static final int INFO_POSITION_X = 8;
-    static final int INFO_POSITION_Y = 107;
+    static final int PAGINATOR_POSITION_X = 83;
+    static final int PAGINATOR_POSITION_Y = 100;
+
+    static final int INFO_POSITION_X = 77;
+    static final int INFO_POSITION_Y = 30;
 
     @Override
     protected void init() {
         super.init();
 
         this.authWidget = new AuthWidget(this, this.getGuiLeft() + AUTH_POSITION_X, this.getGuiTop() + AUTH_POSITION_Y);
-        this.previewWidget = new PreviewWidget(this, this.getGuiLeft() + PREVIEW_POSITION_X, this.getGuiTop() + PREVIEW_POSITION_Y);
+        this.previewWidget = new PaintingPreviewWidget(this, this.getGuiLeft() + PREVIEW_POSITION_X, this.getGuiTop() + PREVIEW_POSITION_Y);
+        this.paginatorWidget = new PaginatorWidget(this, this.getGuiLeft() + PAGINATOR_POSITION_X, this.getGuiTop() + PAGINATOR_POSITION_Y);
         this.infoWidget = new InfoWidget(this, this.getGuiLeft() + INFO_POSITION_X, this.getGuiTop() + INFO_POSITION_Y);
 
         this.addWidget(this.authWidget);
         this.addWidget(this.previewWidget);
+        this.addWidget(this.paginatorWidget);
         this.addWidget(this.infoWidget);
 
         this.inventoryLabelX = 107;
@@ -151,7 +156,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
 
     private void renderProgressBar(PoseStack poseStack) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderTexture(0, READY_RESOURCE);
+        RenderSystem.setShaderTexture(0, GUI_TEXTURE_RESOURCE);
 
         final float BAR_U = 0.0F;
         final float BAR_V = 246.0F;
@@ -174,7 +179,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
                     BAR_V,
                     BAR_WIDTH,
                     BAR_HEIGHT,
-                    256,
+                    512,
                     256
             );
 
@@ -194,7 +199,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
                         BAR_V + BAR_HEIGHT,
                         i1 + 1, // WIDTH
                         BAR_HEIGHT,
-                        256,
+                        512,
                         256
                 );
 
@@ -226,33 +231,35 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     protected void renderBg(PoseStack poseStack, float partialTicks, int mouseX, int mouseY) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.setShaderTexture(0, GUI_TEXTURE_RESOURCE);
 
-        if (this.menu.getState() == PaintingMerchantMenu.State.READY) {
-            RenderSystem.setShaderTexture(0, READY_RESOURCE);
-        } else {
-            RenderSystem.setShaderTexture(0, LOADING_RESOURCE);
+        blit(poseStack, this.leftPos, this.topPos, this.getBlitOffset(), 0.0F, 0.0F, this.imageWidth, this.imageHeight, 512, 256);
+
+        // Suggest paintings or emeralds for sale
+        final int SELL_SLOT_X = 119;
+        final int SELL_SLOT_Y = 119;
+        final int SELL_SLOT_U = 208;
+        final int SELL_SLOT_V = 160;
+        final int SELL_SLOT_WIDTH = 16;
+        final int SELL_SLOT_HEIGHT = 16;
+
+        int sellSlotVOffset = 0;
+
+        if (this.saleAllowed() && this.tick % 40 > 19) {
+            sellSlotVOffset = SELL_SLOT_HEIGHT;
         }
 
-        blit(poseStack, this.leftPos, this.topPos, this.getBlitOffset(), 0.0F, 0.0F, this.imageWidth, this.imageHeight, 256, 256);
+        blit(poseStack, this.leftPos + SELL_SLOT_X, this.topPos + SELL_SLOT_Y, SELL_SLOT_U, SELL_SLOT_V + sellSlotVOffset, SELL_SLOT_WIDTH, SELL_SLOT_HEIGHT);
 
-        if (this.menu.getState() == PaintingMerchantMenu.State.READY) {
-            // Suggest paintings or emeralds for sale
-            final int SELL_SLOT_X = 15;
-            final int SELL_SLOT_Y = 83;
-            final int SELL_SLOT_U = 212;
-            final int SELL_SLOT_V = 0;
-            final int SELL_SLOT_WIDTH = 16;
-            final int SELL_SLOT_HEIGHT = 16;
-            final int sellSlotVOffset = this.tick % 40 > 19 ? SELL_SLOT_HEIGHT : 0;
+        // Widgets
+        this.authWidget.render(poseStack, mouseX, mouseY, partialTicks);
+        this.previewWidget.render(poseStack, mouseX, mouseY, partialTicks);
+        this.paginatorWidget.render(poseStack, mouseX, mouseY, partialTicks);
+        this.infoWidget.render(poseStack, mouseX, mouseY, partialTicks);
+    }
 
-            blit(poseStack, this.leftPos + SELL_SLOT_X, this.topPos + SELL_SLOT_Y, SELL_SLOT_U, SELL_SLOT_V + sellSlotVOffset, SELL_SLOT_WIDTH, SELL_SLOT_HEIGHT);
-
-            // Widgets
-            this.previewWidget.render(poseStack, mouseX, mouseY, partialTicks);
-            this.infoWidget.render(poseStack, mouseX, mouseY, partialTicks);
-        } else {
-            this.authWidget.render(poseStack, mouseX, mouseY, partialTicks);
-        }
+    public boolean saleAllowed() {
+        return false;
     }
 
     /**
@@ -312,8 +319,12 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         return this.menu.getCurrentOffer();
     }
 
-    public PaintingMerchantMenu.State getState() {
-        return this.menu.getState();
+    public PaintingMerchantMenu.OfferLoadingState getOfferLoadingState() {
+        return this.menu.getOfferLoadingState();
+    }
+
+    public PaintingMerchantMenu.PlayerAuthorizationState getAuthorizationState() {
+        return this.menu.getPlayerAuthorizationState();
     }
 
     class URIBuilder {

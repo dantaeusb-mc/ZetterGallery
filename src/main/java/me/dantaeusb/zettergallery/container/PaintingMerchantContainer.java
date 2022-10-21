@@ -182,10 +182,10 @@ public class PaintingMerchantContainer implements Container {
                                 SGalleryOfferStatePacket offerStatePacket = new SGalleryOfferStatePacket(offer.getCanvasCode(), PaintingMerchantOffer.State.READY, "Ready");
                                 ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.merchant.getTradingPlayer()), offerStatePacket);
                             },
-                            (errorMessage) -> {
-                                offer.markError(errorMessage);
+                            (error) -> {
+                                offer.markError(error);
 
-                                SGalleryOfferStatePacket offerStatePacket = new SGalleryOfferStatePacket(offer.getCanvasCode(), PaintingMerchantOffer.State.ERROR, errorMessage);
+                                SGalleryOfferStatePacket offerStatePacket = new SGalleryOfferStatePacket(offer.getCanvasCode(), PaintingMerchantOffer.State.ERROR, error.getClientMessage());
                                 ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.merchant.getTradingPlayer()), offerStatePacket);
                             }
                         );

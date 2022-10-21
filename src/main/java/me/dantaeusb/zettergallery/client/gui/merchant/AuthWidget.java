@@ -2,7 +2,6 @@ package me.dantaeusb.zettergallery.client.gui.merchant;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.dantaeusb.zetter.core.tools.Color;
-import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -14,16 +13,13 @@ import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.List;
 
 public class AuthWidget extends AbstractWidget implements Widget, GuiEventListener {
-
-    private static final ResourceLocation LOADING_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade_loading.png");
-
     protected final PaintingMerchantScreen parentScreen;
 
     @Nullable
@@ -31,14 +27,17 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
     protected ItemRenderer itemRenderer;
     protected Font font;
 
-    static final int WIDTH = 162;
-    static final int HEIGHT = 186;
+    static final int WIDTH = 98;
+    static final int HEIGHT = 26;
+
+    private static final int AUTH_UPOS = 208;
+    private static final int AUTH_VPOS = 50;
 
     private int tick = 0;
 
     private static final Component AUTHENTICATING_TEXT = Component.translatable("container.zettergallery.merchant.authenticating");
-    private static final Component LOGIN_REQUEST_TEXT = Component.translatable("container.zettergallery.merchant.login_request");
-    private static final Component FETCHING_SALES_TEXT = Component.translatable("container.zettergallery.merchant.fetching_sales");
+    private static final Component LOGIN_TEXT = Component.translatable("container.zettergallery.merchant.login_request");
+    private static final Component LOGIN_TOOLTIP_TEXT = Component.translatable("container.zettergallery.merchant.login_request_tooltip");
     private static final Component UNKNOWN_ERROR_TEXT = Component.translatable("container.zettergallery.merchant.unknown_error");
     private static final Component TRY_AGAIN_TEXT = Component.translatable("container.zettergallery.merchant.try_again");
 
@@ -54,32 +53,102 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
 
     @Override
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        switch (this.parentScreen.getState()) {
+        RenderSystem.setShaderTexture(0, PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
+
+        switch (this.parentScreen.getAuthorizationState()) {
             case SERVER_AUTHENTICATION:
+                blit(
+                        matrixStack,
+                        this.x,
+                        this.y,
+                        AUTH_UPOS,
+                        AUTH_VPOS + HEIGHT * 2,
+                        WIDTH,
+                        HEIGHT,
+                        512,
+                        256
+                );
+
+                // @todo: draw loader
+
                 // stack, font, x, y, color
-                drawCenteredString(matrixStack, this.font, AUTHENTICATING_TEXT, this.x + this.width / 2, this.y + 96, Color.white.getRGB());
+                drawCenteredString(matrixStack, this.font, AUTHENTICATING_TEXT, this.x + this.width / 2, this.y + 10, Color.white.getRGB());
 
                 this.drawLoading(matrixStack);
                 break;
             case CLIENT_AUTHORIZATION:
+                if (!isPointInRegion(0, 0, WIDTH, HEIGHT, mouseX, mouseY)) {
+                    blit(
+                            matrixStack,
+                            this.x,
+                            this.y,
+                            AUTH_UPOS,
+                            AUTH_VPOS,
+                            WIDTH,
+                            HEIGHT,
+                            512,
+                            256
+                    );
+                } else {
+                    blit(
+                            matrixStack,
+                            this.x,
+                            this.y,
+                            AUTH_UPOS,
+                            AUTH_VPOS + HEIGHT,
+                            WIDTH,
+                            HEIGHT,
+                            512,
+                            256
+                    );
+
+                    // @todo: Add tooltip text
+                }
+
                 // stack, font, x, y, color
-                drawCenteredString(matrixStack, this.font, LOGIN_REQUEST_TEXT, this.x + this.width / 2, this.y + 96, Color.white.getRGB());
+                drawCenteredString(matrixStack, this.font, LOGIN_TEXT, this.x + this.width / 2, this.y + 10, Color.white.getRGB());
 
                 this.drawConnectButton(matrixStack, mouseX, mouseY);
                 break;
-            case FETCHING_OFFERS:
-                drawCenteredString(matrixStack, this.font, FETCHING_SALES_TEXT, this.x + this.width / 2, this.y + 96, Color.white.getRGB());
+            case LOGGED_IN:
+                blit(
+                        matrixStack,
+                        this.x,
+                        this.y,
+                        AUTH_UPOS,
+                        AUTH_VPOS + HEIGHT * 2,
+                        WIDTH,
+                        HEIGHT,
+                        512,
+                        256
+                );
 
-                this.drawLoading(matrixStack);
+                // @todo: draw player-client info
                 break;
             case ERROR:
+                blit(
+                        matrixStack,
+                        this.x,
+                        this.y,
+                        AUTH_UPOS,
+                        AUTH_VPOS + HEIGHT * 2,
+                        WIDTH,
+                        HEIGHT,
+                        512,
+                        256
+                );
+
                 final Component errorMessage = this.parentScreen.getMenu().getError() != null ?
-                        Component.nullToEmpty(this.parentScreen.getMenu().getError()) :
+                        Component.nullToEmpty(this.parentScreen.getMenu().getError().getMessage()) :
                         UNKNOWN_ERROR_TEXT;
 
-                // 176 (window width - 16x2 (padding) - 2 (borders))
-                List<FormattedCharSequence> lines = this.font.split(errorMessage, 142);
+                List<FormattedCharSequence> lines = this.font.split(errorMessage, 92);
                 int i = 0;
+                int yPos = 4;
+
+                if (lines.size() == 1) {
+                    yPos += 6;
+                }
 
                 for (FormattedCharSequence line : lines) {
                     // stack, font, x, y, color
@@ -88,7 +157,7 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
                             this.font,
                             line,
                             this.x + this.width / 2,
-                            this.y + 82 + (i++ * 13),
+                            this.y + yPos + (i++ * 13),
                             Color.white.getRGB()
                     );
                 }
@@ -103,7 +172,7 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (this.parentScreen.getState() == PaintingMerchantMenu.State.CLIENT_AUTHORIZATION &&
+        if (this.parentScreen.getAuthorizationState() == PaintingMerchantMenu.PlayerAuthorizationState.CLIENT_AUTHORIZATION &&
             isPointInRegion(BUTTON_XPOS, BUTTON_YPOS, BUTTON_WIDTH, BUTTON_HEIGHT, mouseX, mouseY)
         ) {
             this.playDownSound(this.minecraft.getSoundManager());
@@ -122,14 +191,12 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
 
     private void drawLoading(PoseStack matrixStack)
     {
-        RenderSystem.setShaderTexture(0, LOADING_RESOURCE);
-
         final int animation = this.tick % 40;
         int frame = animation / 10; // 0-3
 
         frame = frame > 2 ? 1 : frame; // 3rd frame is the same as 1st frame
 
-        blit(matrixStack, this.x + LOADING_XPOS, this.y + LOADING_YPOS, LOADING_UPOS, LOADING_VPOS + LOADING_HEIGHT * frame, LOADING_WIDTH, LOADING_HEIGHT, 256, 256);
+        blit(matrixStack, this.x + LOADING_XPOS, this.y + LOADING_YPOS, LOADING_UPOS, LOADING_VPOS + LOADING_HEIGHT * frame, LOADING_WIDTH, LOADING_HEIGHT, 512, 256);
     }
 
     private static final int BUTTON_WIDTH = 64;
@@ -146,15 +213,13 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
      * @param mouseY
      */
     private void drawConnectButton(PoseStack matrixStack, int mouseX, int mouseY) {
-        final int BUTTON_UPOS = 176;
-        final int BUTTON_VPOS = 0;
-
-        RenderSystem.setShaderTexture(0, LOADING_RESOURCE);
+        final int BUTTON_UPOS = 208;
+        final int BUTTON_VPOS = 51;
 
         if (isPointInRegion(BUTTON_XPOS, BUTTON_YPOS, BUTTON_WIDTH, BUTTON_HEIGHT, mouseX, mouseY)) {
-            blit(matrixStack, this.x + BUTTON_XPOS, this.y + BUTTON_YPOS, BUTTON_UPOS, BUTTON_VPOS + BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT, 256, 256);
+            blit(matrixStack, this.x + BUTTON_XPOS, this.y + BUTTON_YPOS, BUTTON_UPOS, BUTTON_VPOS + BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT, 512, 256);
         } else {
-            blit(matrixStack, this.x + BUTTON_XPOS, this.y + BUTTON_YPOS, BUTTON_UPOS, BUTTON_VPOS, BUTTON_WIDTH, BUTTON_HEIGHT, 256, 256);
+            blit(matrixStack, this.x + BUTTON_XPOS, this.y + BUTTON_YPOS, BUTTON_UPOS, BUTTON_VPOS, BUTTON_WIDTH, BUTTON_HEIGHT, 512, 256);
         }
     }
 
