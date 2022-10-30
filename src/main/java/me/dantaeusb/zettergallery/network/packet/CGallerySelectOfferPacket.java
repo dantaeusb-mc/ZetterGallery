@@ -14,7 +14,7 @@ import java.util.function.Supplier;
  * unless they're different classes for some reason
  */
 public class CGallerySelectOfferPacket {
-    private final int offerIndex;
+    public final int offerIndex;
 
     public CGallerySelectOfferPacket(int offerIndex) {
         this.offerIndex = offerIndex;
@@ -37,10 +37,6 @@ public class CGallerySelectOfferPacket {
      */
     public void writePacketData(FriendlyByteBuf buf) {
         buf.writeInt(this.offerIndex);
-    }
-
-    public int getOfferIndex() {
-        return this.offerIndex;
     }
 
     public static void handle(final CGallerySelectOfferPacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {

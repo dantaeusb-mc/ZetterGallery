@@ -20,20 +20,14 @@ import java.util.function.Supplier;
 /**
  * @todo: Is that okay that we don't have classic handler here?
  */
-public class SGallerySalesPacket {
+public class SGalleryOffersPacket {
     static final int MAX_NAME_LENGTH = 128;
     static final int MAX_AUTHOR_LENGTH = 64;
 
-    private final boolean sellAllowed;
     private final List<PaintingMerchantOffer> offers;
 
-    public SGallerySalesPacket(boolean sellAllowed, List<PaintingMerchantOffer> offers) {
-        this.sellAllowed = sellAllowed;
+    public SGalleryOffersPacket(List<PaintingMerchantOffer> offers) {
         this.offers = offers;
-    }
-
-    public boolean isSellAllowed() {
-        return this.sellAllowed;
     }
 
     public List<PaintingMerchantOffer> getOffers() {
@@ -43,9 +37,8 @@ public class SGallerySalesPacket {
     /**
      * Reads the raw packet data from the data stream.
      */
-    public static SGallerySalesPacket readPacketData(FriendlyByteBuf networkBuffer) {
+    public static SGalleryOffersPacket readPacketData(FriendlyByteBuf networkBuffer) {
         try {
-            final boolean saleAllowed = networkBuffer.readBoolean();
             final int size = networkBuffer.readInt();
             int i = 0;
 
@@ -68,7 +61,7 @@ public class SGallerySalesPacket {
                 i++;
             }
 
-            return new SGallerySalesPacket(saleAllowed, offers);
+            return new SGalleryOffersPacket(offers);
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
             ZetterGallery.LOG.warn("Exception while reading SGallerySalesPacket: " + e);
             return null;
@@ -79,7 +72,6 @@ public class SGallerySalesPacket {
      * Writes the raw packet data to the data stream.
      */
     public void writePacketData(FriendlyByteBuf networkBuffer) {
-        networkBuffer.writeBoolean(this.sellAllowed);
         networkBuffer.writeInt(this.offers.size());
 
         for (PaintingMerchantOffer merchantOffer : this.offers) {
@@ -109,7 +101,7 @@ public class SGallerySalesPacket {
         }
     }
 
-    public static void handle(final SGallerySalesPacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
+    public static void handle(final SGalleryOffersPacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
         LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
         ctx.setPacketHandled(true);

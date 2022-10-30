@@ -10,6 +10,8 @@ public class GalleryError {
     public static final int SERVER_RECEIVED_INVALID_PAINTING_DATA = 1004;
     public static final int CLIENT_INVALID_OFFER = 1005;
 
+    public static final int UNKNOWN_FSM_ERROR = 2000;
+
     private final int code;
     private final String message;
     private @Nullable String clientMessage;

@@ -22,14 +22,14 @@ public class ServerHandler {
         if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
             PaintingMerchantMenu menu = (PaintingMerchantMenu) sendingPlayer.containerMenu;
 
-            menu.handleServerAuthenticationRetry();
+            menu.getAuthController().handleAuthorizationRetry();
         }
     }
 
     public static void processGallerySelectOffer(final CGallerySelectOfferPacket packetIn, ServerPlayer sendingPlayer) {
         if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
             PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)sendingPlayer.containerMenu;
-            paintingMerchantMenu.updateCurrentOfferIndex(packetIn.getOfferIndex());
+            paintingMerchantMenu.updateCurrentOfferIndex(packetIn.offerIndex);
 
             if (paintingMerchantMenu.getCurrentOffer() == null) {
                 throw new IllegalStateException("Selected offer is empty");
@@ -49,7 +49,7 @@ public class ServerHandler {
         if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
             // @todo: here we send request, but not yet proceed on container
             PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)sendingPlayer.containerMenu;
-            paintingMerchantMenu.startCheckout();
+            paintingMerchantMenu.getContainer().startCheckout();
         }
     }
 }

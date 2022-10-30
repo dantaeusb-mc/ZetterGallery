@@ -16,7 +16,7 @@ public class ZetterGalleryGameEvents {
     }
 
     /**
-     *
+     * @todo: [HIGH] Do we need that? Maybe we can just call that when trading starts
      * @param event
      */
     @SubscribeEvent
@@ -26,7 +26,7 @@ public class ZetterGalleryGameEvents {
         }
 
         if (event.getContainer() instanceof PaintingMerchantMenu) {
-            ((PaintingMerchantMenu) event.getContainer()).updateAuthorizationState();
+            ((PaintingMerchantMenu) event.getContainer()).getAuthController().startFlow();
         }
     }
 }

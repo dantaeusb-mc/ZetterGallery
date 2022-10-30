@@ -7,7 +7,6 @@ import me.dantaeusb.zettergallery.gallery.salesmanager.PlayerFeed;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryConnection;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
-import me.dantaeusb.zettergallery.network.http.GalleryException;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import me.dantaeusb.zettergallery.util.EventConsumer;
@@ -17,7 +16,6 @@ import net.minecraft.server.level.ServerPlayer;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -120,16 +118,13 @@ public class ConnectionManager {
      * to game after authorizing server, another call for this method
      * will be received and we'll be checking token access.
      *
-     * @todo: kinda weird that retry awaits for auth code
-     *
      * @param player
      */
-    public void authorizeServerPlayer(ServerPlayer player, BiConsumer<Boolean, Boolean> successConsumer, Consumer<String> retry, Consumer<GalleryError> errorConsumer) {
-        // @todo: check status here?
+    public void authenticateServerPlayer(ServerPlayer player, Consumer<PlayerToken> successConsumer, Consumer<GalleryError> errorConsumer) {
         if (this.status != ConnectionStatus.READY) {
             this.requestServerToken(
                     (token) -> {
-                        this.authorizeServerPlayer(player, successConsumer, retry, errorConsumer);
+                        this.authenticateServerPlayer(player, successConsumer, errorConsumer);
                     },
                     errorConsumer
             );
@@ -140,29 +135,26 @@ public class ConnectionManager {
         if (this.playerTokenStorage.hasPlayerToken(player) && this.playerTokenStorage.getPlayerToken(player).valid()) {
             // Might be valid but unauthorized
 
+            // @todo: [MID] No need to do that every time
             this.connection.checkPlayerToken(
                     this.playerTokenStorage.getPlayerTokenString(player),
                     (response) -> {
-                        successConsumer.accept(true, true);
+                        // @todo: [HIGH] Get player info
+
+                        successConsumer.accept(this.playerTokenStorage.getPlayerToken(player));
                     },
                     (error) -> {
                         error.setClientMessage("Unable to authorize");
 
-                        if (error.getCode() >= 400 && error.getCode() < 500) {
-                            retry.accept(this.playerTokenStorage.getPlayerToken(player).crossAuthCode.code);
-                        }
-
                         // @todo: [HIGH] Check that token is removed properly
                         this.playerTokenStorage.removePlayerToken(player);
-
+                        this.authenticateServerPlayer(player, successConsumer, errorConsumer);
                     }
             );
         } else {
             this.requestPlayerToken(
                     player,
-                    (response) -> {
-                        retry.accept(response.crossAuthCode.code);
-                    },
+                    successConsumer,
                     errorConsumer
             );
         }
@@ -239,12 +231,15 @@ public class ConnectionManager {
      * Feed
      */
 
-    public void requestOffers(ServerPlayer player, PaintingMerchantMenu paintingMerchantMenu, Consumer<List<PaintingMerchantOffer>> successConsumer, Consumer<GalleryError> errorConsumer) {
-        PaintingMerchantContainer container = paintingMerchantMenu.getContainer();
-
+    public void requestOffers(ServerPlayer player, PaintingMerchantContainer paintingMerchantContainer, Consumer<List<PaintingMerchantOffer>> successConsumer, Consumer<GalleryError> errorConsumer) {
         if (this.playerFeeds.containsKey(player.getUUID())) {
             PlayerFeed feed = this.playerFeeds.get(player.getUUID());
-            List<PaintingMerchantOffer> offers = this.getOffersFromFeed(this.cycleSeed, feed, paintingMerchantMenu.getMerchantId(), paintingMerchantMenu.getMerchantLevel());
+            List<PaintingMerchantOffer> offers = this.getOffersFromFeed(
+                    this.cycleSeed,
+                    feed,
+                    paintingMerchantContainer.getMenu().getMerchantId(),
+                    paintingMerchantContainer.getMenu().getMerchantLevel()
+            );
 
             successConsumer.accept(offers);
         } else {
@@ -256,7 +251,12 @@ public class ConnectionManager {
                         this.nextCycleEpoch = response.cycleInfo.endsAt.getTime();
 
                         PlayerFeed feed = this.createPlayerFeed(player, response);
-                        List<PaintingMerchantOffer> offers = this.getOffersFromFeed(this.cycleSeed, feed, paintingMerchantMenu.getMerchantId(), paintingMerchantMenu.getMerchantLevel());
+                        List<PaintingMerchantOffer> offers = this.getOffersFromFeed(
+                                this.cycleSeed,
+                                feed,
+                                paintingMerchantContainer.getMenu().getMerchantId(),
+                                paintingMerchantContainer.getMenu().getMerchantLevel()
+                        );
 
                         successConsumer.accept(offers);
                     },
@@ -341,6 +341,10 @@ public class ConnectionManager {
         );
     }
 
+    private void requestPlayerInfo(ServerPlayer player, Consumer<PlayerToken> tokenConsumer, Consumer<GalleryError> errorConsumer) {
+
+    }
+
     /**
      * Request token for current server, register it in Zetter Gallery
      * @param success
@@ -390,9 +394,11 @@ public class ConnectionManager {
                         return;
                     }
 
-                    this.errorMessage = "Cannot connect to Zetter Gallery. Please try again later.";
+                    this.errorMessage = "Cannot connect. Please try later.";
                     this.status = ConnectionStatus.ERROR_RETRY;
                     this.errorTimestamp = System.currentTimeMillis();
+
+                    error.setClientMessage(this.errorMessage);
 
                     errorConsumer.accept(error);
                 }

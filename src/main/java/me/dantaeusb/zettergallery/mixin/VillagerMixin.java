@@ -3,7 +3,6 @@ package me.dantaeusb.zettergallery.mixin;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.core.ZetterGalleryVillagers;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
-import me.dantaeusb.zettergallery.network.packet.SGalleryAuthorizationRequestPacket;
 import me.dantaeusb.zettergallery.network.packet.SGalleryMerchantInfoPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;

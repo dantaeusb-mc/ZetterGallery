@@ -16,20 +16,12 @@ import java.util.function.Supplier;
  * @todo: Is that okay that we don't have classic handler here?
  */
 public class SGalleryMerchantInfoPacket {
-    private final UUID merchantId;
-    private final int merchantLevel;
+    public final UUID merchantId;
+    public final int merchantLevel;
 
     public SGalleryMerchantInfoPacket(UUID merchantId, int merchantLevel) {
         this.merchantId = merchantId;
         this.merchantLevel = merchantLevel;
-    }
-
-    public UUID getMerchantId() {
-        return this.merchantId;
-    }
-
-    public int getMerchantLevel() {
-        return this.merchantLevel;
     }
 
     /**

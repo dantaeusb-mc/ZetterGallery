@@ -47,28 +47,11 @@ public class PaintingPreviewWidget extends AbstractWidget implements Widget, Gui
         this.renderOfferPainting(matrixStack, mouseX, mouseY, partialTicks);
     }
 
-    private static final int COUNT_TEXT_YPOS = 2;
-
-    private void renderOffersCount(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
-
-        if (offer.isSaleOffer()) {
-            drawCenteredString(matrixStack, this.font, Component.translatable("container.zettergallery.merchant.sell"), this.x + this.width / 2, this.y + COUNT_TEXT_YPOS, Color.white.getRGB());
-        } else {
-            int currentOffer = this.parentScreen.getCurrentOfferIndex() + 1;
-            int offersCount = this.parentScreen.getOffersCount();
-
-            drawCenteredString(matrixStack, this.font, currentOffer + "/" + offersCount, this.x + this.width / 2, this.y + COUNT_TEXT_YPOS, Color.white.getRGB());
-        }
-    }
-
     private void renderOfferPainting(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        final int PAINTING_PREVIEW_OFFSET_X = 14;
-        final int PAINTING_PREVIEW_OFFSET_Y = 12;
-
         PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
+
         if (offer == null) {
-            // @todo: show loading
+            // @todo: show loading if ready
             return;
         }
 
@@ -84,8 +67,8 @@ public class PaintingPreviewWidget extends AbstractWidget implements Widget, Gui
             final float scaledHeight = offerPaintingData.getHeight() * scale;
 
             float aspectRatio = scaledWidth / scaledHeight;
-            int offsetX = PAINTING_PREVIEW_OFFSET_X;
-            int offsetY = PAINTING_PREVIEW_OFFSET_Y;
+            int offsetX = 0;
+            int offsetY = 0;
 
             if (aspectRatio > 1.0F) {
                 offsetY += Math.round((64.0F - scaledHeight) / 2.0F);
@@ -98,13 +81,13 @@ public class PaintingPreviewWidget extends AbstractWidget implements Widget, Gui
             matrixStack.scale(scale, scale, 1.0F);
 
             MultiBufferSource.BufferSource renderBuffers = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
-            // @todo: make code with uuid
+            // @todo: [LOW] make code with uuid (wtf does this mean)
             CanvasRenderer.getInstance().renderCanvas(matrixStack, renderBuffers, canvasCode, offerPaintingData, 0xF000F0);
             renderBuffers.endBatch();
 
             matrixStack.popPose();
         } else {
-            // @todo: different type for zetter painting
+            // @todo: [LOW] different type for Zetter Gallery painting
             AbstractCanvasData.Type type = offer.isSaleOffer() ? AbstractCanvasData.Type.PAINTING : AbstractCanvasData.Type.PAINTING;
             CanvasRenderer.getInstance().queueCanvasTextureUpdate(type, canvasCode);
         }

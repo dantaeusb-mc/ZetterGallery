@@ -32,6 +32,10 @@ public class ZetterGalleryModEvents {
             return;
         }
 
+        if (!(event.getCanvasData() instanceof PaintingData)) {
+            return;
+        }
+
         PaintingMerchantMenu menu = (PaintingMerchantMenu) Minecraft.getInstance().player.containerMenu;
         menu.getContainer().updateCurrentOfferPaintingData(event.getCanvasCode(), (PaintingData) event.getCanvasData());
     }

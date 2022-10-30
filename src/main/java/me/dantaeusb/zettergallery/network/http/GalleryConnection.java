@@ -4,6 +4,7 @@ import com.google.gson.JsonSyntaxException;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import com.google.gson.Gson;
+import me.dantaeusb.zettergallery.core.Helper;
 import me.dantaeusb.zettergallery.gallery.PlayerTokenStorage;
 import me.dantaeusb.zettergallery.gallery.ServerInfo;
 import me.dantaeusb.zettergallery.network.http.stub.*;
@@ -26,7 +27,6 @@ import java.util.function.Consumer;
  */
 public class GalleryConnection {
     private static final String API_VERSION = "v1";
-    private static final String BASE_URI = "https://api.zetter.gallery/";
     private static final String SERVERS_ENDPOINT = "servers";
     private static final String TOKEN_ENDPOINT = "auth/token";
     private static final String CHECK_ENDPOINT = "auth/token/check";
@@ -363,8 +363,11 @@ public class GalleryConnection {
             query = "?" + String.join("&", queryElements);
         }
 
-
-        return new URL(BASE_URI + API_VERSION + "/" + endpoint + query);
+        if (ZetterGallery.DEBUG_LOCALHOST) {
+            return new URL(Helper.LOCALHOST_API + API_VERSION + "/" + endpoint + query);
+        } else {
+            return new URL(Helper.GALLERY_API + API_VERSION + "/" + endpoint + query);
+        }
     }
 
     protected static <T> T makeRequest(URL uri, String method, Class<T> classOfT, @Nullable String token, @Nullable Object input) throws IOException, GalleryException {

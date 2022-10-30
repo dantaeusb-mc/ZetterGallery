@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.UUID;
 
 public class PlayerToken extends Token {
-    public @Nullable UUID authorizedAs;
+    public @Nullable PlayerInfo authorizedAs;
     public CrossAuthCode crossAuthCode;
 
     PlayerToken(String token, Date issuedAt, Date notAfter) {
@@ -17,7 +17,7 @@ public class PlayerToken extends Token {
     }
 
     @Nullable
-    public UUID getAuthorizedAs() {
+    public PlayerInfo getAuthorizedAs() {
         return this.authorizedAs;
     }
 
@@ -29,15 +29,9 @@ public class PlayerToken extends Token {
         return this.crossAuthCode;
     }
 
-    class CrossAuthCode {
-        public String code;
-        public Date issued;
-        public Date notAfter;
+    public record PlayerInfo(UUID uuid, String nickname) {
+    }
 
-        public CrossAuthCode(String code, Date issued, Date notAfter) {
-            this.code = code;
-            this.issued = issued;
-            this.notAfter = notAfter;
-        }
+    public record CrossAuthCode(String code, Date issued, Date notAfter) {
     }
 }
