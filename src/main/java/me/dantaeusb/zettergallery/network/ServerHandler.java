@@ -46,10 +46,10 @@ public class ServerHandler {
     }
 
     public static void processGalleryProceedOffer(final CGalleryProceedOfferPacket packetIn, ServerPlayer sendingPlayer) {
-        if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
+        /*if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
             // @todo: here we send request, but not yet proceed on container
             PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)sendingPlayer.containerMenu;
-            paintingMerchantMenu.getContainer().startCheckout();
-        }
+            paintingMerchantMenu.getContainer().checkout();
+        }*/
     }
 }

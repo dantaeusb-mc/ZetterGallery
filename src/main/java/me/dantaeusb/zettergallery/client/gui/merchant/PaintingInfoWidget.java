@@ -157,6 +157,11 @@ public class PaintingInfoWidget extends AbstractWidget implements Widget {
         return this.parentScreen.getCurrentOffer().isLoading();
     }
 
+    /**
+     * Show some kind of indicator, but generally item in output slot will
+     * be enough of an indicator
+     * @return
+     */
     public boolean canProceed() {
         if (this.parentScreen.getCurrentOffer() == null) {
             return false;
@@ -167,13 +172,6 @@ public class PaintingInfoWidget extends AbstractWidget implements Widget {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (this.canProceed()) {
-            if (isPointInRegion(0, 0, OFFER_BUTTON_WIDTH, OFFER_BUTTON_HEIGHT, mouseX, mouseY)) {
-                this.playDownSound(Minecraft.getInstance().getSoundManager());
-                this.parentScreen.proceed();
-            }
-        }
-
         return false;
     }
 

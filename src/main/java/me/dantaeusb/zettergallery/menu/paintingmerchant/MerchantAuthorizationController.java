@@ -1,5 +1,6 @@
 package me.dantaeusb.zettergallery.menu.paintingmerchant;
 
+import me.dantaeusb.zetter.item.PaintingItem;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.gallery.AuthorizationCode;
@@ -14,6 +15,7 @@ import me.dantaeusb.zettergallery.network.packet.SGalleryAuthorizationCodeRespon
 import me.dantaeusb.zettergallery.network.packet.SGalleryAuthenticationPlayerResponsePacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
@@ -73,8 +75,11 @@ public class MerchantAuthorizationController {
         return null;
     }
 
-    public boolean canSell() {
-        return this.isAuthorized() && this.canSell;
+    public boolean canSell(ItemStack painting) {
+        return
+                this.isAuthorized()
+                && this.canSell
+                && PaintingItem.getPaintingCode(painting) != null;
     }
 
     /**

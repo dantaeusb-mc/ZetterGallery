@@ -8,11 +8,9 @@ import me.dantaeusb.zettergallery.client.gui.merchant.PaintingPreviewWidget;
 import me.dantaeusb.zettergallery.client.gui.merchant.AuthWidget;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.gallery.AuthorizationCode;
-import me.dantaeusb.zettergallery.gallery.PlayerToken;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.core.Helper;
 import me.dantaeusb.zettergallery.menu.paintingmerchant.MerchantAuthorizationController;
-import me.dantaeusb.zettergallery.network.http.stub.ServerResponse;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -333,10 +331,6 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
 
     private void updateCurrentOfferIndex(int newOffersIndex) {
         this.menu.updateCurrentOfferIndex(newOffersIndex);
-    }
-
-    public void proceed() {
-        this.menu.getContainer().startCheckout();
     }
 
     public int getOffersCount() {

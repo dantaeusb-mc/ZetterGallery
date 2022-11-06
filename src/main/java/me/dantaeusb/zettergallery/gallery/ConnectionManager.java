@@ -227,8 +227,9 @@ public class ConnectionManager {
                         },
                         error -> {
                             // @todo: [MED] When something went wrong, how do we reset the code?
+                            ZetterGallery.LOG.error(error.getMessage());
 
-                            errorConsumer.accept(error);
+                            successConsumer.accept(playerToken);
                         }
                 );
             } else {

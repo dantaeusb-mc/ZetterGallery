@@ -135,6 +135,10 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
 
     }
 
+    public void purchase(Player player, ItemStack stack) {
+        this.container.checkout(stack);
+    }
+
     /**
      * Determines whether supplied player can use this container
      */
@@ -211,11 +215,6 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
 
     public void updateCurrentOfferIndex(int index) {
         this.container.setCurrentOfferIndex(index);
-
-        if (this.merchant.getTradingPlayer().getLevel().isClientSide()) {
-            CGallerySelectOfferPacket selectOfferPacket = new CGallerySelectOfferPacket(index);
-            ZetterGalleryNetwork.simpleChannel.sendToServer(selectOfferPacket);
-        }
     }
 
     public int getCurrentOfferIndex() {
@@ -301,7 +300,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
                 return true;
             }
 
-            if (stack.getItem() == ZetterItems.PAINTING.get() && PaintingMerchantMenu.this.getAuthController().canSell()) {
+            if (stack.getItem() == ZetterItems.PAINTING.get() && PaintingMerchantMenu.this.getAuthController().canSell(stack)) {
                 return true;
             }
 
@@ -332,7 +331,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
          */
         public void onTake(Player player, ItemStack stack) {
             super.onTake(player, stack);
-            //PaintingMerchantMenu.this.takeOutput(player, stack);
+            PaintingMerchantMenu.this.purchase(player, stack);
         }
     }
 }

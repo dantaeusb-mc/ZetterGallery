@@ -166,6 +166,8 @@ public class GalleryConnection {
     /**
      * Specific server player token. Allows to connect player, server player and client altogether
      *
+     * @todo: [HIGH] Response is different type
+     *
      * @param clientInfo
      * @param successConsumer
      * @param errorConsumer
@@ -191,7 +193,7 @@ public class GalleryConnection {
 
                 executor.submitAsync(() -> successConsumer.accept(response));
             } catch (GalleryException e) {
-                ZetterGallery.LOG.error(String.format("Unable to exchange token for server, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
+                ZetterGallery.LOG.error(String.format("Unable to exchange token for server player, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
 
                 executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
             } catch (Exception e) {

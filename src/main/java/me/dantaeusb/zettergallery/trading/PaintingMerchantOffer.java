@@ -103,20 +103,26 @@ public class PaintingMerchantOffer {
         return this.message == null ? Optional.empty() : Optional.of(this.message);
     }
 
-    public ItemStack getOfferResult(Level level) {
+    public ItemStack getOfferResult() {
         if (this.saleOffer) {
             return new ItemStack(Items.EMERALD, this.price);
         } else {
             ItemStack painting = new ItemStack(ZetterItems.PAINTING.get());
 
-            ICanvasTracker canvasTracker = Helper.getWorldCanvasTracker(level);
-            canvasTracker.registerCanvasData(this.canvasCode, this.paintingData);
-            // @todo: this spawns event that will replace offer
-
-            PaintingItem.storePaintingData(painting, this.canvasCode, this.paintingData, 1);
-
             return painting;
         }
+    }
+
+    public void writeOfferResultData(Level level, ItemStack painting) {
+        if (!painting.is(ZetterItems.PAINTING.get())) {
+            throw new IllegalStateException("Can only write data to painting");
+        }
+
+        ICanvasTracker canvasTracker = Helper.getWorldCanvasTracker(level);
+        canvasTracker.registerCanvasData(this.canvasCode, this.paintingData);
+        // @todo: this spawns event that will replace offer
+
+        PaintingItem.storePaintingData(painting, this.canvasCode, this.paintingData, 1);
     }
 
     public boolean isLoading() {
