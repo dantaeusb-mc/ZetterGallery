@@ -14,6 +14,7 @@ public class ZetterGalleryServerEvents {
     @SuppressWarnings("unused")
     public static void serverStarted(final ServerStartedEvent event)
     {
+        ConnectionManager.initialize(event.getServer().overworld());
         ConnectionManager.getInstance().handleServerStart(event.getServer());
     }
 
@@ -22,5 +23,6 @@ public class ZetterGalleryServerEvents {
     public static void serverStopped(final ServerStoppingEvent event)
     {
         ConnectionManager.getInstance().handleServerStop(event.getServer());
+        ConnectionManager.close();
     }
 }

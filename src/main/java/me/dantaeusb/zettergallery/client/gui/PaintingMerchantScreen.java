@@ -7,10 +7,12 @@ import me.dantaeusb.zettergallery.client.gui.merchant.PaginatorWidget;
 import me.dantaeusb.zettergallery.client.gui.merchant.PaintingPreviewWidget;
 import me.dantaeusb.zettergallery.client.gui.merchant.AuthWidget;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
+import me.dantaeusb.zettergallery.gallery.AuthorizationCode;
 import me.dantaeusb.zettergallery.gallery.PlayerToken;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.core.Helper;
 import me.dantaeusb.zettergallery.menu.paintingmerchant.MerchantAuthorizationController;
+import me.dantaeusb.zettergallery.network.http.stub.ServerResponse;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -97,10 +99,10 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
 
     public void openAuthenticationLink() {
         try {
-            PlayerToken.CrossAuthCode token = this.menu.getAuthController().getCrossAuthorizationCode();
+            AuthorizationCode authorizationCode = this.menu.getAuthController().getAuthorizationCode();
 
-            if (token == null) {
-                throw new IllegalStateException("Unable to start client authentication without cross-auth token");
+            if (authorizationCode == null) {
+                throw new IllegalStateException("Unable to start client authentication without cross-auth authorizationCode");
             }
 
             URI uri;
@@ -110,7 +112,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
                 uri = new URI(Helper.GALLERY_FRONTEND + Helper.GALLERY_AUTH_SERVER_ENDPOINT);
             }
 
-            uri = addUriParam(uri, "code", this.menu.getAuthController().getCrossAuthorizationCode().code());
+            uri = addUriParam(uri, "code", this.menu.getAuthController().getAuthorizationCode().code);
 
             Util.getPlatform().openUri(uri);
 

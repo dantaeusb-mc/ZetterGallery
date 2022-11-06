@@ -2,23 +2,27 @@ package me.dantaeusb.zettergallery.menu.paintingmerchant;
 
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
+import me.dantaeusb.zettergallery.gallery.AuthorizationCode;
 import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.gallery.PlayerToken;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
+import me.dantaeusb.zettergallery.network.http.stub.ServerResponse;
 import me.dantaeusb.zettergallery.network.packet.CGalleryAuthorizationCheckPacket;
-import me.dantaeusb.zettergallery.network.packet.SGalleryAuthenticationCodeResponsePacket;
+import me.dantaeusb.zettergallery.network.packet.SGalleryAuthErrorPacket;
+import me.dantaeusb.zettergallery.network.packet.SGalleryAuthorizationCodeResponsePacket;
 import me.dantaeusb.zettergallery.network.packet.SGalleryAuthenticationPlayerResponsePacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
+import java.util.Optional;
 
 public class MerchantAuthorizationController {
     // We do not share token info because token only belongs to one client (Minecraft server)
     private @Nullable PlayerToken.PlayerInfo playerInfo;
-    private @Nullable PlayerToken.CrossAuthCode crossAuthorizationCode;
+    private @Nullable AuthorizationCode authorizationCode;
 
     private boolean canSell = true;
 
@@ -45,8 +49,8 @@ public class MerchantAuthorizationController {
         return this.playerInfo;
     }
 
-    public @Nullable PlayerToken.CrossAuthCode getCrossAuthorizationCode() {
-        return this.crossAuthorizationCode;
+    public @Nullable AuthorizationCode getAuthorizationCode() {
+        return this.authorizationCode;
     }
 
     public PlayerAuthorizationState getState() {
@@ -95,8 +99,8 @@ public class MerchantAuthorizationController {
 
         if (playerToken.isAuthorized()) {
             this.handleAuthorized(playerToken.getAuthorizedAs());
-        } else {
-            this.handleUnauthorized(playerToken.getCrossAuthCode());
+        } else if (playerToken.getAuthorizationCode() != null) {
+            this.handleUnauthorized(playerToken.getAuthorizationCode());
         }
 
         // Ask to load offers only if we were waiting for server auth
@@ -115,6 +119,7 @@ public class MerchantAuthorizationController {
         this.state = this.state.authorized();
         this.assertTargetState(PlayerAuthorizationState.LOGGED_IN);
 
+        this.authorizationCode = null;
         this.playerInfo = authorizedAs;
 
         if (!this.player.getLevel().isClientSide()) {
@@ -126,16 +131,16 @@ public class MerchantAuthorizationController {
     /**
      * If player is not authorized, let client player
      * know the code to cross-authorize server token
-     * @param crossAuthorizationCode
+     * @param authorizationCodeInfo
      */
-    public void handleUnauthorized(PlayerToken.CrossAuthCode crossAuthorizationCode) {
+    public void handleUnauthorized(AuthorizationCode authorizationCodeInfo) {
         this.state = this.state.unauthorized();
         this.assertTargetState(PlayerAuthorizationState.CLIENT_AUTHORIZATION);
 
-        this.crossAuthorizationCode = crossAuthorizationCode;
+        this.authorizationCode = authorizationCodeInfo;
 
         if (!this.player.getLevel().isClientSide()) {
-            SGalleryAuthenticationCodeResponsePacket authorizationRequestPacket = new SGalleryAuthenticationCodeResponsePacket(crossAuthorizationCode);
+            SGalleryAuthorizationCodeResponsePacket authorizationRequestPacket = new SGalleryAuthorizationCodeResponsePacket(authorizationCodeInfo);
             ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), authorizationRequestPacket);
         }
     }
@@ -166,9 +171,15 @@ public class MerchantAuthorizationController {
         this.error = error;
         this.state = this.state.error();
 
-        // Share error with offers
+        // Share error with offers if it happened on server auth stage
         if (previousState == PlayerAuthorizationState.SERVER_AUTHENTICATION) {
             this.menu.getContainer().handleError(this.error);
+        }
+
+        if (!this.player.getLevel().isClientSide()) {
+            // Send message to server, code in else section will be called
+            SGalleryAuthErrorPacket selectOfferPacket = new SGalleryAuthErrorPacket(this.error);
+            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), selectOfferPacket);
         }
     }
 

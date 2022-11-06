@@ -5,10 +5,12 @@ import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import com.google.gson.Gson;
 import me.dantaeusb.zettergallery.core.Helper;
+import me.dantaeusb.zettergallery.gallery.GalleryServerCapability;
 import me.dantaeusb.zettergallery.gallery.PlayerTokenStorage;
 import me.dantaeusb.zettergallery.gallery.ServerInfo;
 import me.dantaeusb.zettergallery.network.http.stub.*;
 import net.minecraft.util.thread.BlockableEventLoop;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.util.LogicalSidedProvider;
 import net.minecraftforge.fml.LogicalSide;
 
@@ -22,15 +24,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
-/**
- * @todo: make singleton
- */
 public class GalleryConnection {
     private static final String API_VERSION = "v1";
+    // Game Server is a specific type of oAuth2 client
     private static final String SERVERS_ENDPOINT = "servers";
+    private static final String SERVERS_PLAYERS_ENDPOINT = "servers/players";
+    private static final String SERVERS_PLAYERS_TOKEN_ENDPOINT = "servers/players/token";
+    private static final String CLIENTS_ENDPOINT = "clients";
     private static final String TOKEN_ENDPOINT = "auth/token";
     private static final String CHECK_ENDPOINT = "auth/token/check";
-    private static final String DROP_ENDPOINT = "auth/drop";
+    private static final String REVOKE_ENDPOINT = "auth/token/revoke";
     private static final String PAINTINGS_ENDPOINT = "paintings";
     private static final String PAINTINGS_PURCHASES_ENDPOINT = "sales";
     private static final String PAINTINGS_IMPRESSION_ENDPOINT = "impressions";
@@ -46,7 +49,7 @@ public class GalleryConnection {
         this.poolExecutor = Executors.newSingleThreadExecutor();
     }
 
-    public void registerServer(ServerInfo serverInfo, Consumer<ServerResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void createServerClient(ServerInfo serverInfo, Consumer<ServerResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -54,25 +57,25 @@ public class GalleryConnection {
             BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
-                final RegisterRequest request = new RegisterRequest(serverInfo.singleplayer, serverInfo.title, serverInfo.motd, serverInfo.galleryVersion);
+                final ServerRegisterRequest request = new ServerRegisterRequest(serverInfo.singleplayer, serverInfo.title, serverInfo.motd, serverInfo.gameVersion, serverInfo.galleryVersion);
                 URL authUri = GalleryConnection.getUri(SERVERS_ENDPOINT);
 
-                ServerResponse response = makeRequest(authUri, "POST", ServerResponse.class, (String) null, request);
+                ServerResponse response = makeRequest(authUri, "POST", ServerResponse.class, null, request);
 
                 executor.submitAsync(() -> successConsumer.accept(response));
             } catch (GalleryException e) {
-                ZetterGallery.LOG.error(String.format("Unable to request token for server, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
+                ZetterGallery.LOG.error(String.format("Unable to register server client app, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
 
                 executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
             } catch (Exception e) {
-                ZetterGallery.LOG.error(String.format("Unable to request token for server: %s", e.getMessage()));
+                ZetterGallery.LOG.error(String.format("Unable to register server client app: %s", e.getMessage()));
 
                 executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
             }
         });
     }
 
-    public void unregisterServer(String serverToken, UUID serverUuid, Consumer<GenericMessageResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void requestToken(GalleryServerCapability.ClientInfo clientInfo, Consumer<AuthTokenResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -80,7 +83,38 @@ public class GalleryConnection {
             BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
-                URL authUri = GalleryConnection.getUri(SERVERS_ENDPOINT + "/" + serverUuid.toString());
+                final HashMap<String, String> query = new HashMap<>();
+                query.put("grantType", "client_credentials");
+                query.put("clientId", clientInfo.id);
+                query.put("clientSecret", clientInfo.secret);
+                query.put("scope", "server");
+                query.put("requestRefresh", "true");
+                URL authUri = GalleryConnection.getUri(TOKEN_ENDPOINT, query);
+
+                AuthTokenResponse response = makeRequest(authUri, "GET", AuthTokenResponse.class, null, null);
+
+                executor.submitAsync(() -> successConsumer.accept(response));
+            } catch (GalleryException e) {
+                ZetterGallery.LOG.error(String.format("Unable to exchange token for server, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
+            } catch (Exception e) {
+                ZetterGallery.LOG.error(String.format("Unable to exchange token for server: %s", e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
+            }
+        });
+    }
+
+    public void unregisterServer(String serverToken, Consumer<GenericMessageResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
+        this.poolExecutor.execute(() -> {
+            /**
+             * @link {#NetworkEvent.enqueueWork}
+             */
+            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+
+            try {
+                URL authUri = GalleryConnection.getUri(REVOKE_ENDPOINT);
 
                 GenericMessageResponse response = makeRequest(authUri, "DELETE", GenericMessageResponse.class, serverToken, null);
 
@@ -102,10 +136,8 @@ public class GalleryConnection {
      * cross-auth code that can be used by player to
      * authorize server to perform tasks on player's
      * behalf
-     *
-     *
      */
-    public void requestPlayerToken(@Nullable String token, Consumer<AuthTokenResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void registerPlayer(String token, Player serverPlayer, Consumer<ServerPlayerResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -113,12 +145,10 @@ public class GalleryConnection {
             BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
-                final HashMap<String, String> query = new HashMap<>();
-                query.put("crossAuthorizationRole", TokenRequest.CrossAuthorizationRole.PLAYER_SERVER.toString());
+                final ServerPlayerRegisterRequest request = new ServerPlayerRegisterRequest(serverPlayer.getUUID(), serverPlayer.getName().getString());
+                URL authUri = GalleryConnection.getUri(SERVERS_PLAYERS_ENDPOINT);
 
-                URL authUri = GalleryConnection.getUri(TOKEN_ENDPOINT, query);
-                // new TokenRequest(TokenRequest.CrossAuthorizationRole.PLAYER_SERVER) was used here, but we just add params to URL
-                AuthTokenResponse response = makeRequest(authUri, "GET", AuthTokenResponse.class, token, null);
+                ServerPlayerResponse response = makeRequest(authUri, "POST", ServerPlayerResponse.class, token, request);
 
                 executor.submitAsync(() -> successConsumer.accept(response));
             } catch (GalleryException e) {
@@ -127,6 +157,45 @@ public class GalleryConnection {
                 executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
             } catch (Exception e) {
                 ZetterGallery.LOG.error(String.format("Unable to request player token: %s", e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
+            }
+        });
+    }
+
+    /**
+     * Specific server player token. Allows to connect player, server player and client altogether
+     *
+     * @param clientInfo
+     * @param successConsumer
+     * @param errorConsumer
+     */
+    public void requestServerPlayerToken(GalleryServerCapability.ClientInfo clientInfo, String currentToken, String authorizationCode, Consumer<AuthTokenResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
+        this.poolExecutor.execute(() -> {
+            /**
+             * @link {#NetworkEvent.enqueueWork}
+             */
+            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+
+            try {
+                final HashMap<String, String> query = new HashMap<>();
+                query.put("grantType", "authorization_code");
+                query.put("clientId", clientInfo.id);
+                query.put("clientSecret", clientInfo.secret);
+                query.put("authorizationCode", authorizationCode);
+                query.put("scope", "player_server");
+                query.put("requestRefresh", "true");
+                URL authUri = GalleryConnection.getUri(SERVERS_PLAYERS_TOKEN_ENDPOINT, query);
+
+                AuthTokenResponse response = makeRequest(authUri, "GET", AuthTokenResponse.class, currentToken, null);
+
+                executor.submitAsync(() -> successConsumer.accept(response));
+            } catch (GalleryException e) {
+                ZetterGallery.LOG.error(String.format("Unable to exchange token for server, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
+            } catch (Exception e) {
+                ZetterGallery.LOG.error(String.format("Unable to exchange token for server player: %s", e.getMessage()));
 
                 executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
             }
@@ -165,8 +234,9 @@ public class GalleryConnection {
 
     /**
      * Deactivates player's token. Usually
-     * happens on player log-out event.
+     * happens 10 minutes later after player log-out event.
      *
+     * @todo: [MED] Call this after player log out and timeout
      */
     public void dropPlayerToken(String token, Consumer<GenericMessageResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
@@ -176,7 +246,7 @@ public class GalleryConnection {
             BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
-                final URL checkUri = GalleryConnection.getUri(DROP_ENDPOINT);
+                final URL checkUri = GalleryConnection.getUri(REVOKE_ENDPOINT);
                 GenericMessageResponse response = makeRequest(checkUri, "GET", GenericMessageResponse.class, token, null);
 
                 executor.submitAsync(() -> successConsumer.accept(response));

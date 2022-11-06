@@ -13,11 +13,11 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processGalleryPlayerNotAuthorized(final SGalleryAuthenticationCodeResponsePacket packetIn, Level world) {
+    public static void processGalleryPlayerNotAuthorized(final SGalleryAuthorizationCodeResponsePacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
-            ((PaintingMerchantMenu) player.containerMenu).getAuthController().handleUnauthorized(packetIn.crossAuthCode);
+            ((PaintingMerchantMenu) player.containerMenu).getAuthController().handleUnauthorized(packetIn.authorizationCode);
         }
     }
 

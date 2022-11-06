@@ -6,14 +6,14 @@ import java.util.UUID;
 
 public class PlayerToken extends Token {
     public @Nullable PlayerInfo authorizedAs;
-    public CrossAuthCode crossAuthCode;
+    public @Nullable AuthorizationCode authorizationCode;
 
     PlayerToken(String token, Date issuedAt, Date notAfter) {
         super(token, issuedAt, notAfter);
     }
 
-    public void setCrossAuthCode(String code, Date issued, Date notAfter) {
-        this.crossAuthCode = new CrossAuthCode(code, issued, notAfter);
+    public void setAuthorizedAs(PlayerInfo authorizedAs) {
+        this.authorizedAs = authorizedAs;
     }
 
     @Nullable
@@ -25,13 +25,15 @@ public class PlayerToken extends Token {
         return this.authorizedAs != null;
     }
 
-    public CrossAuthCode getCrossAuthCode() {
-        return this.crossAuthCode;
+    public void setAuthorizationCode(AuthorizationCode authorizationCode) {
+        this.authorizationCode = authorizationCode;
+    }
+
+    @Nullable
+    public AuthorizationCode getAuthorizationCode() {
+        return this.authorizationCode;
     }
 
     public record PlayerInfo(UUID uuid, String nickname) {
-    }
-
-    public record CrossAuthCode(String code, Date issued, Date notAfter) {
     }
 }

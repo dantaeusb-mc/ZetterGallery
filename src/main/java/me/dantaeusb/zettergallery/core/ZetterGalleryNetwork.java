@@ -30,8 +30,8 @@ public class ZetterGalleryNetwork {
     public static final byte GALLERY_PROCEED_OFFER = 57;
     public static final byte GALLERY_MERCHANT_INFO = 58;
     public static final byte GALLERY_OFFERS_ERROR = 60;
-    public static final byte GALLERY_AUTH_ERROR = 62;
     public static final byte GALLERY_OFFER_STATE = 61;
+    public static final byte GALLERY_AUTH_ERROR = 62;
 
     @SubscribeEvent
     @SuppressWarnings("unused")
@@ -48,9 +48,9 @@ public class ZetterGalleryNetwork {
                 CGalleryAuthorizationCheckPacket::handle,
                 Optional.of(PLAY_TO_SERVER));
 
-        simpleChannel.registerMessage(GALLERY_UNAUTHORIZED_RESPONSE, SGalleryAuthenticationCodeResponsePacket.class,
-                SGalleryAuthenticationCodeResponsePacket::writePacketData, SGalleryAuthenticationCodeResponsePacket::readPacketData,
-                SGalleryAuthenticationCodeResponsePacket::handle,
+        simpleChannel.registerMessage(GALLERY_UNAUTHORIZED_RESPONSE, SGalleryAuthorizationCodeResponsePacket.class,
+                SGalleryAuthorizationCodeResponsePacket::writePacketData, SGalleryAuthorizationCodeResponsePacket::readPacketData,
+                SGalleryAuthorizationCodeResponsePacket::handle,
                 Optional.of(PLAY_TO_CLIENT));
 
         simpleChannel.registerMessage(GALLERY_AUTHORIZED_RESPONSE, SGalleryAuthenticationPlayerResponsePacket.class,

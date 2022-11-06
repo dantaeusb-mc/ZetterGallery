@@ -1,32 +1,30 @@
 package me.dantaeusb.zettergallery.network.http.stub;
 
+import me.dantaeusb.zettergallery.gallery.Token;
+
 import javax.annotation.Nullable;
 import java.util.Date;
 
-public class AuthTokenResponse {
-    public String token;
-    public Date issued;
-    public Date notAfter;
+public class AuthTokenResponse extends Token {
     public String type;
 
     @Nullable
-    public CrossAuthorization crossAuthorizationCode;
+    public RefreshToken refreshToken;
 
     public AuthTokenResponse(String token, Date issued, Date notAfter, String type) {
-        this.token = token;
-        this.issued = issued;
-        this.notAfter = notAfter;
+        super(token, issued, notAfter);
+
         this.type = type;
     }
 
-    public static class CrossAuthorization {
-        public String code;
-        public Date issued;
+    public static class RefreshToken {
+        public String token;
+        public Date issuedAt;
         public Date notAfter;
 
-        public CrossAuthorization(String code, Date issued, Date notAfter) {
-            this.code = code;
-            this.issued = issued;
+        public RefreshToken(String token, Date issuedAt, Date notAfter) {
+            this.token = token;
+            this.issuedAt = issuedAt;
             this.notAfter = notAfter;
         }
     }

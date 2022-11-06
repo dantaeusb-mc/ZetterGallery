@@ -2,9 +2,10 @@ package me.dantaeusb.zettergallery.gallery;
 
 import me.dantaeusb.zetter.Zetter;
 import me.dantaeusb.zetter.storage.PaintingData;
+import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
+import me.dantaeusb.zettergallery.core.Helper;
 import me.dantaeusb.zettergallery.gallery.salesmanager.PlayerFeed;
-import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryConnection;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
@@ -12,7 +13,9 @@ import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import me.dantaeusb.zettergallery.util.EventConsumer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -21,20 +24,22 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * This siтgleton is responsible for Gallery interaction
+ * This singleton is responsible for Gallery interaction
  * on behalf of a server.
  * <p>
  * Deferred server registration
  */
 public class ConnectionManager {
-    private static ConnectionManager instance;
+    private static @Nullable ConnectionManager instance;
 
     private final GalleryConnection connection;
     private final PlayerTokenStorage playerTokenStorage = PlayerTokenStorage.getInstance();
 
+    private Level overworld;
     private ServerInfo serverInfo;
 
     private Token serverToken;
+    private Token refreshToken;
     private UUID serverUuid;
 
     private ConnectionStatus status = ConnectionStatus.WAITING;
@@ -50,19 +55,27 @@ public class ConnectionManager {
     private long nextCycleEpoch;
     private String cycleSeed;
 
-    private ConnectionManager() {
+    private ConnectionManager(Level overworld) {
+        this.overworld = overworld;
         this.connection = new GalleryConnection();
-        this.serverInfo = ServerInfo.createSingleplayerServer();
 
         instance = this;
     }
 
     public static ConnectionManager getInstance() {
         if (ConnectionManager.instance == null) {
-            ConnectionManager.instance = new ConnectionManager();
+            throw new IllegalStateException("Connection Manager is not ready, no client app capability in the world");
         }
 
         return instance;
+    }
+
+    public static void initialize(Level overworld) {
+        ConnectionManager.instance = new ConnectionManager(overworld);
+    }
+
+    public static void close() {
+        ConnectionManager.instance = null;
     }
 
     /**
@@ -82,7 +95,11 @@ public class ConnectionManager {
     }
 
     public void handleServerStart(MinecraftServer server) {
-        this.serverInfo = ServerInfo.createMultiplayerServer("%servername%", server.getMotd());
+        if (server.isDedicatedServer()) {
+            this.serverInfo = ServerInfo.createMultiplayerServer(server.getLocalIp() + ":" + server.getPort(), server.getMotd(), server.getServerVersion());
+        } else {
+            this.serverInfo = ServerInfo.createSingleplayerServer(server.getServerVersion());
+        }
     }
 
     public void handleServerStop(MinecraftServer server) {
@@ -103,12 +120,44 @@ public class ConnectionManager {
         WAITING,
         READY,
         ERROR,
-        ERROR_RETRY,
+        UNRECOVERABLE_ERROR,
     }
 
     /*
      * Player
      */
+
+    /**
+     * Request auth code for particular player for this server
+     * @param player
+     * @param tokenConsumer
+     * @param errorConsumer
+     */
+    private void registerServerPlayer(ServerPlayer player, Consumer<PlayerToken> tokenConsumer, Consumer<GalleryError> errorConsumer) {
+        GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
+
+        this.connection.registerPlayer(
+                this.serverToken.token,
+                player,
+                (response) -> {
+                    PlayerToken playerReservedToken = new PlayerToken(
+                            response.token.token,
+                            response.token.issuedAt,
+                            response.token.notAfter
+                    );
+
+                    if (response.poolingAuthorizationCode != null) {
+                        playerReservedToken.setAuthorizationCode(response.poolingAuthorizationCode);
+                    }
+
+                    // @todo: [HIGH] Save authorization code
+                    this.playerTokenStorage.setPlayerToken(player, playerReservedToken);
+
+                    tokenConsumer.accept(playerReservedToken);
+                },
+                errorConsumer
+        );
+    }
 
     /**
      * Start server player authorization flow. If we have a token
@@ -121,38 +170,72 @@ public class ConnectionManager {
      * @param player
      */
     public void authenticateServerPlayer(ServerPlayer player, Consumer<PlayerToken> successConsumer, Consumer<GalleryError> errorConsumer) {
-        if (this.status != ConnectionStatus.READY) {
-            this.requestServerToken(
-                    (token) -> {
-                        this.authenticateServerPlayer(player, successConsumer, errorConsumer);
-                    },
-                    errorConsumer
-            );
-
+        // Check that server is registered, try again when registered or handle error if cannot be registered
+        if (!this.authenticateServerClient(
+                (token) -> {
+                    this.authenticateServerPlayer(player, successConsumer, errorConsumer);
+                },
+                errorConsumer
+        )) {
             return;
         }
 
-        if (this.playerTokenStorage.hasPlayerToken(player) && this.playerTokenStorage.getPlayerToken(player).valid()) {
-            // Might be valid but unauthorized
+        if (this.playerTokenStorage.hasPlayerToken(player)) {
+            PlayerToken playerToken = this.playerTokenStorage.getPlayerToken(player);
+            assert playerToken != null;
 
-            // @todo: [MID] No need to do that every time
-            this.connection.checkPlayerToken(
-                    this.playerTokenStorage.getPlayerTokenString(player),
-                    (response) -> {
-                        // @todo: [HIGH] Get player info
+            // @todo: [MID] Check if playerToken expired
+            if (!playerToken.valid()) {
+                this.playerTokenStorage.removePlayerToken(player);
 
-                        successConsumer.accept(this.playerTokenStorage.getPlayerToken(player));
-                    },
-                    (error) -> {
-                        error.setClientMessage("Unable to authorize");
+                this.registerServerPlayer(
+                        player,
+                        successConsumer,
+                        errorConsumer
+                );
 
-                        // @todo: [HIGH] Check that token is removed properly
-                        this.playerTokenStorage.removePlayerToken(player);
-                        this.authenticateServerPlayer(player, successConsumer, errorConsumer);
-                    }
-            );
+                return;
+            }
+
+            if (playerToken.isAuthorized()) {
+                successConsumer.accept(playerToken);
+            } else if (playerToken.authorizationCode != null) {
+                GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
+
+                this.connection.requestServerPlayerToken(
+                        galleryServerCapability.getClientInfo(),
+                        playerToken.token,
+                        playerToken.authorizationCode.code,
+                        authTokenResponse -> {
+                            this.playerTokenStorage.removePlayerToken(player);
+
+                            PlayerToken newPlayerToken = new PlayerToken(
+                                    authTokenResponse.token,
+                                    authTokenResponse.issuedAt,
+                                    authTokenResponse.notAfter
+                            );
+
+                            // @todo: [HIGH] this is wrong, ask Gallery
+                            newPlayerToken.setAuthorizedAs(new PlayerToken.PlayerInfo(
+                                    player.getUUID(),
+                                    player.getName().getString()
+                            ));
+
+                            this.playerTokenStorage.setPlayerToken(player, newPlayerToken);
+
+                            successConsumer.accept(newPlayerToken);
+                        },
+                        error -> {
+                            // @todo: [MED] When something went wrong, how do we reset the code?
+
+                            errorConsumer.accept(error);
+                        }
+                );
+            } else {
+                errorConsumer.accept(new GalleryError(GalleryError.UNKNOWN, "No authorization code"));
+            }
         } else {
-            this.requestPlayerToken(
+            this.registerServerPlayer(
                     player,
                     successConsumer,
                     errorConsumer
@@ -319,88 +402,149 @@ public class ConnectionManager {
      */
 
     /**
-     * Request cross-auth token for particular player for this server
-     * @param player
-     * @param tokenConsumer
+     * Check that sever is registered and have a valid token,
+     * return true if registered and ready and call success consumer,
+     * return false is not and call retry or error consumer dependent
+     * on the recoverability of issue.
+     *
+     * @param retryConsumer
      * @param errorConsumer
+     * @return
      */
-    private void requestPlayerToken(ServerPlayer player, Consumer<PlayerToken> tokenConsumer, Consumer<GalleryError> errorConsumer) {
-        this.connection.requestPlayerToken(
-                this.playerTokenStorage.getPlayerTokenString(player),
-                (response) -> {
-                    PlayerToken playerReservedToken = new PlayerToken(response.token, response.issued, response.notAfter);
+    private boolean authenticateServerClient(Consumer<Token> retryConsumer, @Nullable Consumer<GalleryError> errorConsumer) {
+        if (this.status == ConnectionStatus.READY && this.serverToken.valid()) {
+            return true;
+        }
 
-                    if (response.crossAuthorizationCode != null) {
-                        playerReservedToken.setCrossAuthCode(response.crossAuthorizationCode.code, response.crossAuthorizationCode.issued, response.crossAuthorizationCode.notAfter);
-                    }
+        // @todo: [HIGH] Refresh server tokens
 
-                    this.playerTokenStorage.setPlayerToken(player, playerReservedToken);
-                    tokenConsumer.accept(playerReservedToken);
-                },
-                errorConsumer
-        );
-    }
-
-    private void requestPlayerInfo(ServerPlayer player, Consumer<PlayerToken> tokenConsumer, Consumer<GalleryError> errorConsumer) {
-
-    }
-
-    /**
-     * Request token for current server, register it in Zetter Gallery
-     * @param success
-     * @param errorConsumer
-     */
-    private void requestServerToken(Consumer<Token> success, Consumer<GalleryError> errorConsumer) {
-        if (this.status == ConnectionStatus.ERROR) {
+        if (this.status == ConnectionStatus.UNRECOVERABLE_ERROR) {
             if (errorConsumer != null) {
                 errorConsumer.accept(new GalleryError(GalleryError.SERVER_INVALID_VERSION, this.errorMessage));
             }
 
-            return;
+            return false;
         }
 
-        if (this.status == ConnectionStatus.ERROR_RETRY) {
-            // 30 seconds since error passed
-            if (System.currentTimeMillis() > this.errorTimestamp + 30 * 1000) {
-                this.status = ConnectionStatus.WAITING;
-            } else {
-                if (errorConsumer != null) {
-                    errorConsumer.accept(new GalleryError(GalleryError.SERVER_INVALID_VERSION, this.errorMessage));
-                }
-
-                return;
+        // 30 seconds since error not yet passed, otherwise proceed
+        if (this.status == ConnectionStatus.ERROR && System.currentTimeMillis() <= this.errorTimestamp + 30 * 1000) {
+            if (errorConsumer != null) {
+                errorConsumer.accept(new GalleryError(GalleryError.SERVER_INVALID_VERSION, this.errorMessage));
             }
+
+            return false;
         }
 
-        this.connection.registerServer(
+        GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
+        if (galleryServerCapability.getClientInfo() != null) {
+            this.getServerToken(
+                    galleryServerCapability.getClientInfo(),
+                    retryConsumer,
+                    errorConsumer
+            );
+        } else {
+            this.createServerClient(
+                    () -> {
+                        this.getServerToken(
+                                galleryServerCapability.getClientInfo(),
+                                retryConsumer,
+                                errorConsumer
+                        );
+                    },
+                    errorConsumer
+            );
+        }
+
+        return false;
+    }
+
+    /**
+     * Creates new client with extra properties and saves client id
+     * and client secret to capability
+     */
+    private void createServerClient(EventConsumer successConsumer, @Nullable Consumer<GalleryError> errorConsumer) {
+        GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
+
+        this.connection.createServerClient(
                 this.serverInfo,
-                (response) -> {
-                    Token serverToken = new Token(response.token.token, response.token.issued, response.token.notAfter);
-                    this.serverToken = serverToken;
-                    this.serverUuid = response.uuid;
-                    this.status = ConnectionStatus.READY;
+                serverResponse -> {
+                    if (serverResponse.client == null) {
+                        if (errorConsumer != null) {
+                            errorConsumer.accept(new GalleryError(GalleryError.UNKNOWN, "Cannot find necessary client info in response"));
+                        }
 
-                    if (success != null) {
-                        success.accept(serverToken);
-                    }
-                },
-                (error) -> {
-                    // Invalid version is unrecoverable
-                    if (error.getCode() == 403) {
-                        this.errorMessage = error.getMessage();
-                        this.status = ConnectionStatus.ERROR;
-
-                        errorConsumer.accept(error);
                         return;
                     }
 
+                    galleryServerCapability.saveClientInfo(serverResponse.client);
+
+                    successConsumer.accept();
+                },
+                error -> {
+                    // Invalid version is unrecoverable
+                    if (error.getCode() == 403) {
+                        this.errorMessage = "Server's Zetter Gallery version is out of date. Please update.";
+                        this.status = ConnectionStatus.UNRECOVERABLE_ERROR;
+                    } else {
+                        this.errorMessage = "Cannot connect. Please try later.";
+                        this.status = ConnectionStatus.ERROR;
+                    }
+
+                    this.errorTimestamp = System.currentTimeMillis();
+                    error.setClientMessage(this.errorMessage);
+
+                    if (errorConsumer != null) {
+                        errorConsumer.accept(error);
+                    }
+                }
+        );
+    }
+
+    /**
+     * Calls for new token given in exchange for client id and client secret
+     * @param clientInfo
+     * @param retryConsumer
+     * @param errorConsumer
+     */
+    private void getServerToken(GalleryServerCapability.ClientInfo clientInfo, Consumer<Token> retryConsumer, @Nullable Consumer<GalleryError> errorConsumer) {
+        this.connection.requestToken(
+                clientInfo,
+                authTokenResponse -> {
+                    this.serverToken = new Token(
+                            authTokenResponse.token,
+                            authTokenResponse.issuedAt,
+                            authTokenResponse.notAfter
+                    );
+
+                    if (authTokenResponse.refreshToken != null) {
+                        this.refreshToken = new Token(
+                                authTokenResponse.refreshToken.token,
+                                authTokenResponse.refreshToken.issuedAt,
+                                authTokenResponse.refreshToken.notAfter
+                        );
+                    }
+
+                    this.status = ConnectionStatus.READY;
+
+                    retryConsumer.accept(this.serverToken);
+                },
+                error -> {
+                    // Cannot use client_credentials
+                    if (error.getCode() == 403) {
+                        GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
+                        galleryServerCapability.removeClientInfo();
+                        ZetterGallery.LOG.error("Unable to use existing client credentials, got error: " + error.getMessage());
+                    }
+
                     this.errorMessage = "Cannot connect. Please try later.";
-                    this.status = ConnectionStatus.ERROR_RETRY;
+                    this.status = ConnectionStatus.ERROR;
                     this.errorTimestamp = System.currentTimeMillis();
 
                     error.setClientMessage(this.errorMessage);
 
-                    errorConsumer.accept(error);
+                    if (errorConsumer != null) {
+                        errorConsumer.accept(error);
+                    }
                 }
         );
     }
@@ -413,7 +557,6 @@ public class ConnectionManager {
 
         this.connection.unregisterServer(
                 this.serverToken.token,
-                this.serverUuid,
                 (message) -> {},
                 Zetter.LOG::error
         );

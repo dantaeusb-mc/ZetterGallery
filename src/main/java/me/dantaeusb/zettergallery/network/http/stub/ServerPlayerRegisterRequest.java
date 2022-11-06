@@ -1,21 +1,17 @@
 package me.dantaeusb.zettergallery.network.http.stub;
 
 import java.util.List;
+import java.util.UUID;
 
-public class RegisterRequest {
-    public boolean singleplayer;
-
-    public String title;
-    public String motd;
-    public String galleryVersion;
+public class ServerPlayerRegisterRequest {
+    public UUID uuid;
+    public String name;
 
     public List<String> rating;
 
-    public RegisterRequest(boolean singleplayer, String title, String motd, String galleryVersion) {
-        this.singleplayer = singleplayer;
-        this.title = title;
-        this.motd = motd;
-        this.galleryVersion = galleryVersion;
+    public ServerPlayerRegisterRequest(UUID uuid, String name) {
+        this.uuid = uuid;
+        this.name = name;
 
         /*
          * Defaults: Low effort, fantasy violence, fear

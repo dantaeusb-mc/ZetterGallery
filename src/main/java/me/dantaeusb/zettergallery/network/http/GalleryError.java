@@ -9,6 +9,7 @@ public class GalleryError {
     public static final int SERVER_SALE_DISALLOWED = 1003;
     public static final int SERVER_RECEIVED_INVALID_PAINTING_DATA = 1004;
     public static final int CLIENT_INVALID_OFFER = 1005;
+    public static final int SERVER_UNAVAILABLE = 1999;
 
     public static final int UNKNOWN_FSM_ERROR = 2000;
 
