@@ -7,6 +7,7 @@ import me.dantaeusb.zetter.core.ZetterItems;
 import me.dantaeusb.zetter.item.PaintingItem;
 import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
+import me.dantaeusb.zettergallery.core.ZetterGalleryCanvasTypes;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
@@ -17,12 +18,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class PaintingMerchantOffer {
+public class PaintingMerchantOffer<T extends PaintingData> {
     private final String canvasCode;
     private final int price;
     private final boolean saleOffer;
 
-    private PaintingData paintingData;
+    private T paintingData;
 
     /**
      * If we're ready to make a transaction
@@ -34,7 +35,7 @@ public class PaintingMerchantOffer {
      */
     private String message;
 
-    private PaintingMerchantOffer(String canvasCode, @Nullable PaintingData paintingData, int price, boolean sale) {
+    private PaintingMerchantOffer(String canvasCode, @Nullable T paintingData, int price, boolean sale) {
         this.canvasCode = canvasCode;
         this.paintingData = paintingData;
         this.price = price;
@@ -47,8 +48,8 @@ public class PaintingMerchantOffer {
         }
     }
 
-    public static PaintingMerchantOffer createOfferFromResponse(PaintingsResponse.PaintingItem paintingItem) {
-        return new PaintingMerchantOffer(
+    public static PaintingMerchantOffer<GalleryPaintingData> createOfferFromResponse(PaintingsResponse.PaintingItem paintingItem) {
+        return new PaintingMerchantOffer<>(
                 GalleryPaintingData.getCanvasCode(paintingItem.uuid),
                 PaintingMerchantOffer.createOfferDataFromItem(paintingItem),
                 paintingItem.price,
@@ -56,8 +57,8 @@ public class PaintingMerchantOffer {
         );
     }
 
-    public static PaintingMerchantOffer createOfferFromPlayersPainting(String canvasCode, PaintingData paintingData, int price) {
-        return new PaintingMerchantOffer(
+    public static PaintingMerchantOffer<PaintingData> createOfferFromPlayersPainting(String canvasCode, PaintingData paintingData, int price) {
+        return new PaintingMerchantOffer<>(
                 canvasCode,
                 paintingData,
                 price,
@@ -65,8 +66,8 @@ public class PaintingMerchantOffer {
         );
     }
 
-    public static PaintingMerchantOffer createOfferFromPaintingData(GalleryPaintingData paintingData, int price) {
-        return new PaintingMerchantOffer(
+    public static PaintingMerchantOffer<GalleryPaintingData> createOfferFromPaintingData(GalleryPaintingData paintingData, int price) {
+        return new PaintingMerchantOffer<>(
                 GalleryPaintingData.getCanvasCode(paintingData.getUUID()),
                 paintingData,
                 price,
@@ -74,7 +75,7 @@ public class PaintingMerchantOffer {
         );
     }
 
-    public void updatePaintingData(PaintingData paintingData) {
+    public void updatePaintingData(T paintingData) {
         if (this.paintingData != null) {
             Zetter.LOG.error("Trying to update offer data which already has data");
             return;
@@ -83,7 +84,7 @@ public class PaintingMerchantOffer {
         this.paintingData = paintingData;
     }
 
-    public Optional<PaintingData> getPaintingData() {
+    public Optional<T> getPaintingData() {
         return this.paintingData == null ? Optional.empty() : Optional.of(this.paintingData);
     }
 
@@ -169,7 +170,13 @@ public class PaintingMerchantOffer {
             // Skip alpha, it should not be used anyway
         }
 
-        return GalleryPaintingData.create(paintingItem.uuid, paintingItem.author.nickname, paintingItem.name, resolution, paintingItem.sizeW * resolution.getNumeric(), paintingItem.sizeH * resolution.getNumeric(), canvasData);
+        GalleryPaintingData paintingData = ZetterGalleryCanvasTypes.GALLERY_PAINTING.get().createWrap(
+            resolution, paintingItem.sizeW * resolution.getNumeric(), paintingItem.sizeH * resolution.getNumeric(), canvasData
+        );
+        paintingData.setMetaProperties(paintingItem.uuid, paintingItem.author.nickname, paintingItem.name);
+
+        return paintingData;
+
     }
 
     public enum State {

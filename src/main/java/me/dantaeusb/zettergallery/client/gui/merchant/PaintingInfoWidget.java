@@ -109,7 +109,7 @@ public class PaintingInfoWidget extends AbstractWidget implements Widget {
     }
 
     private void drawPaintingInfo(PoseStack matrixStack) {
-        PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
+        PaintingMerchantOffer<?> offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null) {
             ZetterGallery.LOG.error("No offer to render info");

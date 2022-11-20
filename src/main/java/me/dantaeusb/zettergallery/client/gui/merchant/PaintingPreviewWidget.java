@@ -1,7 +1,6 @@
 package me.dantaeusb.zettergallery.client.gui.merchant;
 
 import me.dantaeusb.zetter.client.renderer.CanvasRenderer;
-import me.dantaeusb.zetter.core.tools.Color;
 import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
@@ -58,7 +57,7 @@ public class PaintingPreviewWidget extends AbstractWidget implements Widget, Gui
         String canvasCode = offer.getCanvasCode();
 
         if (offer.getPaintingData().isPresent()) {
-            PaintingData offerPaintingData = offer.getPaintingData().get();
+            PaintingData offerPaintingData = (PaintingData) offer.getPaintingData().get();
 
             float maxSize = Math.max(offerPaintingData.getHeight(), offerPaintingData.getWidth()) / 16.0F;
             float scale = 4.0F / maxSize;
@@ -87,9 +86,7 @@ public class PaintingPreviewWidget extends AbstractWidget implements Widget, Gui
 
             matrixStack.popPose();
         } else {
-            // @todo: [LOW] different type for Zetter Gallery painting
-            AbstractCanvasData.Type type = offer.isSaleOffer() ? AbstractCanvasData.Type.PAINTING : AbstractCanvasData.Type.PAINTING;
-            CanvasRenderer.getInstance().queueCanvasTextureUpdate(type, canvasCode);
+            CanvasRenderer.getInstance().queueCanvasTextureUpdate(canvasCode);
         }
     }
 

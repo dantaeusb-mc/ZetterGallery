@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * @todo: this mixin worth Forge PR for a bus event
+ * @todo: [LOW] this mixin worth Forge PR for a bus event
  */
 @Mixin(net.minecraft.world.entity.npc.Villager.class)
 public abstract class VillagerMixin extends AbstractVillager {

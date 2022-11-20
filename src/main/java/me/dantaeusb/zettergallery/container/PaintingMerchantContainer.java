@@ -6,6 +6,7 @@ import me.dantaeusb.zetter.core.Helper;
 import me.dantaeusb.zetter.core.ZetterItems;
 import com.google.common.collect.Lists;
 import me.dantaeusb.zetter.item.PaintingItem;
+import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
@@ -57,7 +58,7 @@ public class PaintingMerchantContainer implements Container {
     private int currentOfferIndex;
 
     @Nullable
-    private List<PaintingMerchantOffer> offers;
+    private List<PaintingMerchantOffer<GalleryPaintingData>> offers;
 
     public PaintingMerchantContainer(Player player, Merchant merchant, PaintingMerchantMenu menu) {
         this.player = player;
@@ -122,7 +123,7 @@ public class PaintingMerchantContainer implements Container {
                         return;
                     }
 
-                    PaintingData paintingData = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().level).getCanvasData(canvasCode, PaintingData.class);
+                    GalleryPaintingData paintingData = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().level).getCanvasData(canvasCode);
                     PaintingMerchantOffer saleOffer = PaintingMerchantOffer.createOfferFromPlayersPainting(canvasCode, paintingData, 4);
 
                     this.currentOffer = saleOffer;
@@ -183,7 +184,7 @@ public class PaintingMerchantContainer implements Container {
      *
      * @param offers
      */
-    public void handleOffers(List<PaintingMerchantOffer> offers) {
+    public void handleOffers(List<PaintingMerchantOffer<GalleryPaintingData>> offers) {
         if (this.state == OffersState.LOADING) {
             this.state = this.state.success();
         }
@@ -208,9 +209,7 @@ public class PaintingMerchantContainer implements Container {
                     throw new IllegalStateException("Painting doesn't have data to be registered");
                 }
 
-                PaintingData paintingData = offer.getPaintingData().get();
-                paintingData.setManaged(true);
-
+                PaintingData paintingData = (PaintingData) offer.getPaintingData().get();
                 tracker.registerCanvasData(offer.getCanvasCode(), paintingData);
             }
         }
@@ -243,10 +242,10 @@ public class PaintingMerchantContainer implements Container {
 
             if (!this.merchant.getTradingPlayer().getLevel().isClientSide()) {
                 ConnectionManager.getInstance().registerSale(
-                        (ServerPlayer) this.player,
-                        offer.getPaintingData().get(),
-                        this::finalizeCheckout,
-                        offer::markError
+                    (ServerPlayer) this.player,
+                    (PaintingData) offer.getPaintingData().get(),
+                    this::finalizeCheckout,
+                    offer::markError
                 );
             }
 
@@ -254,11 +253,11 @@ public class PaintingMerchantContainer implements Container {
         } else {
             if (!this.merchant.getTradingPlayer().getLevel().isClientSide()) {
                 ConnectionManager.getInstance().registerPurchase(
-                        (ServerPlayer) this.player,
-                        ((GalleryPaintingData) offer.getPaintingData().get()).getUUID(),
-                        offer.getPrice(),
-                        this::finalizeCheckout,
-                        offer::markError
+                    (ServerPlayer) this.player,
+                    ((GalleryPaintingData) offer.getPaintingData().get()).getUUID(),
+                    offer.getPrice(),
+                    this::finalizeCheckout,
+                    offer::markError
                 );
             }
 
@@ -271,7 +270,7 @@ public class PaintingMerchantContainer implements Container {
     }
 
     /**
-     * @todo: remove
+     * @todo: [HIGH] Remove
      *
      * Response from server after sell/purchase request: either
      * request was fulfilled and player may take the painting or something went wrong
@@ -345,7 +344,7 @@ public class PaintingMerchantContainer implements Container {
     }
 
     @Nullable
-    public List<PaintingMerchantOffer> getOffers() {
+    public List<PaintingMerchantOffer<GalleryPaintingData>> getOffers() {
         return this.offers;
     }
 
@@ -366,7 +365,7 @@ public class PaintingMerchantContainer implements Container {
      * on current offer if it was not available
      * at the time of offer creating
      */
-    public void updateCurrentOfferPaintingData(String canvasCode, PaintingData paintingData) {
+    public void updateCurrentOfferPaintingData(String canvasCode, GalleryPaintingData paintingData) {
         // If offer has changed
         if (this.getCurrentOffer() == null || !this.getCurrentOffer().getCanvasCode().equals(canvasCode)) {
             return;
@@ -448,7 +447,6 @@ public class PaintingMerchantContainer implements Container {
     }
 
     /**
-     * @todo: move all interactions to TE
      * @return
      */
     public ItemStack getInputSlot() {

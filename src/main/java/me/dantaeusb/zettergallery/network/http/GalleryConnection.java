@@ -5,6 +5,7 @@ import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import com.google.gson.Gson;
 import me.dantaeusb.zettergallery.core.Helper;
+import me.dantaeusb.zettergallery.gallery.AuthorizationCode;
 import me.dantaeusb.zettergallery.gallery.GalleryServerCapability;
 import me.dantaeusb.zettergallery.gallery.PlayerTokenStorage;
 import me.dantaeusb.zettergallery.gallery.ServerInfo;
@@ -30,6 +31,7 @@ public class GalleryConnection {
     private static final String SERVERS_ENDPOINT = "servers";
     private static final String SERVERS_PLAYERS_ENDPOINT = "servers/players";
     private static final String SERVERS_PLAYERS_TOKEN_ENDPOINT = "servers/players/token";
+    private static final String SERVERS_PLAYERS_AUTHORIZATION_CODE_ENDPOINT = "servers/players/authorization-code";
     private static final String CLIENTS_ENDPOINT = "clients";
     private static final String TOKEN_ENDPOINT = "auth/token";
     private static final String CHECK_ENDPOINT = "auth/token/check";
@@ -137,7 +139,7 @@ public class GalleryConnection {
      * authorize server to perform tasks on player's
      * behalf
      */
-    public void registerPlayer(String token, Player serverPlayer, Consumer<ServerPlayerResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void registerPlayer(String serverToken, Player serverPlayer, Consumer<ServerPlayerResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -148,7 +150,7 @@ public class GalleryConnection {
                 final ServerPlayerRegisterRequest request = new ServerPlayerRegisterRequest(serverPlayer.getUUID(), serverPlayer.getName().getString());
                 URL authUri = GalleryConnection.getUri(SERVERS_PLAYERS_ENDPOINT);
 
-                ServerPlayerResponse response = makeRequest(authUri, "POST", ServerPlayerResponse.class, token, request);
+                ServerPlayerResponse response = makeRequest(authUri, "POST", ServerPlayerResponse.class, serverToken, request);
 
                 executor.submitAsync(() -> successConsumer.accept(response));
             } catch (GalleryException e) {
@@ -198,6 +200,38 @@ public class GalleryConnection {
                 executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
             } catch (Exception e) {
                 ZetterGallery.LOG.error(String.format("Unable to exchange token for server player: %s", e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
+            }
+        });
+    }
+
+    /**
+     * Get authorization token if one that was provided on player registration is outdated
+     *
+     * @param serverToken
+     * @param successConsumer
+     * @param errorConsumer
+     */
+    public void requestServerPlayerAuthorizationCode(String serverToken, Consumer<AuthorizationCode> successConsumer, Consumer<GalleryError> errorConsumer) {
+        this.poolExecutor.execute(() -> {
+            /**
+             * @link {#NetworkEvent.enqueueWork}
+             */
+            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+
+            try {
+                URL authUri = GalleryConnection.getUri(SERVERS_PLAYERS_AUTHORIZATION_CODE_ENDPOINT);
+
+                AuthorizationCode response = makeRequest(authUri, "GET", AuthorizationCode.class, serverToken, null);
+
+                executor.submitAsync(() -> successConsumer.accept(response));
+            } catch (GalleryException e) {
+                ZetterGallery.LOG.error(String.format("Unable get authorization code for server player, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
+            } catch (Exception e) {
+                ZetterGallery.LOG.error(String.format("Unable get authorization code for server player: %s", e.getMessage()));
 
                 executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
             }

@@ -1,5 +1,6 @@
 package me.dantaeusb.zettergallery.network;
 
+import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.packet.CGalleryAuthorizationCheckPacket;
@@ -41,7 +42,9 @@ public class ServerHandler {
 
             UUID paintingUuid = ((GalleryPaintingData) paintingMerchantMenu.getCurrentOffer().getPaintingData().get()).getUUID();
 
-            ConnectionManager.getInstance().registerImpression(sendingPlayer, paintingUuid, null, null);
+            ConnectionManager.getInstance().registerImpression(sendingPlayer, paintingUuid, () -> {}, () -> {
+                ZetterGallery.LOG.error("Unable to register impression, maybe outdated mod version?");
+            });
         }
     }
 

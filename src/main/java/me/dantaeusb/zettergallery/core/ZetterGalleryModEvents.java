@@ -1,9 +1,9 @@
 package me.dantaeusb.zettergallery.core;
 
-import me.dantaeusb.zetter.event.CanvasRegisterEvent;
-import me.dantaeusb.zetter.storage.PaintingData;
+import me.dantaeusb.zetter.event.CanvasRenderPostRegisterEvent;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
+import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -21,22 +21,15 @@ public class ZetterGalleryModEvents {
      * @param event
      */
     @SubscribeEvent
-    public static void onCanvasSynced(CanvasRegisterEvent event) {
-        event.getCanvasCode();
-
+    public static void onCanvasSynced(CanvasRenderPostRegisterEvent event) {
         if (Minecraft.getInstance().player.containerMenu == null) {
             return;
         }
 
-        if (!(Minecraft.getInstance().player.containerMenu instanceof PaintingMerchantMenu)) {
-            return;
+        if (Minecraft.getInstance().player.containerMenu instanceof PaintingMerchantMenu paintingMerchantMenu) {
+            if (event.canvasData.getType().equals(ZetterGalleryCanvasTypes.GALLERY_PAINTING.get())) {
+                paintingMerchantMenu.getContainer().updateCurrentOfferPaintingData(event.canvasCode, (GalleryPaintingData) event.canvasData);
+            }
         }
-
-        if (!(event.getCanvasData() instanceof PaintingData)) {
-            return;
-        }
-
-        PaintingMerchantMenu menu = (PaintingMerchantMenu) Minecraft.getInstance().player.containerMenu;
-        menu.getContainer().updateCurrentOfferPaintingData(event.getCanvasCode(), (PaintingData) event.getCanvasData());
     }
 }

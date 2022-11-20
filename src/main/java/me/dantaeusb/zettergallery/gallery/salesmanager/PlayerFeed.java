@@ -1,6 +1,7 @@
 package me.dantaeusb.zettergallery.gallery.salesmanager;
 
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
+import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -9,21 +10,21 @@ import java.util.Vector;
 
 public class PlayerFeed {
     private final ServerPlayer player;
-    private final List<PaintingMerchantOffer> offers;
+    private final List<PaintingMerchantOffer<GalleryPaintingData>> offers;
     private final boolean saleAllowed;
 
-    public PlayerFeed(ServerPlayer player, boolean saleAllowed, List<PaintingMerchantOffer> offers) {
+    public PlayerFeed(ServerPlayer player, boolean saleAllowed, List<PaintingMerchantOffer<GalleryPaintingData>> offers) {
         this.player = player;
         this.saleAllowed = saleAllowed;
         this.offers = offers;
     }
 
     public static PlayerFeed createFeedFromSaleResponse(ServerPlayer player, PaintingsResponse response) {
-        final List<PaintingMerchantOffer> offers = new Vector<>();
+        final List<PaintingMerchantOffer<GalleryPaintingData>> offers = new Vector<>();
 
         for (String feedName : response.feeds.keySet()) {
             for (PaintingsResponse.PaintingItem item : response.feeds.get(feedName)) {
-                PaintingMerchantOffer offer = PaintingMerchantOffer.createOfferFromResponse(item);
+                PaintingMerchantOffer<GalleryPaintingData> offer = PaintingMerchantOffer.createOfferFromResponse(item);
 
                 offers.add(offer);
             }
@@ -36,7 +37,7 @@ public class PlayerFeed {
         return this.saleAllowed;
     }
 
-    public List<PaintingMerchantOffer> getOffers() {
+    public List<PaintingMerchantOffer<GalleryPaintingData>> getOffers() {
         return this.offers;
     }
 

@@ -11,17 +11,23 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.UUID;
 
-public class GalleryServerCapability extends GalleryClientCapability implements IGalleryCapability {
+public class GalleryServerCapability implements IGalleryCapability {
     private static final String NBT_TAG_PAINTINGS_TRACKER = "PaintingsTracker";
     private static final String NBT_TAG_CLIENT_ID = "ClientID";
     private static final String NBT_TAG_CLIENT_NAME = "ClientName";
     private static final String NBT_TAG_CLIENT_SECRET = "ClientSecret";
 
+    private Level overworld;
+
     @Nullable
     private ClientInfo clientInfo;
 
-    public GalleryServerCapability(Level world) {
-        super(world);
+    public GalleryServerCapability(Level overworld) {
+        this.overworld = overworld;
+    }
+
+    public Level getWorld() {
+        return this.overworld;
     }
 
     public void saveClientInfo(ClientInfo clientInfo) {

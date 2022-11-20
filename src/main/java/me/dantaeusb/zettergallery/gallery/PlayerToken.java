@@ -29,6 +29,10 @@ public class PlayerToken extends Token {
         this.authorizationCode = authorizationCode;
     }
 
+    public void dropAuthorizationCode() {
+        this.authorizationCode = null;
+    }
+
     @Nullable
     public AuthorizationCode getAuthorizationCode() {
         return this.authorizationCode;

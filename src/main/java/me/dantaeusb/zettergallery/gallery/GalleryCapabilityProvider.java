@@ -23,10 +23,10 @@ public class GalleryCapabilityProvider implements ICapabilitySerializable<Compou
 
     public GalleryCapabilityProvider(Level world) {
         if (world.isClientSide()) {
-            this.galleryCapability = new GalleryClientCapability(world);
-        } else {
-            this.galleryCapability = new GalleryServerCapability(world);
+            throw new IllegalArgumentException("Gallery capability exists only in server's overworld");
         }
+
+        this.galleryCapability = new GalleryServerCapability(world);
     }
 
     /**

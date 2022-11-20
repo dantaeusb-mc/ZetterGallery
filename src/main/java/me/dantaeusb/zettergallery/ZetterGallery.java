@@ -1,6 +1,7 @@
 package me.dantaeusb.zettergallery;
 
 import me.dantaeusb.zetter.core.ZetterContainerMenus;
+import me.dantaeusb.zettergallery.core.ZetterGalleryCanvasTypes;
 import me.dantaeusb.zettergallery.core.ZetterGalleryContainerMenus;
 import me.dantaeusb.zettergallery.core.ZetterGalleryVillagers;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -32,5 +33,7 @@ public class ZetterGallery
 
         ZetterGalleryVillagers.init(MOD_EVENT_BUS);
         ZetterGalleryContainerMenus.init(MOD_EVENT_BUS);
+
+        ZetterGalleryCanvasTypes.init(MOD_EVENT_BUS);
     }
 }

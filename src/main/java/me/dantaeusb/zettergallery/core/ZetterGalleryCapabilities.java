@@ -2,7 +2,7 @@ package me.dantaeusb.zettergallery.core;
 
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.gallery.GalleryCapabilityProvider;
-import me.dantaeusb.zettergallery.gallery.GalleryClientCapability;
+import me.dantaeusb.zettergallery.gallery.GalleryServerCapability;
 import me.dantaeusb.zettergallery.gallery.IGalleryCapability;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -25,15 +25,14 @@ public class ZetterGalleryCapabilities
     public static void attachCapabilityToWorldHandler(AttachCapabilitiesEvent<Level> event) {
         Level world = event.getObject();
 
-        // For client, it doesn't matter which world we're attaching to.
-        // For server, it's always saved with overworld.
-        if (world.isClientSide() || world.dimension() == Level.OVERWORLD) {
+        // This capability only exists on server in the overworld
+        if (!world.isClientSide() && world.dimension() == Level.OVERWORLD) {
             event.addCapability(GALLERY_CAPABILITY_LOCATION, new GalleryCapabilityProvider(world));
         }
     }
 
     @SubscribeEvent
     public static void registerCapabilityHandler(RegisterCapabilitiesEvent event) {
-        event.register(GalleryClientCapability.class);
+        event.register(IGalleryCapability.class);
     }
 }

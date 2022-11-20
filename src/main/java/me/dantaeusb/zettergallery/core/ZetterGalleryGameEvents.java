@@ -16,7 +16,8 @@ public class ZetterGalleryGameEvents {
     }
 
     /**
-     * @todo: [HIGH] Do we need that? Maybe we can just call that when trading starts
+     * We need this because we need to start flow
+     * only when container is opened and initialized on both sides
      * @param event
      */
     @SubscribeEvent
