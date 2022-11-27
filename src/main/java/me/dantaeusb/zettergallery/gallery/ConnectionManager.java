@@ -8,6 +8,7 @@ import me.dantaeusb.zettergallery.core.Helper;
 import me.dantaeusb.zettergallery.gallery.salesmanager.PlayerFeed;
 import me.dantaeusb.zettergallery.network.http.GalleryConnection;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
+import me.dantaeusb.zettergallery.network.http.stub.AuthTokenResponse;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
@@ -189,7 +190,7 @@ public class ConnectionManager {
     /**
      * Start server player authorization flow. If we have a token
      * already, just check if it works and what rights we have.
-     * If we don't, request token and cross-authorization code,
+     * If we don't have a token, request token and cross-authorization code,
      * which later will be sent to client. When client returns
      * to game after authorizing server, another call for this method
      * will be received and we'll be checking token access.
@@ -255,7 +256,11 @@ public class ConnectionManager {
                     },
                     error -> {
                         // @todo: [MED] Check that it works!
-                        if (error.getCode() != 401) {
+                        if (error.getCode() == 401) {
+                            // Code is fine, but it's not authorized yet
+                            successConsumer.accept(playerToken);
+                        } else {
+                            // Code is likely broken, make a new one!
                             ZetterGallery.LOG.error(error.getMessage());
                             playerToken.dropAuthorizationCode();
 
@@ -266,8 +271,6 @@ public class ConnectionManager {
                                 },
                                 errorConsumer
                             );
-                        } else {
-                            successConsumer.accept(playerToken);
                         }
                     }
                 );
@@ -451,12 +454,28 @@ public class ConnectionManager {
      * return false is not and call retry or error consumer dependent
      * on the recoverability of issue.
      *
+     * @todo: [MID] Test
+     *
      * @param retryConsumer
      * @param errorConsumer
      * @return
      */
     private boolean authenticateServerClient(Consumer<Token> retryConsumer, @Nullable Consumer<GalleryError> errorConsumer) {
         if (this.status == ConnectionStatus.READY && this.serverToken.valid()) {
+            if (this.serverToken.needRefresh()) {
+                GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
+
+                if (galleryServerCapability.getClientInfo() != null) {
+                    this.refreshServerToken(
+                        this.refreshToken,
+                        retryConsumer,
+                        errorConsumer
+                    );
+                }
+
+                return false;
+            }
+
             return true;
         }
 
@@ -504,7 +523,11 @@ public class ConnectionManager {
 
     /**
      * Creates new client with extra properties and saves client id
-     * and client secret to capability
+     * and client secret to capability for later use
+     *
+     * Now this server will be connected to that record
+     * in Zetter Gallery, and will be able to use credentials
+     * to get access token
      */
     private void createServerClient(EventConsumer successConsumer, @Nullable Consumer<GalleryError> errorConsumer) {
         GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
@@ -555,43 +578,95 @@ public class ConnectionManager {
         this.connection.requestToken(
             clientInfo,
             authTokenResponse -> {
-                this.serverToken = new Token(
-                    authTokenResponse.token,
-                    authTokenResponse.issuedAt,
-                    authTokenResponse.notAfter
-                );
-
-                if (authTokenResponse.refreshToken != null) {
-                    this.refreshToken = new Token(
-                        authTokenResponse.refreshToken.token,
-                        authTokenResponse.refreshToken.issuedAt,
-                        authTokenResponse.refreshToken.notAfter
-                    );
-                }
-
-                this.status = ConnectionStatus.READY;
+                this.handleServerAuthorizationSuccess(authTokenResponse);
 
                 retryConsumer.accept(this.serverToken);
             },
             error -> {
                 // Cannot use client_credentials
-                if (error.getCode() == 403) {
-                    GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
-                    galleryServerCapability.removeClientInfo();
-                    ZetterGallery.LOG.error("Unable to use existing client credentials, got error: " + error.getMessage());
-                }
-
-                this.errorMessage = "Cannot connect. Please try later.";
-                this.status = ConnectionStatus.ERROR;
-                this.errorTimestamp = System.currentTimeMillis();
-
-                error.setClientMessage(this.errorMessage);
+                this.handleServerAuthorizationIssue(error);
 
                 if (errorConsumer != null) {
                     errorConsumer.accept(error);
                 }
             }
         );
+    }
+
+    /**
+     * Calls for new token given in exchange for client id and client secret
+     *
+     * @param refreshToken
+     * @param retryConsumer
+     * @param errorConsumer
+     */
+    private void refreshServerToken(Token refreshToken, Consumer<Token> retryConsumer, @Nullable Consumer<GalleryError> errorConsumer) {
+        this.connection.refreshToken(
+            refreshToken,
+            authTokenResponse -> {
+                this.handleServerAuthorizationSuccess(authTokenResponse);
+
+                retryConsumer.accept(this.serverToken);
+            },
+            error -> {
+                // Cannot use refresh_token
+                this.handleServerAuthorizationIssue(error);
+
+                if (errorConsumer != null) {
+                    errorConsumer.accept(error);
+                }
+            }
+        );
+    }
+
+    /**
+     * Save server client token when successfully authorized
+     * with client id or refresh token
+     * @param authTokenResponse
+     */
+    private void handleServerAuthorizationSuccess(AuthTokenResponse authTokenResponse) {
+        this.serverToken = new Token(
+            authTokenResponse.token,
+            authTokenResponse.issuedAt,
+            authTokenResponse.notAfter
+        );
+
+        if (authTokenResponse.refreshToken != null) {
+            this.refreshToken = new Token(
+                authTokenResponse.refreshToken.token,
+                authTokenResponse.refreshToken.issuedAt,
+                authTokenResponse.refreshToken.notAfter
+            );
+        }
+
+        this.status = ConnectionStatus.READY;
+    }
+
+    /**
+     * In case if server cannot authorize with request error, wipe all existing info
+     * and try to do everything from start. If that's internal error - just ignore it
+     */
+    private void handleServerAuthorizationIssue(GalleryError error) {
+        // Cannot use existing credentials
+        if (error.getCode() == 400) {
+            ZetterGallery.LOG.error("Unable to use existing refresh token got error: " + error.getMessage());
+
+            if (this.serverToken != null) {
+                //@todo: [MID] this.connection.dropServerToken
+
+                this.serverToken = null;
+                this.refreshToken = null;
+            }
+
+            GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
+            galleryServerCapability.removeClientInfo();
+        }
+
+        this.errorMessage = "Cannot connect. Please try later.";
+        this.status = ConnectionStatus.ERROR;
+        this.errorTimestamp = System.currentTimeMillis();
+
+        error.setClientMessage(this.errorMessage);
     }
 
     /**

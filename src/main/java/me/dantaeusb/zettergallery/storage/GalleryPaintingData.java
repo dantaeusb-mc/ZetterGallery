@@ -15,7 +15,7 @@ import java.util.UUID;
  * Contains information about painting downloaded from Zetter Gallery
  */
 public class GalleryPaintingData extends PaintingData {
-    public static final String TYPE = "gallery_painting";
+    public static final String TYPE = "painting";
     public static final String CODE_PREFIX = ZetterGallery.MOD_ID + "_" + TYPE + "_";
 
     protected static final String NBT_TAG_UUID = "ZetterGalleryUuid";

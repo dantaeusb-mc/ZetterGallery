@@ -256,7 +256,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
      */
     public void removed(Player player) {
         super.removed(player);
-        this.merchant.setTradingPlayer((Player) null);
+        this.merchant.setTradingPlayer(null);
 
         if (!this.merchant.isClientSide()) {
             this.container.unregisterOffersCanvases();

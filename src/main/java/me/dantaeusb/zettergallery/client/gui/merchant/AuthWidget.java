@@ -6,6 +6,7 @@ import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import com.mojang.blaze3d.vertex.PoseStack;
 import me.dantaeusb.zettergallery.menu.paintingmerchant.MerchantAuthorizationController;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -19,9 +20,7 @@ import net.minecraft.util.FormattedCharSequence;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class AuthWidget extends AbstractWidget implements Widget, GuiEventListener {
-    protected final PaintingMerchantScreen parentScreen;
-
+public class AuthWidget extends AbstractPaintingMerchantWidget {
     @Nullable
     protected Minecraft minecraft;
     protected ItemRenderer itemRenderer;
@@ -37,14 +36,14 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
 
     private static final Component AUTHENTICATING_TEXT = Component.translatable("container.zettergallery.merchant.authenticating");
     private static final Component LOGIN_TEXT = Component.translatable("container.zettergallery.merchant.login_request");
-    private static final Component LOGIN_TOOLTIP_TEXT = Component.translatable("container.zettergallery.merchant.login_request_tooltip");
     private static final Component UNKNOWN_ERROR_TEXT = Component.translatable("container.zettergallery.merchant.unknown_error");
     private static final Component TRY_AGAIN_TEXT = Component.translatable("container.zettergallery.merchant.try_again");
 
-    public AuthWidget(PaintingMerchantScreen parentScreen, int x, int y) {
-        super(x, y, WIDTH, HEIGHT, Component.translatable("container.zetter.painting.status"));
+    private static final Component LOGIN_TOOLTIP_TEXT = Component.translatable("container.zettergallery.merchant.login_request_tooltip");
+    private static final Component WAITING_TOOLTIP_TEXT = Component.translatable("container.zettergallery.merchant.login_waiting");
 
-        this.parentScreen = parentScreen;
+    public AuthWidget(PaintingMerchantScreen parentScreen, int x, int y) {
+        super(parentScreen, x, y, WIDTH, HEIGHT, Component.translatable("container.zetter.painting.status"));
 
         this.minecraft = parentScreen.getMinecraft();
         this.itemRenderer = minecraft.getItemRenderer();
@@ -69,12 +68,9 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
                         256
                 );
 
-                // @todo: draw loader
-
-                // stack, font, x, y, color
-                drawCenteredString(matrixStack, this.font, AUTHENTICATING_TEXT, this.x + this.width / 2, this.y + 10, Color.white.getRGB());
-
                 this.drawLoading(matrixStack);
+                this.font.draw(matrixStack, AUTHENTICATING_TEXT, this.x + 32.0F, this.y + 8.0F, Color.white.getRGB());
+
                 break;
             case CLIENT_AUTHORIZATION:
                 if (!isPointInRegion(0, 0, WIDTH, HEIGHT, mouseX, mouseY)) {
@@ -101,8 +97,6 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
                             512,
                             256
                     );
-
-                    // @todo: Add tooltip text
                 }
 
                 // stack, font, x, y, color
@@ -122,6 +116,7 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
                 );
 
                 // @todo: draw player-client info
+                this.font.draw(matrixStack, this.parentScreen.getAuthorizedPlayerNickname(), this.x + 26.0F, this.y + 9.0F, Color.white.getRGB());
                 break;
             case ERROR:
                 blit(
@@ -186,10 +181,10 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
 
     private static final int LOADING_WIDTH = 16;
     private static final int LOADING_HEIGHT = 10;
-    private static final int LOADING_XPOS = (WIDTH / 2) - (LOADING_WIDTH / 2);
-    private static final int LOADING_YPOS = 78;
-    private static final int LOADING_UPOS = 176;
-    private static final int LOADING_VPOS = 28;
+    private static final int LOADING_XPOS = 8;
+    private static final int LOADING_YPOS = 8;
+    private static final int LOADING_UPOS = 208;
+    private static final int LOADING_VPOS = 20;
 
     private void drawLoading(PoseStack matrixStack)
     {
@@ -199,6 +194,22 @@ public class AuthWidget extends AbstractWidget implements Widget, GuiEventListen
         frame = frame > 2 ? 1 : frame; // 3rd frame is the same as 1st frame
 
         blit(matrixStack, this.x + LOADING_XPOS, this.y + LOADING_YPOS, LOADING_UPOS, LOADING_VPOS + LOADING_HEIGHT * frame, LOADING_WIDTH, LOADING_HEIGHT, 512, 256);
+    }
+
+    @Override
+    public @Nullable Component getTooltip(int mouseX, int mouseY) {
+        switch (this.parentScreen.getPlayerAuthorizationState()) {
+            case SERVER_AUTHENTICATION:
+                return WAITING_TOOLTIP_TEXT;
+            case CLIENT_AUTHORIZATION:
+                return LOGIN_TOOLTIP_TEXT;
+            case LOGGED_IN:
+                return Component.translatable("container.zettergallery.merchant.logged_in_player_tooltip", this.parentScreen.getAuthorizedPlayerNickname());
+            case ERROR:
+                return null;
+        }
+
+        return super.getTooltip(mouseX, mouseY);
     }
 
     protected boolean isPointInRegion(int x, int y, int width, int height, double mouseX, double mouseY) {

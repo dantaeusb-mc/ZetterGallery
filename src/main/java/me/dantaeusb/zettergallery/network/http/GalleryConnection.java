@@ -5,10 +5,7 @@ import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import com.google.gson.Gson;
 import me.dantaeusb.zettergallery.core.Helper;
-import me.dantaeusb.zettergallery.gallery.AuthorizationCode;
-import me.dantaeusb.zettergallery.gallery.GalleryServerCapability;
-import me.dantaeusb.zettergallery.gallery.PlayerTokenStorage;
-import me.dantaeusb.zettergallery.gallery.ServerInfo;
+import me.dantaeusb.zettergallery.gallery.*;
 import me.dantaeusb.zettergallery.network.http.stub.*;
 import net.minecraft.util.thread.BlockableEventLoop;
 import net.minecraft.world.entity.player.Player;
@@ -77,6 +74,13 @@ public class GalleryConnection {
         });
     }
 
+    /**
+     * Send request to the token response with client info
+     * (ID and secret), expect to receive token in exchange
+     * @param clientInfo
+     * @param successConsumer
+     * @param errorConsumer
+     */
     public void requestToken(GalleryServerCapability.ClientInfo clientInfo, Consumer<AuthTokenResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
@@ -108,6 +112,50 @@ public class GalleryConnection {
         });
     }
 
+    /**
+     * Send request to the token response with client info
+     * (ID and secret), expect to receive token in exchange
+     * @param refreshToken
+     * @param successConsumer
+     * @param errorConsumer
+     */
+    public void refreshToken(Token refreshToken, Consumer<AuthTokenResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
+        this.poolExecutor.execute(() -> {
+            /**
+             * @link {#NetworkEvent.enqueueWork}
+             */
+            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+
+            try {
+                final HashMap<String, String> query = new HashMap<>();
+                query.put("grantType", "refresh_token");
+                query.put("refreshToken", refreshToken.token);
+                query.put("requestRefresh", "true");
+
+                URL authUri = GalleryConnection.getUri(TOKEN_ENDPOINT, query);
+
+                AuthTokenResponse response = makeRequest(authUri, "GET", AuthTokenResponse.class, null, null);
+
+                executor.submitAsync(() -> successConsumer.accept(response));
+            } catch (GalleryException e) {
+                ZetterGallery.LOG.error(String.format("Unable to exchange token for server, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
+            } catch (Exception e) {
+                ZetterGallery.LOG.error(String.format("Unable to exchange token for server: %s", e.getMessage()));
+
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
+            }
+        });
+    }
+
+    /**
+     * Ask to delete Server Client entity,
+     * and revoke related tokens
+     * @param serverToken
+     * @param successConsumer
+     * @param errorConsumer
+     */
     public void unregisterServer(String serverToken, Consumer<GenericMessageResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**

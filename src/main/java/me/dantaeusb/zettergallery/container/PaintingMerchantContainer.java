@@ -6,7 +6,6 @@ import me.dantaeusb.zetter.core.Helper;
 import me.dantaeusb.zetter.core.ZetterItems;
 import com.google.common.collect.Lists;
 import me.dantaeusb.zetter.item.PaintingItem;
-import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
@@ -34,7 +33,7 @@ import net.minecraftforge.network.PacketDistributor;
 import javax.annotation.Nullable;
 import java.util.List;
 
-public class PaintingMerchantContainer implements Container {
+public class PaintingMerchantContainer implements Container, AutoCloseable {
     public static final int STORAGE_SIZE = 2;
 
     public static final int INPUT_SLOT = 0;
@@ -123,8 +122,8 @@ public class PaintingMerchantContainer implements Container {
                         return;
                     }
 
-                    GalleryPaintingData paintingData = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().level).getCanvasData(canvasCode);
-                    PaintingMerchantOffer saleOffer = PaintingMerchantOffer.createOfferFromPlayersPainting(canvasCode, paintingData, 4);
+                    PaintingData paintingData = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().level).getCanvasData(canvasCode);
+                    PaintingMerchantOffer<PaintingData> saleOffer = PaintingMerchantOffer.createOfferFromPlayersPainting(canvasCode, paintingData, 4);
 
                     this.currentOffer = saleOffer;
 
@@ -209,7 +208,10 @@ public class PaintingMerchantContainer implements Container {
                     throw new IllegalStateException("Painting doesn't have data to be registered");
                 }
 
+                // Register as non-managed to prevent removing its data
                 PaintingData paintingData = (PaintingData) offer.getPaintingData().get();
+                paintingData.setManaged(false);
+
                 tracker.registerCanvasData(offer.getCanvasCode(), paintingData);
             }
         }
@@ -231,7 +233,8 @@ public class PaintingMerchantContainer implements Container {
      * We do not really care much for response: when purchasing,
      * Zetter Gallery just logs the data, and player should not be affected
      * When selling, validation part should be enough to make sure painting will
-     * be saved successfully, except for very rare cases.
+     * be saved successfully, except for the very rare cases that player should not
+     * care about.
      */
     public void checkout(ItemStack purchaseStack) {PaintingMerchantOffer offer = this.getCurrentOffer();
         if (offer.isSaleOffer()) {
@@ -285,6 +288,11 @@ public class PaintingMerchantContainer implements Container {
     public void handleError(GalleryError error) {
         this.error = error;
         this.state = this.state.error();
+    }
+
+    @Override
+    public void close() {
+        this.unregisterOffersCanvases();
     }
 
     public enum OffersState {

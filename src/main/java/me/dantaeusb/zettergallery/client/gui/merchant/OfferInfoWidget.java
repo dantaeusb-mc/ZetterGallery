@@ -10,8 +10,6 @@ import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Component;
@@ -20,10 +18,8 @@ import net.minecraft.world.item.Items;
 
 import javax.annotation.Nullable;
 
-public class PaintingInfoWidget extends AbstractWidget implements Widget {
+public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
     private static final Component LOADING_TEXT = Component.translatable("container.zettergallery.merchant.fetching_sales");
-
-    protected final PaintingMerchantScreen parentScreen;
 
     @Nullable
     protected Minecraft minecraft;
@@ -32,13 +28,11 @@ public class PaintingInfoWidget extends AbstractWidget implements Widget {
 
     private int tick = 0;
 
-    private static final int WIDTH = 120;
-    private static final int HEIGHT = 32;
+    private static final int WIDTH = 196;
+    private static final int HEIGHT = 74;
 
-    public PaintingInfoWidget(PaintingMerchantScreen parentScreen, int x, int y) {
-        super(x, y, WIDTH, HEIGHT, Component.translatable("container.zetter.painting.info"));
-
-        this.parentScreen = parentScreen;
+    public OfferInfoWidget(PaintingMerchantScreen parentScreen, int x, int y) {
+        super(parentScreen, x, y, WIDTH, HEIGHT, Component.translatable("container.zetter.painting.info"));
 
         this.minecraft = parentScreen.getMinecraft();
         this.itemRenderer = minecraft.getItemRenderer();
@@ -55,25 +49,26 @@ public class PaintingInfoWidget extends AbstractWidget implements Widget {
         if (this.parentScreen.getOffersState().equals(PaintingMerchantContainer.OffersState.LOADING)) {
             this.drawLoadingLogo(matrixStack);
         } else if (this.parentScreen.getOffersState().equals(PaintingMerchantContainer.OffersState.ERROR)) {
+            this.drawConnectionError(matrixStack);
             // @todo: draw error
         } else {
             this.drawPaintingInfo(matrixStack);
         }
     }
 
-    private static final int LOGO_XPOS = 9;
-    private static final int LOGO_YPOS = 10;
     private static final int LOGO_WIDTH = 32;
     private static final int LOGO_HEIGHT = 32;
     private static final int LOGO_UPOS = 208;
     private static final int LOGO_VPOS = 128;
+    private static final int LOGO_XPOS = (WIDTH - LOGO_WIDTH) / 2;
+    private static final int LOGO_YPOS = (HEIGHT - (LOGO_HEIGHT + 16)) / 2;
 
-    private static final int LOGO_LOADER_XPOS = 17;
-    private static final int LOGO_LOADER_YPOS = 16;
     private static final int LOGO_LOADER_WIDTH = 16;
     private static final int LOGO_LOADER_HEIGHT = 20;
     private static final int LOGO_LOADER_UPOS = 240;
     private static final int LOGO_LOADER_VPOS = 128;
+    private static final int LOGO_LOADER_XPOS = (WIDTH - LOGO_LOADER_WIDTH) / 2;
+    private static final int LOGO_LOADER_YPOS = (HEIGHT - LOGO_LOADER_HEIGHT) / 2;
 
     private void drawLoadingLogo(PoseStack matrixStack) {
         final int animation = this.tick % (LOGO_LOADER_HEIGHT * 10);
@@ -128,8 +123,8 @@ public class PaintingInfoWidget extends AbstractWidget implements Widget {
         final int priceWidth = this.font.width(priceString);
 
         ItemStack emeraldStack = new ItemStack(Items.EMERALD);
-        this.itemRenderer.renderGuiItem(emeraldStack, this.x + this.width - 21, this.y + 61);
-        this.font.draw(matrixStack, priceString, this.x + this.width - 22 - priceWidth, this.y + 65, Color.white.getRGB());
+        this.itemRenderer.renderGuiItem(emeraldStack, this.x + this.width - 23, this.y + 63);
+        this.font.draw(matrixStack, priceString, this.x + this.width - 24 - priceWidth, this.y + 67, Color.white.getRGB());
 
         // Duplicate from PaintingItem#setPaintingData
         int widthBlocks = offerPaintingData.getWidth() / offerPaintingData.getResolution().getNumeric();
@@ -145,8 +140,92 @@ public class PaintingInfoWidget extends AbstractWidget implements Widget {
             return;
         }
 
-        this.font.draw(matrixStack, offerPaintingData.getPaintingTitle(), this.x, this.y + 2, Color.white.getRGB());
-        this.font.draw(matrixStack, offerPaintingData.getAuthorName() + ", " + blockSize.getString(), this.x, this.y + 2 + 11, Color.white.getRGB());
+        // To avoid texture swapping, first draw icons, then text
+        RenderSystem.setShaderTexture(0, PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
+
+        // Feed icon
+        if (!offer.isSaleOffer() && offer.getFeedName() != null) {
+            int feedIconU = 0;
+            switch (offer.getFeedName()) {
+                case "new":
+                    feedIconU = 16;
+                    break;
+                case "top":
+                    feedIconU = 32;
+                    break;
+                case "favorite":
+                    feedIconU = 48;
+                    break;
+                case "hot":
+                default:
+                    break;
+            }
+
+            blit(
+                matrixStack,
+                this.x + WIDTH - 16 - 5,
+                this.y + 5,
+                304 + feedIconU,
+                0,
+                16,
+                16,
+                512,
+                256
+            );
+        }
+
+        final int ICON_OFFSET = 5 + 64 + 5;
+        final int TEXT_OFFSET = ICON_OFFSET + 8 + 5;
+
+        // Name
+        blit(
+            matrixStack,
+            this.x + ICON_OFFSET,
+            this.y + 4,
+            265,
+            0,
+            8,
+            8,
+            512,
+            256
+        );
+
+        // Author
+        // @todo: real icon from base64
+        blit(
+            matrixStack,
+            this.x + ICON_OFFSET,
+            this.y + 4 + 11,
+            265,
+            8,
+            8,
+            8,
+            512,
+            256
+        );
+
+        // Size
+        blit(
+            matrixStack,
+            this.x + ICON_OFFSET,
+            this.y + 4 + 22,
+            273 + (widthBlocks - 1) * 8,
+            (heightBlocks - 1) * 8,
+            8,
+            8,
+            512,
+            256
+        );
+
+        this.font.draw(matrixStack, offerPaintingData.getPaintingTitle(), this.x + TEXT_OFFSET, this.y + 5, Color.white.getRGB());
+        this.font.draw(matrixStack, offerPaintingData.getAuthorName(), this.x + TEXT_OFFSET, this.y + 5 + 11, Color.white.getRGB());
+        this.font.draw(matrixStack, blockSize.getString(), this.x + TEXT_OFFSET, this.y + 5 + 22, Color.white.getRGB());
+    }
+
+    private void drawConnectionError(PoseStack matrixStack) {
+        final String errorMessage = this.parentScreen.getMenu().getAuthController().getError().getMessage();
+
+        drawCenteredString(matrixStack, this.font, errorMessage, this.x + this.width / 2, this.y + 20, Color.white.getRGB());
     }
 
     public boolean isLoading() {
@@ -177,6 +256,11 @@ public class PaintingInfoWidget extends AbstractWidget implements Widget {
 
     public void tick() {
         this.tick++;
+    }
+
+    @Override
+    public @Nullable Component getTooltip(int mouseX, int mouseY) {
+        return null;
     }
 
     /**

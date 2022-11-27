@@ -1,10 +1,19 @@
 {
   "entity.minecraft.villager.zettergallery.painting_merchant": "Painting Merchant",
   "container.zettergallery.merchant.preview": "Painting Preview",
-  "container.zettergallery.merchant.authenticating": "Authenticating",
+  "container.zettergallery.merchant.preview.loading": "Loading Painting Preview",
+  "container.zettergallery.merchant.info": "Painting Info",
+  "container.zettergallery.merchant.status": "Authorization Status",
+  "container.zettergallery.merchant.paginator": "Switch Paintings",
+  "container.zettergallery.merchant.paginator.previous": "Previous Painting",
+  "container.zettergallery.merchant.paginator.next": "Next Painting",
+  "container.zettergallery.merchant.authenticating": "Connecting",
   "container.zettergallery.merchant.login_request": "Log in",
   "container.zettergallery.merchant.login_request_tooltip": "Logging in allows you to sell and personalize paintings",
+  "container.zettergallery.merchant.login_waiting": "Checkin if you are logged in",
+  "container.zettergallery.merchant.logged_in_player_tooltip": "Logged in as %1$s",
   "container.zettergallery.merchant.fetching_sales": "Loading paintings",
   "container.zettergallery.merchant.unknown_error": "Unknown error occurred",
-  "container.zettergallery.merchant.try_again": "Please try again later"
+  "container.zettergallery.merchant.try_again": "Please try again later",
+  "container.zettergallery.merchant.sell": "Sell"
 }

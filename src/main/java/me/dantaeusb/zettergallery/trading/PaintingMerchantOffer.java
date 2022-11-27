@@ -35,6 +35,8 @@ public class PaintingMerchantOffer<T extends PaintingData> {
      */
     private String message;
 
+    private String feedName;
+
     private PaintingMerchantOffer(String canvasCode, @Nullable T paintingData, int price, boolean sale) {
         this.canvasCode = canvasCode;
         this.paintingData = paintingData;
@@ -98,6 +100,14 @@ public class PaintingMerchantOffer<T extends PaintingData> {
 
     public int getPrice() {
         return this.price;
+    }
+
+    public void setFeedName(String feedName) {
+        this.feedName = feedName;
+    }
+
+    public String getFeedName() {
+        return this.feedName;
     }
 
     public Optional<String> getMessage() {

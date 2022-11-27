@@ -4,15 +4,12 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.Widget;
-import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 
-public class PaginatorWidget extends AbstractWidget implements Widget, GuiEventListener {
-    protected final PaintingMerchantScreen parentScreen;
+import javax.annotation.Nullable;
 
+public class PaginatorWidget extends AbstractPaintingMerchantWidget {
     private static final int WIDTH = 39;
     private static final int HEIGHT = 10;
 
@@ -27,10 +24,12 @@ public class PaginatorWidget extends AbstractWidget implements Widget, GuiEventL
     private static final int NEXT_OFFER_BUTTON_UPOS = 208;
     private static final int NEXT_OFFER_BUTTON_VPOS = 10;
 
-    public PaginatorWidget(PaintingMerchantScreen parentScreen, int x, int y) {
-        super(x, y, WIDTH, HEIGHT, Component.translatable("container.zettergallery.merchant.paginator"));
+    private static final Component PREVIOUS_PAINTING = Component.translatable("container.zettergallery.merchant.paginator.previous");
+    private static final Component NEXT_PAINTING = Component.translatable("container.zettergallery.merchant.paginator.next");
 
-        this.parentScreen = parentScreen;
+
+    public PaginatorWidget(PaintingMerchantScreen parentScreen, int x, int y) {
+        super(parentScreen, x, y, WIDTH, HEIGHT, Component.translatable("container.zettergallery.merchant.paginator"));
     }
 
     @Override
@@ -143,6 +142,19 @@ public class PaginatorWidget extends AbstractWidget implements Widget, GuiEventL
         }
 
         return false;
+    }
+
+    @Override
+    public @Nullable Component getTooltip(int mouseX, int mouseY) {
+        if (isPointInRegion(PREV_OFFER_BUTTON_XPOS, PREV_OFFER_BUTTON_YPOS, OFFER_BUTTON_WIDTH, OFFER_BUTTON_HEIGHT, mouseX, mouseY)) {
+            return PREVIOUS_PAINTING;
+        }
+
+        if (isPointInRegion(NEXT_OFFER_BUTTON_XPOS, NEXT_OFFER_BUTTON_YPOS, OFFER_BUTTON_WIDTH, OFFER_BUTTON_HEIGHT, mouseX, mouseY)) {
+            return NEXT_PAINTING;
+        }
+
+        return null;
     }
 
     /**

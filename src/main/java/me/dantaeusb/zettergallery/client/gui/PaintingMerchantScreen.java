@@ -1,13 +1,12 @@
 package me.dantaeusb.zettergallery.client.gui;
 
+import com.google.common.collect.Lists;
 import me.dantaeusb.zetter.core.tools.Color;
 import me.dantaeusb.zettergallery.ZetterGallery;
-import me.dantaeusb.zettergallery.client.gui.merchant.PaintingInfoWidget;
-import me.dantaeusb.zettergallery.client.gui.merchant.PaginatorWidget;
-import me.dantaeusb.zettergallery.client.gui.merchant.PaintingPreviewWidget;
-import me.dantaeusb.zettergallery.client.gui.merchant.AuthWidget;
+import me.dantaeusb.zettergallery.client.gui.merchant.*;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.gallery.AuthorizationCode;
+import me.dantaeusb.zettergallery.gallery.PlayerToken;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.core.Helper;
 import me.dantaeusb.zettergallery.menu.paintingmerchant.MerchantAuthorizationController;
@@ -20,6 +19,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.npc.VillagerData;
 import net.minecraft.world.entity.player.Inventory;
@@ -29,6 +29,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import javax.annotation.Nullable;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerchantMenu> {
@@ -39,7 +40,9 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     private AuthWidget authWidget;
     private PaintingPreviewWidget previewWidget;
     private PaginatorWidget paginatorWidget;
-    private PaintingInfoWidget infoWidget;
+    private OfferInfoWidget infoWidget;
+
+    private final List<AbstractPaintingMerchantWidget> paintingMerchantWidgets = Lists.newArrayList();
 
     private int tick = 0;
 
@@ -71,70 +74,40 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     static final int PAGINATOR_POSITION_X = 83;
     static final int PAGINATOR_POSITION_Y = 100;
 
-    static final int INFO_POSITION_X = 79;
-    static final int INFO_POSITION_Y = 30;
+    static final int INFO_POSITION_X = 6;
+    static final int INFO_POSITION_Y = 26;
 
     @Override
     protected void init() {
         super.init();
 
-        this.authWidget = new AuthWidget(this, this.getGuiLeft() + AUTH_POSITION_X, this.getGuiTop() + AUTH_POSITION_Y);
-        this.previewWidget = new PaintingPreviewWidget(this, this.getGuiLeft() + PREVIEW_POSITION_X, this.getGuiTop() + PREVIEW_POSITION_Y);
-        this.paginatorWidget = new PaginatorWidget(this, this.getGuiLeft() + PAGINATOR_POSITION_X, this.getGuiTop() + PAGINATOR_POSITION_Y);
-        this.infoWidget = new PaintingInfoWidget(this, this.getGuiLeft() + INFO_POSITION_X, this.getGuiTop() + INFO_POSITION_Y);
-
-        this.addWidget(this.authWidget);
-        this.addWidget(this.previewWidget);
-        this.addWidget(this.paginatorWidget);
-        this.addWidget(this.infoWidget);
-
         this.inventoryLabelX = 107;
     }
 
-    public void onClose() {
-        super.onClose();
+    @Override
+    protected void rebuildWidgets() {
+        super.rebuildWidgets();
+
+        this.authWidget = new AuthWidget(this, this.getGuiLeft() + AUTH_POSITION_X, this.getGuiTop() + AUTH_POSITION_Y);
+        this.previewWidget = new PaintingPreviewWidget(this, this.getGuiLeft() + PREVIEW_POSITION_X, this.getGuiTop() + PREVIEW_POSITION_Y);
+        this.paginatorWidget = new PaginatorWidget(this, this.getGuiLeft() + PAGINATOR_POSITION_X, this.getGuiTop() + PAGINATOR_POSITION_Y);
+        this.infoWidget = new OfferInfoWidget(this, this.getGuiLeft() + INFO_POSITION_X, this.getGuiTop() + INFO_POSITION_Y);
+
+        this.addPaintingMerchantWidget(this.authWidget);
+        this.addPaintingMerchantWidget(this.previewWidget);
+        this.addPaintingMerchantWidget(this.paginatorWidget);
+        this.addPaintingMerchantWidget(this.infoWidget);
     }
 
-    public void openAuthenticationLink() {
-        try {
-            AuthorizationCode authorizationCode = this.menu.getAuthController().getAuthorizationCode();
-
-            if (authorizationCode == null) {
-                throw new IllegalStateException("Unable to start client authentication without cross-auth authorizationCode");
-            }
-
-            URI uri;
-            if (ZetterGallery.DEBUG_LOCALHOST) {
-                uri = new URI(Helper.LOCALHOST_FRONTEND + Helper.GALLERY_AUTH_SERVER_ENDPOINT);
-            } else {
-                uri = new URI(Helper.GALLERY_FRONTEND + Helper.GALLERY_AUTH_SERVER_ENDPOINT);
-            }
-
-            uri = addUriParam(uri, "code", this.menu.getAuthController().getAuthorizationCode().code);
-
-            Util.getPlatform().openUri(uri);
-
-            this.waitingForBrowser = true;
-        } catch (Exception exception) {
-            ZetterGallery.LOG.error(exception.getMessage());
-        }
+    @Override
+    protected void clearWidgets() {
+        super.clearWidgets();
+        this.paintingMerchantWidgets.clear();
     }
 
-    public static URI addUriParam(URI uri, String name, String value) throws URISyntaxException {
-        final String appendQuery = name + "=" + value;
-        URI oldUri = new URI(uri.toString());
-        return new URI(oldUri.getScheme(), oldUri.getAuthority(), oldUri.getPath(),
-                oldUri.getQuery() == null ? appendQuery : oldUri.getQuery() + "&" + appendQuery, oldUri.getFragment());
-    }
-
-    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(poseStack);
-
-        super.render(poseStack, mouseX, mouseY, partialTicks);
-
-        this.renderProgressBar(poseStack);
-
-        this.renderTooltip(poseStack, mouseX, mouseY);
+    public void addPaintingMerchantWidget(AbstractPaintingMerchantWidget widget) {
+        this.paintingMerchantWidgets.add(widget);
+        this.addWidget(widget);
     }
 
     @Override
@@ -164,6 +137,32 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
 
         this.authWidget.tick();
         this.infoWidget.tick();
+    }
+
+    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
+        this.renderBackground(poseStack);
+
+        super.render(poseStack, mouseX, mouseY, partialTicks);
+
+        this.renderProgressBar(poseStack);
+
+        this.renderTooltip(poseStack, mouseX, mouseY);
+    }
+
+    @Override
+    protected void renderTooltip(PoseStack matrixStack, int x, int y) {
+        super.renderTooltip(matrixStack, x, y);
+
+        for (AbstractPaintingMerchantWidget widget : this.paintingMerchantWidgets) {
+            if (widget.isMouseOver(x, y)) {
+                Component tooltip = widget.getTooltip(x, y);
+
+                if (tooltip != null) {
+                    List<FormattedCharSequence> tooltipLines = this.font.split(tooltip, 120);
+                    this.renderTooltip(matrixStack, tooltipLines, x, y);
+                }
+            }
+        }
     }
 
     private void renderProgressBar(PoseStack poseStack) {
@@ -293,6 +292,42 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         this.infoWidget.render(poseStack, mouseX, mouseY, partialTicks);
     }
 
+    public void onClose() {
+        super.onClose();
+    }
+
+    public void openAuthenticationLink() {
+        try {
+            AuthorizationCode authorizationCode = this.menu.getAuthController().getAuthorizationCode();
+
+            if (authorizationCode == null) {
+                throw new IllegalStateException("Unable to start client authentication without cross-auth authorizationCode");
+            }
+
+            URI uri;
+            if (ZetterGallery.DEBUG_LOCALHOST) {
+                uri = new URI(Helper.LOCALHOST_FRONTEND + Helper.GALLERY_AUTH_SERVER_ENDPOINT);
+            } else {
+                uri = new URI(Helper.GALLERY_FRONTEND + Helper.GALLERY_AUTH_SERVER_ENDPOINT);
+            }
+
+            uri = addUriParam(uri, "code", this.menu.getAuthController().getAuthorizationCode().code);
+
+            Util.getPlatform().openUri(uri);
+
+            this.waitingForBrowser = true;
+        } catch (Exception exception) {
+            ZetterGallery.LOG.error(exception.getMessage());
+        }
+    }
+
+    public static URI addUriParam(URI uri, String name, String value) throws URISyntaxException {
+        final String appendQuery = name + "=" + value;
+        URI oldUri = new URI(uri.toString());
+        return new URI(oldUri.getScheme(), oldUri.getAuthority(), oldUri.getPath(),
+            oldUri.getQuery() == null ? appendQuery : oldUri.getQuery() + "&" + appendQuery, oldUri.getFragment());
+    }
+
     public boolean saleAllowed() {
         return false;
     }
@@ -356,5 +391,15 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
 
     public MerchantAuthorizationController.PlayerAuthorizationState getPlayerAuthorizationState() {
         return this.menu.getAuthController().getState();
+    }
+
+    public String getAuthorizedPlayerNickname() {
+        PlayerToken.PlayerInfo playerInfo = this.menu.getAuthController().getPlayerInfo();
+
+        if (playerInfo != null) {
+            return playerInfo.nickname();
+        }
+
+        return "Anonymous";
     }
 }

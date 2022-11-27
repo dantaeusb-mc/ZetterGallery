@@ -54,11 +54,15 @@ public class SGalleryOffersPacket {
                 final int sizeW = networkBuffer.readInt();
                 final byte[] color = networkBuffer.readByteArray();
                 final int price = networkBuffer.readInt();
+                final String feedName = networkBuffer.readUtf(64);
 
                 GalleryPaintingData paintingData = ZetterGalleryCanvasTypes.GALLERY_PAINTING.get().createWrap(resolution, sizeW * resolution.getNumeric(), sizeH * resolution.getNumeric(), color);
                 paintingData.setMetaProperties(uuid, authorName, title);
 
-                offers.add(PaintingMerchantOffer.createOfferFromPaintingData(paintingData, price));
+                PaintingMerchantOffer<GalleryPaintingData> offer = PaintingMerchantOffer.createOfferFromPaintingData(paintingData, price);
+                offer.setFeedName(feedName);
+
+                offers.add(offer);
 
                 i++;
             }
@@ -100,6 +104,7 @@ public class SGalleryOffersPacket {
             networkBuffer.writeInt(paintingData.getWidth() / resolution);
             networkBuffer.writeByteArray(color);
             networkBuffer.writeInt(merchantOffer.getPrice());
+            networkBuffer.writeUtf(merchantOffer.getFeedName(), 64);
         }
     }
 

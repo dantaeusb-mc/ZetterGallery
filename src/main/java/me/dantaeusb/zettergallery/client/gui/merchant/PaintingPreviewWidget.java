@@ -1,53 +1,31 @@
 package me.dantaeusb.zettergallery.client.gui.merchant;
 
 import me.dantaeusb.zetter.client.renderer.CanvasRenderer;
-import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.Widget;
-import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
-public class PaintingPreviewWidget extends AbstractWidget implements Widget, GuiEventListener {
-    protected final PaintingMerchantScreen parentScreen;
+public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
+    private static final Component LOADING_TEXT = Component.translatable("container.zettergallery.merchant.preview.loading");
 
-    @Nullable
-    protected Minecraft minecraft;
-    protected ItemRenderer itemRenderer;
-    protected Font font;
-
-    static final int WIDTH = 92;
-    static final int HEIGHT = 78;
+    static final int WIDTH = 64;
+    static final int HEIGHT = 64;
 
     public PaintingPreviewWidget(PaintingMerchantScreen parentScreen, int x, int y) {
-        super(x, y, WIDTH, HEIGHT, Component.translatable("container.zettergallery.merchant.preview"));
-
-        this.parentScreen = parentScreen;
-
-        this.minecraft = parentScreen.getMinecraft();
-        this.itemRenderer = minecraft.getItemRenderer();
-        this.font = minecraft.font;
+        super(parentScreen, x, y, WIDTH, HEIGHT, Component.translatable("container.zettergallery.merchant.preview"));
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        //this.renderOffersCount(matrixStack, mouseX, mouseY, partialTicks);
-        this.renderOfferPainting(matrixStack, mouseX, mouseY, partialTicks);
-    }
-
-    private void renderOfferPainting(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
+    public void render(@NotNull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        PaintingMerchantOffer<?> offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null) {
             // @todo: show loading if ready
@@ -80,7 +58,7 @@ public class PaintingPreviewWidget extends AbstractWidget implements Widget, Gui
             matrixStack.scale(scale, scale, 1.0F);
 
             MultiBufferSource.BufferSource renderBuffers = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
-            // @todo: [LOW] make code with uuid (wtf does this mean)
+
             CanvasRenderer.getInstance().renderCanvas(matrixStack, renderBuffers, canvasCode, offerPaintingData, 0xF000F0);
             renderBuffers.endBatch();
 
@@ -88,6 +66,21 @@ public class PaintingPreviewWidget extends AbstractWidget implements Widget, Gui
         } else {
             CanvasRenderer.getInstance().queueCanvasTextureUpdate(canvasCode);
         }
+    }
+
+    @Override
+    public @Nullable Component getTooltip(int mouseX, int mouseY) {
+        PaintingMerchantOffer<?> offer = this.parentScreen.getCurrentOffer();
+
+        if (offer == null) {
+            return null;
+        }
+
+        if (offer.getPaintingData().isEmpty()) {
+            return LOADING_TEXT;
+        }
+
+        return null;
     }
 
     @Override
