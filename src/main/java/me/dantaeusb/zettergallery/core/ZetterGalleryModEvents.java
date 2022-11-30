@@ -1,6 +1,8 @@
 package me.dantaeusb.zettergallery.core;
 
+import me.dantaeusb.zetter.core.ZetterCanvasTypes;
 import me.dantaeusb.zetter.event.CanvasRenderPostRegisterEvent;
+import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
@@ -27,8 +29,13 @@ public class ZetterGalleryModEvents {
         }
 
         if (Minecraft.getInstance().player.containerMenu instanceof PaintingMerchantMenu paintingMerchantMenu) {
-            if (event.canvasData.getType().equals(ZetterGalleryCanvasTypes.GALLERY_PAINTING.get())) {
-                paintingMerchantMenu.getContainer().updateCurrentOfferPaintingData(event.canvasCode, (GalleryPaintingData) event.canvasData);
+            // We use both gallery painting for purchase offers and zetter paintings for sale
+            if (
+                event.canvasData.getType().equals(ZetterGalleryCanvasTypes.GALLERY_PAINTING.get())
+            ) {
+                paintingMerchantMenu.getContainer().updatePurchaseOfferPaintingData(event.canvasCode, (GalleryPaintingData) event.canvasData);
+            } else if (event.canvasData.getType().equals(ZetterCanvasTypes.PAINTING.get())) {
+                paintingMerchantMenu.getContainer().updateSaleOfferPaintingData(event.canvasCode, (PaintingData) event.canvasData);
             }
         }
     }

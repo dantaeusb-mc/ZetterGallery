@@ -146,6 +146,10 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
 
     @Override
     public @Nullable Component getTooltip(int mouseX, int mouseY) {
+        if (!this.canSelect()) {
+            return null;
+        }
+
         if (isPointInRegion(PREV_OFFER_BUTTON_XPOS, PREV_OFFER_BUTTON_YPOS, OFFER_BUTTON_WIDTH, OFFER_BUTTON_HEIGHT, mouseX, mouseY)) {
             return PREVIOUS_PAINTING;
         }

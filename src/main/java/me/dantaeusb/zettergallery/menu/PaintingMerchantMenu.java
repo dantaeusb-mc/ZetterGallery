@@ -3,11 +3,8 @@ package me.dantaeusb.zettergallery.menu;
 import me.dantaeusb.zetter.core.ZetterItems;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.core.ZetterGalleryContainerMenus;
-import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
-import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.menu.paintingmerchant.MerchantAuthorizationController;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
-import me.dantaeusb.zettergallery.network.packet.*;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
@@ -20,7 +17,6 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.Merchant;
-import net.minecraftforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
 import java.util.UUID;
@@ -214,11 +210,11 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     }
 
     public void updateCurrentOfferIndex(int index) {
-        this.container.setCurrentOfferIndex(index);
+        this.container.setSelectedPurchaseOfferIndex(index);
     }
 
     public int getCurrentOfferIndex() {
-        return this.container.getCurrentOfferIndex();
+        return this.container.getSelectedPurchaseOfferIndex();
     }
 
     /*
@@ -245,6 +241,8 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         } else if (state == PaintingMerchantOffer.State.READY) {
             this.getCurrentOffer().ready();
         }
+
+         this.container.setChanged();
     }
 
     /*

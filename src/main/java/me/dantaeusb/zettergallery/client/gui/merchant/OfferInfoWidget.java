@@ -13,13 +13,18 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
-    private static final Component LOADING_TEXT = Component.translatable("container.zettergallery.merchant.fetching_sales");
+    private static final Component FETCHING_OFFERS = Component.translatable("container.zettergallery.merchant.fetching_offers");
+    private static final Component LOADING_PAINTING = Component.translatable("container.zettergallery.merchant.loading_painting");
+    private static final Component UNKNOWN_OFFER_ERROR = Component.translatable("container.zettergallery.merchant.offer.unknown_error");
 
     @Nullable
     protected Minecraft minecraft;
@@ -39,20 +44,16 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
         this.font = minecraft.font;
     }
 
-    private static final int OFFER_BUTTON_WIDTH = 160;
-    private static final int OFFER_BUTTON_HEIGHT = 32;
-
     @Override
     public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         RenderSystem.setShaderTexture(0, PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
 
         if (this.parentScreen.getOffersState().equals(PaintingMerchantContainer.OffersState.LOADING)) {
-            this.drawLoadingLogo(matrixStack);
+            this.renderLoadingLogo(matrixStack);
         } else if (this.parentScreen.getOffersState().equals(PaintingMerchantContainer.OffersState.ERROR)) {
-            this.drawConnectionError(matrixStack);
-            // @todo: draw error
+            this.renderErrorMessage(matrixStack,this.parentScreen.getMenu().getAuthController().getError().getMessage());
         } else {
-            this.drawPaintingInfo(matrixStack);
+            this.renderPaintingInfo(matrixStack);
         }
     }
 
@@ -68,9 +69,9 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
     private static final int LOGO_LOADER_UPOS = 240;
     private static final int LOGO_LOADER_VPOS = 128;
     private static final int LOGO_LOADER_XPOS = (WIDTH - LOGO_LOADER_WIDTH) / 2;
-    private static final int LOGO_LOADER_YPOS = (HEIGHT - LOGO_LOADER_HEIGHT) / 2;
+    private static final int LOGO_LOADER_YPOS = (HEIGHT - (LOGO_LOADER_HEIGHT + 16)) / 2;
 
-    private void drawLoadingLogo(PoseStack matrixStack) {
+    private void renderLoadingLogo(PoseStack matrixStack) {
         final int animation = this.tick % (LOGO_LOADER_HEIGHT * 10);
         int frame = animation / 10; // 0-19
 
@@ -100,10 +101,10 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
                 256
         );
 
-        drawCenteredString(matrixStack, this.font, LOADING_TEXT, this.x + LOGO_XPOS + (LOGO_WIDTH / 2), this.y + LOGO_YPOS + LOGO_HEIGHT + 7, Color.white.getRGB());
+        drawCenteredString(matrixStack, this.font, FETCHING_OFFERS, this.x + LOGO_XPOS + (LOGO_WIDTH / 2), this.y + LOGO_YPOS + LOGO_HEIGHT + 7, Color.white.getRGB());
     }
 
-    private void drawPaintingInfo(PoseStack matrixStack) {
+    private void renderPaintingInfo(PoseStack matrixStack) {
         PaintingMerchantOffer<?> offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null) {
@@ -113,11 +114,18 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
 
         if (this.isLoading() || offer.getPaintingData().isEmpty()) {
             // Preview widget will have loader
-            // @todo: draw loading text
+            drawCenteredString(matrixStack, this.font, LOADING_PAINTING, this.x + this.width / 2, this.y + this.height / 2 - 4, Color.white.getRGB());
             return;
         }
 
         PaintingData offerPaintingData = offer.getPaintingData().get();
+
+        if (offer.isError()) {
+            final String errorMessage = offer.getMessage().orElse(UNKNOWN_OFFER_ERROR.getString());
+
+            this.renderErrorMessage(matrixStack, errorMessage);
+            return;
+        }
 
         String priceString = String.valueOf(offer.getPrice());
         final int priceWidth = this.font.width(priceString);
@@ -133,12 +141,8 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
         // Account for RTL?
         Component blockSize = (Component.translatable("item.zetter.painting.size", Integer.toString(widthBlocks), Integer.toString(heightBlocks)));
 
-        if (offer.isError()) {
-            final String errorMessage = offer.getMessage().orElse("Something went wrong");
-
-            this.font.draw(matrixStack, errorMessage, this.x + this.width / 2.0F - (this.font.width(errorMessage) / 2.0F), this.y + 12, Color.white.getRGB());
-            return;
-        }
+        List<FormattedCharSequence> multilinePaintingTitle =  this.font.split(FormattedText.of(offerPaintingData.getPaintingTitle()), 80);
+        List<FormattedCharSequence> multilineNickname =  this.font.split(FormattedText.of(offerPaintingData.getAuthorName()), 80);
 
         // To avoid texture swapping, first draw icons, then text
         RenderSystem.setShaderTexture(0, PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
@@ -195,7 +199,7 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
         blit(
             matrixStack,
             this.x + ICON_OFFSET,
-            this.y + 4 + 11,
+            this.y + 4 + 11 * multilinePaintingTitle.size(),
             265,
             8,
             8,
@@ -208,7 +212,7 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
         blit(
             matrixStack,
             this.x + ICON_OFFSET,
-            this.y + 4 + 22,
+            this.y + 4 + 11 * multilinePaintingTitle.size() + 11 * multilineNickname.size(),
             273 + (widthBlocks - 1) * 8,
             (heightBlocks - 1) * 8,
             8,
@@ -217,15 +221,25 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
             256
         );
 
-        this.font.draw(matrixStack, offerPaintingData.getPaintingTitle(), this.x + TEXT_OFFSET, this.y + 5, Color.white.getRGB());
-        this.font.draw(matrixStack, offerPaintingData.getAuthorName(), this.x + TEXT_OFFSET, this.y + 5 + 11, Color.white.getRGB());
-        this.font.draw(matrixStack, blockSize.getString(), this.x + TEXT_OFFSET, this.y + 5 + 22, Color.white.getRGB());
+        int titleNameLines = 0;
+        for (FormattedCharSequence paintingTitleNameLine: multilinePaintingTitle) {
+            this.font.draw(matrixStack, paintingTitleNameLine, this.x + TEXT_OFFSET, this.y + 5 + 11 * titleNameLines++, Color.white.getRGB());
+        }
+
+        int nicknameLines = 0;
+        for (FormattedCharSequence nicknameLine: multilineNickname) {
+            this.font.draw(matrixStack, nicknameLine, this.x + TEXT_OFFSET, this.y + 5 + 11 * titleNameLines + 11 * nicknameLines++, Color.white.getRGB());
+        }
+
+        this.font.draw(matrixStack, blockSize.getString(), this.x + TEXT_OFFSET, this.y + 5 + 11 * titleNameLines + 11 * nicknameLines, Color.white.getRGB());
     }
 
-    private void drawConnectionError(PoseStack matrixStack) {
-        final String errorMessage = this.parentScreen.getMenu().getAuthController().getError().getMessage();
-
-        drawCenteredString(matrixStack, this.font, errorMessage, this.x + this.width / 2, this.y + 20, Color.white.getRGB());
+    private void renderErrorMessage(PoseStack matrixStack, String errorMessage) {
+        List<FormattedCharSequence> multilineErrorMessage =  this.font.split(FormattedText.of(errorMessage), 186);
+        int errorLines = 0;
+        for (FormattedCharSequence errorLine: multilineErrorMessage) {
+            drawCenteredString(matrixStack, this.font, errorLine, this.x + this.width / 2, this.y + 20 + 11 * errorLines++, Color.white.getRGB());
+        }
     }
 
     public boolean isLoading() {
@@ -264,7 +278,6 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
     }
 
     /**
-     * @see net.minecraft.client.gui.screen.inventory.ContainerScreen#isPointInRegion(int, int, int, int, double, double)
      * @param x
      * @param y
      * @param width

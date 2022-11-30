@@ -3,15 +3,11 @@ package me.dantaeusb.zettergallery.client.gui.merchant;
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.dantaeusb.zetter.core.tools.Color;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
-import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import com.mojang.blaze3d.vertex.PoseStack;
+import me.dantaeusb.zettergallery.core.ClientHelper;
 import me.dantaeusb.zettergallery.menu.paintingmerchant.MerchantAuthorizationController;
-import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.gui.components.Widget;
-import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Component;
@@ -38,7 +34,9 @@ public class AuthWidget extends AbstractPaintingMerchantWidget {
     private static final Component LOGIN_TEXT = Component.translatable("container.zettergallery.merchant.login_request");
     private static final Component UNKNOWN_ERROR_TEXT = Component.translatable("container.zettergallery.merchant.unknown_error");
     private static final Component TRY_AGAIN_TEXT = Component.translatable("container.zettergallery.merchant.try_again");
+    private static final Component DISABLED_TEXT = Component.translatable("container.zettergallery.merchant.login_disabled");
 
+    private static final Component LINKS_DISABLED_TOOLTIP_TEXT = Component.translatable("container.zettergallery.merchant.links_disabled_tooltip");
     private static final Component LOGIN_TOOLTIP_TEXT = Component.translatable("container.zettergallery.merchant.login_request_tooltip");
     private static final Component WAITING_TOOLTIP_TEXT = Component.translatable("container.zettergallery.merchant.login_waiting");
 
@@ -68,11 +66,29 @@ public class AuthWidget extends AbstractPaintingMerchantWidget {
                         256
                 );
 
-                this.drawLoading(matrixStack);
+                this.renderLoading(matrixStack);
                 this.font.draw(matrixStack, AUTHENTICATING_TEXT, this.x + 32.0F, this.y + 8.0F, Color.white.getRGB());
 
                 break;
             case CLIENT_AUTHORIZATION:
+                if (!ClientHelper.openUriAllowed()) {
+                    blit(
+                        matrixStack,
+                        this.x,
+                        this.y,
+                        AUTH_UPOS,
+                        AUTH_VPOS,
+                        WIDTH,
+                        HEIGHT,
+                        512,
+                        256
+                    );
+
+                    drawCenteredString(matrixStack, this.font, DISABLED_TEXT, this.x + this.width / 2, this.y + 10, Color.white.getRGB());
+
+                    break;
+                }
+
                 if (!isPointInRegion(0, 0, WIDTH, HEIGHT, mouseX, mouseY)) {
                     blit(
                             matrixStack,
@@ -169,6 +185,10 @@ public class AuthWidget extends AbstractPaintingMerchantWidget {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (!ClientHelper.openUriAllowed()) {
+            return false;
+        }
+
         if (this.parentScreen.getPlayerAuthorizationState() == MerchantAuthorizationController.PlayerAuthorizationState.CLIENT_AUTHORIZATION &&
             isPointInRegion(0, 0, WIDTH, HEIGHT, mouseX, mouseY)
         ) {
@@ -186,7 +206,7 @@ public class AuthWidget extends AbstractPaintingMerchantWidget {
     private static final int LOADING_UPOS = 208;
     private static final int LOADING_VPOS = 20;
 
-    private void drawLoading(PoseStack matrixStack)
+    private void renderLoading(PoseStack matrixStack)
     {
         final int animation = this.tick % 40;
         int frame = animation / 10; // 0-3
@@ -198,10 +218,15 @@ public class AuthWidget extends AbstractPaintingMerchantWidget {
 
     @Override
     public @Nullable Component getTooltip(int mouseX, int mouseY) {
+
         switch (this.parentScreen.getPlayerAuthorizationState()) {
             case SERVER_AUTHENTICATION:
                 return WAITING_TOOLTIP_TEXT;
             case CLIENT_AUTHORIZATION:
+                if (!ClientHelper.openUriAllowed()) {
+                    return LINKS_DISABLED_TOOLTIP_TEXT;
+                }
+
                 return LOGIN_TOOLTIP_TEXT;
             case LOGGED_IN:
                 return Component.translatable("container.zettergallery.merchant.logged_in_player_tooltip", this.parentScreen.getAuthorizedPlayerNickname());

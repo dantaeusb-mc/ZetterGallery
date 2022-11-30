@@ -472,6 +472,8 @@ public class GalleryConnection {
     /**
      * Submits painting on behalf of player
      *
+     * @todo: [HIGH] Wrong response type
+     *
      * @param token
      * @param paintingData
      */

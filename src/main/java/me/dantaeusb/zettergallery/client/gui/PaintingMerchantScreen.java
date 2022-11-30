@@ -5,6 +5,7 @@ import me.dantaeusb.zetter.core.tools.Color;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.merchant.*;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
+import me.dantaeusb.zettergallery.core.ClientHelper;
 import me.dantaeusb.zettergallery.gallery.AuthorizationCode;
 import me.dantaeusb.zettergallery.gallery.PlayerToken;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
@@ -13,7 +14,6 @@ import me.dantaeusb.zettergallery.menu.paintingmerchant.MerchantAuthorizationCon
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
@@ -136,6 +136,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         }
 
         this.authWidget.tick();
+        this.previewWidget.tick();
         this.infoWidget.tick();
     }
 
@@ -313,7 +314,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
 
             uri = addUriParam(uri, "code", this.menu.getAuthController().getAuthorizationCode().code);
 
-            Util.getPlatform().openUri(uri);
+            ClientHelper.openUriPrompt(this, uri.toString());
 
             this.waitingForBrowser = true;
         } catch (Exception exception) {

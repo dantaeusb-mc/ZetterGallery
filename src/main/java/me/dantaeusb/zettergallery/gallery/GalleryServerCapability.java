@@ -7,7 +7,6 @@ import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.List;
 import java.util.UUID;
 

@@ -53,8 +53,9 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
     private OffersState state = OffersState.LOADING;
     private GalleryError error;
 
+    // @todo: [HIGH] I don't think we need that anymore
     private boolean locked = false;
-    private int currentOfferIndex;
+    private int selectedPurchaseOfferIndex;
 
     @Nullable
     private List<PaintingMerchantOffer<GalleryPaintingData>> offers;
@@ -98,14 +99,23 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
      * to prevent event spamming and data inconsistency, check
      * that offer is changed!
      */
+    @Override
     public void setChanged() {
         ItemStack inputStack = this.getInputSlot();
-        PaintingMerchantOffer currentOffer = this.getCurrentOffer();
+        PaintingMerchantOffer<GalleryPaintingData> selectedPurchaseOffer = null;
+
+        if (this.offers != null && this.offers.size() > this.selectedPurchaseOfferIndex) {
+            selectedPurchaseOffer = this.offers.get(this.selectedPurchaseOfferIndex);
+        }
 
         if (this.hasOffers()) {
             if (inputStack.isEmpty()) {
-                if (currentOffer != null) {
-                    currentOffer.unfulfilled();
+                if (selectedPurchaseOffer != null && !selectedPurchaseOffer.equals(this.currentOffer)) {
+                    this.currentOffer = selectedPurchaseOffer;
+                }
+
+                if (this.currentOffer != null) {
+                    this.currentOffer.unfulfilled();
                 }
 
                 this.setItem(OUTPUT_SLOT, ItemStack.EMPTY);
@@ -117,8 +127,17 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
                     /**
                      * If item was not changed, there's no need
                      * to update offer and send packet
+                     *
+                     * Only need to update result
                      */
-                    if (currentOffer != null && currentOffer.isSaleOffer() && currentOffer.getCanvasCode().equals(canvasCode)) {
+                    if (
+                        this.currentOffer != null && this.currentOffer.isSaleOffer()
+                            && this.currentOffer.getCanvasCode().equals(canvasCode)
+                    ) {
+                        if (this.currentOffer.isReady()) {
+                            this.setItem(OUTPUT_SLOT, currentOffer.getOfferResult());
+                        }
+
                         return;
                     }
 
@@ -147,8 +166,12 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
                         );
                     }
                 } else if (inputStack.getItem() == Items.EMERALD) {
-                    if (currentOffer != null && currentOffer.getPrice() <= inputStack.getCount()) {
-                        currentOffer.ready();
+                    if (selectedPurchaseOffer != null && !selectedPurchaseOffer.equals(this.currentOffer)) {
+                        this.currentOffer = selectedPurchaseOffer;
+                    }
+
+                    if (this.currentOffer != null && currentOffer.getPrice() <= inputStack.getCount()) {
+                        this.currentOffer.ready();
 
                         this.setItem(OUTPUT_SLOT, currentOffer.getOfferResult());
                     } else {
@@ -252,7 +275,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
                 );
             }
 
-            this.itemStacks.remove(INPUT_SLOT);
+            this.itemStacks.set(INPUT_SLOT, ItemStack.EMPTY);
         } else {
             if (!this.merchant.getTradingPlayer().getLevel().isClientSide()) {
                 ConnectionManager.getInstance().registerPurchase(
@@ -369,11 +392,29 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
     }
 
     /**
-     * Usually called on client to sync painting data
-     * on current offer if it was not available
-     * at the time of offer creating
+     * If for some reason offer was missing data
+     *
+     * @todo: [MED] Need to register as well?
+     * @param canvasCode
+     * @param paintingData
      */
-    public void updateCurrentOfferPaintingData(String canvasCode, GalleryPaintingData paintingData) {
+    public void updatePurchaseOfferPaintingData(String canvasCode, GalleryPaintingData paintingData) {
+        if (this.offers != null) {
+            for (PaintingMerchantOffer<GalleryPaintingData> offer: this.offers){
+                if (offer.getCanvasCode().equals(canvasCode)) {
+                    offer.updatePaintingData(paintingData);
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
+     * If painting was not loaded before player attempted to submit painting
+     * @param canvasCode
+     * @param paintingData
+     */
+    public void updateSaleOfferPaintingData(String canvasCode, PaintingData paintingData) {
         // If offer has changed
         if (this.getCurrentOffer() == null || !this.getCurrentOffer().getCanvasCode().equals(canvasCode)) {
             return;
@@ -394,15 +435,15 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
         return this.currentOffer;
     }
 
-    public int getCurrentOfferIndex() {
-        return this.currentOfferIndex;
+    public int getSelectedPurchaseOfferIndex() {
+        return this.selectedPurchaseOfferIndex;
     }
 
     public void updateCurrentOffer() {
-        this.setCurrentOfferIndex(this.getCurrentOfferIndex());
+        this.setSelectedPurchaseOfferIndex(this.getSelectedPurchaseOfferIndex());
     }
 
-    private MerchantOffer getVanillaMerchantOffer(PaintingMerchantOffer offer) {
+    private MerchantOffer getVanillaMerchantOffer(PaintingMerchantOffer<?> offer) {
         if (offer.isSaleOffer()) {
             return this.merchant.getOffers().get(ZetterGalleryVillagerTrades.SELL_OFFER_ID);
         } else {
@@ -410,7 +451,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
         }
     }
 
-    public void setCurrentOfferIndex(int index) {
+    public void setSelectedPurchaseOfferIndex(int index) {
         if (!this.hasOffers()) {
             ZetterGallery.LOG.error("No offers loaded yet");
             return;
@@ -421,8 +462,10 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
             return;
         }
 
-        this.currentOfferIndex = index;
-        this.currentOffer = this.offers.get(index);
+        this.selectedPurchaseOfferIndex = index;
+
+        // This will set current offer, because this code needs to update offer's state
+        // Depending on the slots
         this.setChanged();
 
         if (this.merchant.getTradingPlayer().level.isClientSide()) {
