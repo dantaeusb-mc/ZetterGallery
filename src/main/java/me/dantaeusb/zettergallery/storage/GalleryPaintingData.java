@@ -1,15 +1,20 @@
 package me.dantaeusb.zettergallery.storage;
 
+import me.dantaeusb.zetter.Zetter;
+import me.dantaeusb.zetter.client.gui.overlay.PaintingInfoOverlay;
 import me.dantaeusb.zetter.core.Helper;
-import me.dantaeusb.zetter.core.ZetterCanvasTypes;
+import me.dantaeusb.zetter.core.ZetterOverlays;
 import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.CanvasDataBuilder;
 import me.dantaeusb.zetter.storage.CanvasDataType;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
+import me.dantaeusb.zettergallery.client.gui.overlay.GalleryPaintingInfoOverlay;
 import me.dantaeusb.zettergallery.core.ZetterGalleryCanvasTypes;
+import me.dantaeusb.zettergallery.core.ZetterGalleryOverlays;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerLevel;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -17,6 +22,8 @@ import java.util.UUID;
 /**
  * Only for client-side purposes
  * Contains information about painting downloaded from Zetter Gallery
+ *
+ * @todo: [LOW] Think about hiding real player UUID in Gallery
  */
 public class GalleryPaintingData extends PaintingData {
     public static final String TYPE = "painting";
@@ -24,9 +31,9 @@ public class GalleryPaintingData extends PaintingData {
 
     public static final CanvasDataBuilder<GalleryPaintingData> BUILDER = new GalleryPaintingDataBuilder();
 
-    protected static final String NBT_TAG_UUID = "ZetterGalleryUuid";
+    protected static final String NBT_TAG_GALLERY_UUID = "ZetterGalleryUuid";
 
-    private UUID uuid;
+    private UUID galleryPaintingUuid;
 
     public static String getCanvasCode(UUID canvasId) {
         return CODE_PREFIX + canvasId.toString();
@@ -34,9 +41,9 @@ public class GalleryPaintingData extends PaintingData {
 
     protected GalleryPaintingData() {}
 
-    public void setMetaProperties(UUID uuid, String authorName, String title) {
-        this.uuid = uuid;
-        super.setMetaProperties(authorName, title);
+    public void setMetaProperties(UUID galleryPaintingUuid, UUID authorUuid, String authorName, String title) {
+        this.galleryPaintingUuid = galleryPaintingUuid;
+        super.setMetaProperties(authorUuid, authorName, title);
     }
 
     public boolean isEditable() {
@@ -44,18 +51,30 @@ public class GalleryPaintingData extends PaintingData {
     }
 
     @Override
+    public PaintingInfoOverlay getOverlay() {
+        return ZetterGalleryOverlays.GALLERY_PAINTING_INFO;
+    }
+
+    @Override
     public CanvasDataType<GalleryPaintingData> getType() {
         return ZetterGalleryCanvasTypes.GALLERY_PAINTING.get();
     }
 
+    @Override
+    public void correctData(ServerLevel level) {
+        if (this.authorUuid == null) {
+            this.authorUuid = new UUID(0L, 0L);
+        }
+    }
+
     public UUID getUUID() {
-        return this.uuid;
+        return this.galleryPaintingUuid;
     }
 
     public CompoundTag save(CompoundTag compoundTag) {
         super.save(compoundTag);
 
-        compoundTag.putUUID(NBT_TAG_UUID, this.uuid);
+        compoundTag.putUUID(NBT_TAG_GALLERY_UUID, this.galleryPaintingUuid);
 
         return compoundTag;
     }
@@ -99,10 +118,16 @@ public class GalleryPaintingData extends PaintingData {
 
             newPainting.updateColorData(compoundTag.getByteArray(NBT_TAG_COLOR));
 
+            if (compoundTag.contains(NBT_TAG_AUTHOR_UUID)) {
+                newPainting.authorUuid = compoundTag.getUUID(NBT_TAG_AUTHOR_UUID);
+            } else {
+                newPainting.authorUuid = null;
+            }
+
             newPainting.authorName = compoundTag.getString(NBT_TAG_AUTHOR_NAME);
             newPainting.title = compoundTag.getString(NBT_TAG_TITLE);
             newPainting.banned = compoundTag.getBoolean(NBT_TAG_BANNED);
-            newPainting.uuid = compoundTag.getUUID(NBT_TAG_UUID);
+            newPainting.galleryPaintingUuid = compoundTag.getUUID(NBT_TAG_GALLERY_UUID);
 
             return newPainting;
         }
@@ -132,12 +157,14 @@ public class GalleryPaintingData extends PaintingData {
                 unwrappedColorData
             );
 
-            final UUID uuid = networkBuffer.readUUID();
+            final UUID galleryPaintingUuid = networkBuffer.readUUID();
+            final UUID authorUuid = networkBuffer.readUUID();
             final String authorName = networkBuffer.readUtf(64);
             final String title = networkBuffer.readUtf(32);
 
             newPainting.setMetaProperties(
-                uuid,
+                galleryPaintingUuid,
+                authorUuid,
                 authorName,
                 title
             );
@@ -151,7 +178,8 @@ public class GalleryPaintingData extends PaintingData {
             networkBuffer.writeInt(canvasData.height);
             networkBuffer.writeInt(canvasData.getColorDataBuffer().remaining());
             networkBuffer.writeBytes(canvasData.getColorDataBuffer());
-            networkBuffer.writeUUID(canvasData.uuid);
+            networkBuffer.writeUUID(canvasData.galleryPaintingUuid);
+            networkBuffer.writeUUID(canvasData.authorUuid);
             networkBuffer.writeUtf(canvasData.authorName, 64);
             networkBuffer.writeUtf(canvasData.title, 32);
         }

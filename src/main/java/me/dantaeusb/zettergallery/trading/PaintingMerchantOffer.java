@@ -17,6 +17,7 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public class PaintingMerchantOffer<T extends PaintingData> {
     private final String canvasCode;
@@ -183,7 +184,8 @@ public class PaintingMerchantOffer<T extends PaintingData> {
         GalleryPaintingData paintingData = ZetterGalleryCanvasTypes.GALLERY_PAINTING.get().createWrap(
             resolution, paintingItem.sizeW * resolution.getNumeric(), paintingItem.sizeH * resolution.getNumeric(), canvasData
         );
-        paintingData.setMetaProperties(paintingItem.uuid, paintingItem.author.nickname, paintingItem.name);
+
+        paintingData.setMetaProperties(paintingItem.uuid, paintingItem.author.uuid, paintingItem.author.nickname, paintingItem.name);
 
         return paintingData;
 
