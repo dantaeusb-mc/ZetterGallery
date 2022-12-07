@@ -2,6 +2,7 @@ package me.dantaeusb.zettergallery.client.gui.merchant;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.dantaeusb.zetter.client.renderer.CanvasRenderer;
+import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
@@ -28,7 +29,7 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
 
     @Override
     public void render(@NotNull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        PaintingMerchantOffer<?> offer = this.parentScreen.getCurrentOffer();
+        PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null || offer.isError()) {
             return;
@@ -41,7 +42,7 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
         String canvasCode = offer.getCanvasCode();
 
         if (offer.getPaintingData().isPresent()) {
-            PaintingData offerPaintingData = (PaintingData) offer.getPaintingData().get();
+            DummyCanvasData offerPaintingData = offer.getPaintingData().get();
 
             float maxSize = Math.max(offerPaintingData.getHeight(), offerPaintingData.getWidth()) / 16.0F;
             float scale = 4.0F / maxSize;
@@ -107,7 +108,7 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
 
     @Override
     public @Nullable Component getTooltip(int mouseX, int mouseY) {
-        PaintingMerchantOffer<?> offer = this.parentScreen.getCurrentOffer();
+        PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null) {
             return null;

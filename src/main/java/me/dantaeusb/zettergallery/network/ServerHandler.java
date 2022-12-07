@@ -36,11 +36,15 @@ public class ServerHandler {
                 throw new IllegalStateException("Selected offer is empty");
             }
 
+            if (paintingMerchantMenu.getCurrentOffer().saleOffer) {
+                throw new IllegalStateException("Cannot select a select offer");
+            }
+
             if (paintingMerchantMenu.getCurrentOffer().getPaintingData().isEmpty()) {
                 throw new IllegalStateException("Painting doesn't have data to register impression");
             }
 
-            UUID paintingUuid = ((GalleryPaintingData) paintingMerchantMenu.getCurrentOffer().getPaintingData().get()).getUUID();
+            UUID paintingUuid = paintingMerchantMenu.getCurrentOffer().paintingUuid;
 
             ConnectionManager.getInstance().registerImpression(sendingPlayer, paintingUuid, () -> {}, () -> {
                 ZetterGallery.LOG.error("Unable to register impression, maybe outdated mod version?");

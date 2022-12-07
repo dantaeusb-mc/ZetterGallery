@@ -1,7 +1,7 @@
 package me.dantaeusb.zettergallery.gallery;
 
 import me.dantaeusb.zetter.Zetter;
-import me.dantaeusb.zetter.storage.PaintingData;
+import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.core.Helper;
@@ -10,7 +10,6 @@ import me.dantaeusb.zettergallery.network.http.GalleryConnection;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.network.http.stub.AuthTokenResponse;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
-import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import me.dantaeusb.zettergallery.util.EventConsumer;
 import net.minecraft.server.MinecraftServer;
@@ -336,16 +335,18 @@ public class ConnectionManager {
 
         ConnectionManager.getInstance().getConnection().validatePainting(
             this.playerTokenStorage.getPlayerTokenString(player),
-            (PaintingData) offer.getPaintingData().get(),
+            offer.paintingName,
+            (DummyCanvasData) offer.getPaintingData().get(),
             (response) -> successConsumer.accept(),
             errorConsumer
         );
     }
 
-    public void registerSale(ServerPlayer player, PaintingData paintingData, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void registerSale(ServerPlayer player, PaintingMerchantOffer offer, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
         ConnectionManager.getInstance().getConnection().sellPainting(
             this.playerTokenStorage.getPlayerTokenString(player),
-            paintingData,
+            offer.paintingName,
+            offer.getPaintingData().get(),
             (response) -> {
                 successConsumer.accept();
             },
@@ -359,12 +360,12 @@ public class ConnectionManager {
 
     public void requestOffers(
         ServerPlayer player, PaintingMerchantContainer paintingMerchantContainer,
-        Consumer<List<PaintingMerchantOffer<GalleryPaintingData>>> successConsumer,
+        Consumer<List<PaintingMerchantOffer>> successConsumer,
         Consumer<GalleryError> errorConsumer
     ) {
         if (this.playerFeeds.containsKey(player.getUUID())) {
             PlayerFeed feed = this.playerFeeds.get(player.getUUID());
-            List<PaintingMerchantOffer<GalleryPaintingData>> offers = this.getOffersFromFeed(
+            List<PaintingMerchantOffer> offers = this.getOffersFromFeed(
                 this.cycleSeed,
                 feed,
                 paintingMerchantContainer.getMenu().getMerchantId(),
@@ -381,7 +382,7 @@ public class ConnectionManager {
                     this.nextCycleEpoch = response.cycleInfo.endsAt.getTime();
 
                     PlayerFeed feed = this.createPlayerFeed(player, response);
-                    List<PaintingMerchantOffer<GalleryPaintingData>> offers = this.getOffersFromFeed(
+                    List<PaintingMerchantOffer> offers = this.getOffersFromFeed(
                         this.cycleSeed,
                         feed,
                         paintingMerchantContainer.getMenu().getMerchantId(),
@@ -411,7 +412,7 @@ public class ConnectionManager {
      * @param merchantLevel
      * @return
      */
-    private List<PaintingMerchantOffer<GalleryPaintingData>> getOffersFromFeed(String seed, PlayerFeed feed, UUID merchantId, int merchantLevel) {
+    private List<PaintingMerchantOffer> getOffersFromFeed(String seed, PlayerFeed feed, UUID merchantId, int merchantLevel) {
         ByteBuffer buffer = ByteBuffer.wrap(seed.getBytes(StandardCharsets.UTF_8), 0, 8);
         long seedLong = buffer.getLong();
 
@@ -426,13 +427,13 @@ public class ConnectionManager {
         Collections.shuffle(available, rng);
         available = available.subList(0, showCount);
 
-        List<PaintingMerchantOffer<GalleryPaintingData>> randomOffers = available.stream().map(feed.getOffers()::get).toList();
+        List<PaintingMerchantOffer> randomOffers = available.stream().map(feed.getOffers()::get).toList();
 
         // Remove duplicates from offers list if there are same paintings in different feeds
         List<String> offerIds = new LinkedList<>();
-        List<PaintingMerchantOffer<GalleryPaintingData>> offers = new LinkedList<>();
+        List<PaintingMerchantOffer> offers = new LinkedList<>();
 
-        for (PaintingMerchantOffer<GalleryPaintingData> offer : randomOffers) {
+        for (PaintingMerchantOffer offer : randomOffers) {
             if (offerIds.contains(offer.getCanvasCode())) {
                 continue;
             }

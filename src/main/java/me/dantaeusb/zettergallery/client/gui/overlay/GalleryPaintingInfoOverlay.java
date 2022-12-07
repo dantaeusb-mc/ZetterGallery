@@ -3,18 +3,26 @@ package me.dantaeusb.zettergallery.client.gui.overlay;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import me.dantaeusb.zetter.client.gui.overlay.PaintingInfoOverlay;
+import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringUtil;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
+import java.security.InvalidParameterException;
+
 public class GalleryPaintingInfoOverlay extends PaintingInfoOverlay implements IGuiOverlay {
     private GalleryPaintingData paintingData = null;
     private int overlayMessageTime = 0;
 
-    public void setPainting(GalleryPaintingData galleryPaintingData) {
-        this.paintingData = galleryPaintingData;
+    @Override
+    public void setPainting(PaintingData galleryPaintingData) {
+        if (!(galleryPaintingData instanceof GalleryPaintingData)) {
+            throw new InvalidParameterException("This overlay should be used exclusively for Gallery Paintings");
+        }
+
+        this.paintingData = (GalleryPaintingData) galleryPaintingData;
         this.overlayMessageTime = 15 * 20;
     }
 
@@ -31,7 +39,7 @@ public class GalleryPaintingInfoOverlay extends PaintingInfoOverlay implements I
 
         Component title;
 
-        String paintingName = this.paintingData.getPaintingTitle();
+        String paintingName = this.paintingData.getPaintingName();
         String authorName = this.paintingData.getAuthorName();
 
         if (StringUtil.isNullOrEmpty(paintingName)) {

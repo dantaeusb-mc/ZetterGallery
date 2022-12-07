@@ -1,10 +1,10 @@
 package me.dantaeusb.zettergallery.network.packet;
 
+import me.dantaeusb.zetter.core.ZetterCanvasTypes;
 import me.dantaeusb.zetter.storage.AbstractCanvasData;
+import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zettergallery.ZetterGallery;
-import me.dantaeusb.zettergallery.core.ZetterGalleryCanvasTypes;
 import me.dantaeusb.zettergallery.network.ClientHandler;
-import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
@@ -25,13 +25,13 @@ public class SGalleryOffersPacket {
     static final int MAX_NAME_LENGTH = 128;
     static final int MAX_AUTHOR_LENGTH = 64;
 
-    private final List<PaintingMerchantOffer<GalleryPaintingData>> offers;
+    private final List<PaintingMerchantOffer> offers;
 
-    public SGalleryOffersPacket(List<PaintingMerchantOffer<GalleryPaintingData>> offers) {
+    public SGalleryOffersPacket(List<PaintingMerchantOffer> offers) {
         this.offers = offers;
     }
 
-    public List<PaintingMerchantOffer<GalleryPaintingData>> getOffers() {
+    public List<PaintingMerchantOffer> getOffers() {
         return this.offers;
     }
 
@@ -43,12 +43,13 @@ public class SGalleryOffersPacket {
             final int size = networkBuffer.readInt();
             int i = 0;
 
-            Vector<PaintingMerchantOffer<GalleryPaintingData>> offers = new Vector<>();
+            Vector<PaintingMerchantOffer> offers = new Vector<>();
 
             while (i < size) {
-                final UUID uuid = networkBuffer.readUUID();
-                final String title = networkBuffer.readUtf(MAX_NAME_LENGTH);
-                final String authorName = networkBuffer.readUtf(MAX_AUTHOR_LENGTH);
+                final UUID paintingGalleryUuid = networkBuffer.readUUID();
+                final String paintingTitle = networkBuffer.readUtf(MAX_NAME_LENGTH);
+                final UUID paintingAuthorUuid = networkBuffer.readUUID();
+                final String paintingAuthorName = networkBuffer.readUtf(MAX_AUTHOR_LENGTH);
                 final AbstractCanvasData.Resolution resolution = AbstractCanvasData.Resolution.get(networkBuffer.readInt());
                 final int sizeH = networkBuffer.readInt();
                 final int sizeW = networkBuffer.readInt();
@@ -56,10 +57,12 @@ public class SGalleryOffersPacket {
                 final int price = networkBuffer.readInt();
                 final String feedName = networkBuffer.readUtf(64);
 
-                GalleryPaintingData paintingData = ZetterGalleryCanvasTypes.GALLERY_PAINTING.get().createWrap(resolution, sizeW * resolution.getNumeric(), sizeH * resolution.getNumeric(), color);
-                paintingData.setMetaProperties(uuid, authorName, title);
+                DummyCanvasData paintingData = ZetterCanvasTypes.DUMMY.get().createWrap(resolution, sizeW * resolution.getNumeric(), sizeH * resolution.getNumeric(), color);
 
-                PaintingMerchantOffer<GalleryPaintingData> offer = PaintingMerchantOffer.createOfferFromPaintingData(paintingData, price);
+                PaintingMerchantOffer offer = PaintingMerchantOffer.createOfferFromNetwork(
+                    paintingData, paintingGalleryUuid, paintingTitle,
+                    paintingAuthorUuid, paintingAuthorName, price
+                );
                 offer.setFeedName(feedName);
 
                 offers.add(offer);
@@ -84,21 +87,21 @@ public class SGalleryOffersPacket {
             if (
                 merchantOffer.isSaleOffer()
                 || merchantOffer.getPaintingData().isEmpty()
-                || !(merchantOffer.getPaintingData().get() instanceof GalleryPaintingData)
             ) {
-                ZetterGallery.LOG.error("Trying to send sell offer over the net");
+                ZetterGallery.LOG.error("Trying to send sale or empty offer over the net");
                 return;
             }
 
-            GalleryPaintingData paintingData = (GalleryPaintingData) merchantOffer.getPaintingData().get();
+            DummyCanvasData paintingData = merchantOffer.getPaintingData().get();
 
             int resolution = paintingData.getResolution().getNumeric();
             byte[] color = new byte[paintingData.getColorDataBuffer().remaining()];
             paintingData.getColorDataBuffer().get(color);
 
-            networkBuffer.writeUUID(paintingData.getUUID());
-            networkBuffer.writeUtf(paintingData.getPaintingTitle(), MAX_NAME_LENGTH);
-            networkBuffer.writeUtf(paintingData.getAuthorName(), MAX_AUTHOR_LENGTH);
+            networkBuffer.writeUUID(merchantOffer.paintingUuid);
+            networkBuffer.writeUtf(merchantOffer.paintingName, MAX_NAME_LENGTH);
+            networkBuffer.writeUUID(merchantOffer.paintingAuthorUuid);
+            networkBuffer.writeUtf(merchantOffer.paintingAuthorName, MAX_AUTHOR_LENGTH);
             networkBuffer.writeInt(paintingData.getResolution().getNumeric());
             networkBuffer.writeInt(paintingData.getHeight() / resolution);
             networkBuffer.writeInt(paintingData.getWidth() / resolution);

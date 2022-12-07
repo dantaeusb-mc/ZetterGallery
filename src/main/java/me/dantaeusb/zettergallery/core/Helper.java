@@ -2,8 +2,11 @@ package me.dantaeusb.zettergallery.core;
 
 import me.dantaeusb.zetter.canvastracker.ICanvasTracker;
 import me.dantaeusb.zetter.core.ZetterCapabilities;
+import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.gallery.IGalleryCapability;
 import net.minecraft.world.level.Level;
+
+import java.util.UUID;
 
 public class Helper {
     public static int CANVAS_COLOR = 0xFFE0DACE;

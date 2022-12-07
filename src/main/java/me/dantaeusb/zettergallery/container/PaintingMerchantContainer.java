@@ -3,9 +3,11 @@ package me.dantaeusb.zettergallery.container;
 import me.dantaeusb.zetter.Zetter;
 import me.dantaeusb.zetter.canvastracker.ICanvasTracker;
 import me.dantaeusb.zetter.core.Helper;
+import me.dantaeusb.zetter.core.ZetterCanvasTypes;
 import me.dantaeusb.zetter.core.ZetterItems;
 import com.google.common.collect.Lists;
 import me.dantaeusb.zetter.item.PaintingItem;
+import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
@@ -58,7 +60,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
     private int selectedPurchaseOfferIndex;
 
     @Nullable
-    private List<PaintingMerchantOffer<GalleryPaintingData>> offers;
+    private List<PaintingMerchantOffer> offers;
 
     public PaintingMerchantContainer(Player player, Merchant merchant, PaintingMerchantMenu menu) {
         this.player = player;
@@ -102,7 +104,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
     @Override
     public void setChanged() {
         ItemStack inputStack = this.getInputSlot();
-        PaintingMerchantOffer<GalleryPaintingData> selectedPurchaseOffer = null;
+        PaintingMerchantOffer selectedPurchaseOffer = null;
 
         if (this.offers != null && this.offers.size() > this.selectedPurchaseOfferIndex) {
             selectedPurchaseOffer = this.offers.get(this.selectedPurchaseOfferIndex);
@@ -142,7 +144,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
                     }
 
                     PaintingData paintingData = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().level).getCanvasData(canvasCode);
-                    PaintingMerchantOffer<PaintingData> saleOffer = PaintingMerchantOffer.createOfferFromPlayersPainting(canvasCode, paintingData, 4);
+                    PaintingMerchantOffer saleOffer = PaintingMerchantOffer.createOfferFromPlayersPainting(canvasCode, paintingData, 4);
 
                     this.currentOffer = saleOffer;
 
@@ -206,7 +208,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
      *
      * @param offers
      */
-    public void handleOffers(List<PaintingMerchantOffer<GalleryPaintingData>> offers) {
+    public void handleOffers(List<PaintingMerchantOffer> offers) {
         if (this.state == OffersState.LOADING) {
             this.state = this.state.success();
         }
@@ -231,10 +233,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
                     throw new IllegalStateException("Painting doesn't have data to be registered");
                 }
 
-                // Register as non-managed to prevent removing its data
-                PaintingData paintingData = (PaintingData) offer.getPaintingData().get();
-                paintingData.setManaged(false);
-
+                DummyCanvasData paintingData = offer.getPaintingData().get();
                 tracker.registerCanvasData(offer.getCanvasCode(), paintingData);
             }
         }
@@ -259,7 +258,9 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
      * be saved successfully, except for the very rare cases that player should not
      * care about.
      */
-    public void checkout(ItemStack purchaseStack) {PaintingMerchantOffer offer = this.getCurrentOffer();
+    public void checkout(ItemStack purchaseStack) {
+        PaintingMerchantOffer offer = this.getCurrentOffer();
+
         if (offer.isSaleOffer()) {
             if (offer.getPaintingData().isEmpty()) {
                 Zetter.LOG.error("Painting data is not ready for checkout");
@@ -269,7 +270,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
             if (!this.merchant.getTradingPlayer().getLevel().isClientSide()) {
                 ConnectionManager.getInstance().registerSale(
                     (ServerPlayer) this.player,
-                    (PaintingData) offer.getPaintingData().get(),
+                    offer,
                     this::finalizeCheckout,
                     offer::markError
                 );
@@ -280,8 +281,8 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
             if (!this.merchant.getTradingPlayer().getLevel().isClientSide()) {
                 ConnectionManager.getInstance().registerPurchase(
                     (ServerPlayer) this.player,
-                    ((GalleryPaintingData) offer.getPaintingData().get()).getUUID(),
-                    offer.getPrice(),
+                    offer.paintingUuid,
+                    offer.price,
                     this::finalizeCheckout,
                     offer::markError
                 );
@@ -375,7 +376,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
     }
 
     @Nullable
-    public List<PaintingMerchantOffer<GalleryPaintingData>> getOffers() {
+    public List<PaintingMerchantOffer> getOffers() {
         return this.offers;
     }
 
@@ -392,24 +393,6 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
     }
 
     /**
-     * If for some reason offer was missing data
-     *
-     * @todo: [MED] Need to register as well?
-     * @param canvasCode
-     * @param paintingData
-     */
-    public void updatePurchaseOfferPaintingData(String canvasCode, GalleryPaintingData paintingData) {
-        if (this.offers != null) {
-            for (PaintingMerchantOffer<GalleryPaintingData> offer: this.offers){
-                if (offer.getCanvasCode().equals(canvasCode)) {
-                    offer.updatePaintingData(paintingData);
-                    return;
-                }
-            }
-        }
-    }
-
-    /**
      * If painting was not loaded before player attempted to submit painting
      * @param canvasCode
      * @param paintingData
@@ -420,7 +403,12 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
             return;
         }
 
-        this.currentOffer.updatePaintingData(paintingData);
+        DummyCanvasData paintingWrap = ZetterCanvasTypes.DUMMY.get().createWrap(
+            paintingData.getResolution(), paintingData.getWidth(), paintingData.getHeight(),
+            paintingData.getColorData()
+        );
+
+        this.currentOffer.updatePaintingData(paintingWrap);
     }
 
     private void playTradeSound() {
@@ -443,7 +431,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
         this.setSelectedPurchaseOfferIndex(this.getSelectedPurchaseOfferIndex());
     }
 
-    private MerchantOffer getVanillaMerchantOffer(PaintingMerchantOffer<?> offer) {
+    private MerchantOffer getVanillaMerchantOffer(PaintingMerchantOffer offer) {
         if (offer.isSaleOffer()) {
             return this.merchant.getOffers().get(ZetterGalleryVillagerTrades.SELL_OFFER_ID);
         } else {

@@ -1,15 +1,12 @@
 package me.dantaeusb.zettergallery.storage;
 
-import me.dantaeusb.zetter.Zetter;
 import me.dantaeusb.zetter.client.gui.overlay.PaintingInfoOverlay;
 import me.dantaeusb.zetter.core.Helper;
-import me.dantaeusb.zetter.core.ZetterOverlays;
 import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.CanvasDataBuilder;
 import me.dantaeusb.zetter.storage.CanvasDataType;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
-import me.dantaeusb.zettergallery.client.gui.overlay.GalleryPaintingInfoOverlay;
 import me.dantaeusb.zettergallery.core.ZetterGalleryCanvasTypes;
 import me.dantaeusb.zettergallery.core.ZetterGalleryOverlays;
 import net.minecraft.nbt.CompoundTag;
@@ -39,11 +36,22 @@ public class GalleryPaintingData extends PaintingData {
         return CODE_PREFIX + canvasId.toString();
     }
 
+    /**
+     * For offers onlu
+     *
+     * Returns dummy canvas data code for temporary gallery paintings
+     * used to store canvas data in painting merchant offers
+     * @return
+     */
+    public static String getDummyOfferCanvasCode(UUID galleryPaintingUuid) {
+        return ZetterGallery.MOD_ID + "_offer_" + Long.toHexString(galleryPaintingUuid.getMostSignificantBits());
+    }
+
     protected GalleryPaintingData() {}
 
-    public void setMetaProperties(UUID galleryPaintingUuid, UUID authorUuid, String authorName, String title) {
+    public void setMetaProperties(UUID galleryPaintingUuid, UUID authorUuid, String authorName, String name) {
         this.galleryPaintingUuid = galleryPaintingUuid;
-        super.setMetaProperties(authorUuid, authorName, title);
+        super.setMetaProperties(authorUuid, authorName, name);
     }
 
     public boolean isEditable() {
@@ -125,7 +133,7 @@ public class GalleryPaintingData extends PaintingData {
             }
 
             newPainting.authorName = compoundTag.getString(NBT_TAG_AUTHOR_NAME);
-            newPainting.title = compoundTag.getString(NBT_TAG_TITLE);
+            newPainting.name = compoundTag.getString(NBT_TAG_NAME);
             newPainting.banned = compoundTag.getBoolean(NBT_TAG_BANNED);
             newPainting.galleryPaintingUuid = compoundTag.getUUID(NBT_TAG_GALLERY_UUID);
 
@@ -181,7 +189,7 @@ public class GalleryPaintingData extends PaintingData {
             networkBuffer.writeUUID(canvasData.galleryPaintingUuid);
             networkBuffer.writeUUID(canvasData.authorUuid);
             networkBuffer.writeUtf(canvasData.authorName, 64);
-            networkBuffer.writeUtf(canvasData.title, 32);
+            networkBuffer.writeUtf(canvasData.name, 32);
         }
     }
 }

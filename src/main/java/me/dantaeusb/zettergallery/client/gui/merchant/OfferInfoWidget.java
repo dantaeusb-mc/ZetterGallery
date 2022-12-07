@@ -2,6 +2,7 @@ package me.dantaeusb.zettergallery.client.gui.merchant;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.dantaeusb.zetter.core.tools.Color;
+import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
@@ -105,7 +106,7 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
     }
 
     private void renderPaintingInfo(PoseStack matrixStack) {
-        PaintingMerchantOffer<?> offer = this.parentScreen.getCurrentOffer();
+        PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null) {
             ZetterGallery.LOG.error("No offer to render info");
@@ -118,7 +119,7 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
             return;
         }
 
-        PaintingData offerPaintingData = offer.getPaintingData().get();
+        DummyCanvasData offerPaintingData = offer.getPaintingData().get();
 
         if (offer.isError()) {
             final String errorMessage = offer.getMessage().orElse(UNKNOWN_OFFER_ERROR.getString());
@@ -141,8 +142,8 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
         // Account for RTL?
         Component blockSize = (Component.translatable("item.zetter.painting.size", Integer.toString(widthBlocks), Integer.toString(heightBlocks)));
 
-        List<FormattedCharSequence> multilinePaintingTitle =  this.font.split(FormattedText.of(offerPaintingData.getPaintingTitle()), 80);
-        List<FormattedCharSequence> multilineNickname =  this.font.split(FormattedText.of(offerPaintingData.getAuthorName()), 80);
+        List<FormattedCharSequence> multilinePaintingTitle =  this.font.split(FormattedText.of(offer.paintingName), 80);
+        List<FormattedCharSequence> multilineNickname =  this.font.split(FormattedText.of(offer.paintingName), 80);
 
         // To avoid texture swapping, first draw icons, then text
         RenderSystem.setShaderTexture(0, PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);

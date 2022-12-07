@@ -1,6 +1,7 @@
 package me.dantaeusb.zettergallery.network.http;
 
 import com.google.gson.JsonSyntaxException;
+import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import com.google.gson.Gson;
@@ -440,7 +441,7 @@ public class GalleryConnection {
      * @param token
      * @param paintingData
      */
-    public void validatePainting(String token, PaintingData paintingData, Consumer<PaintingsResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void validatePainting(String token, String paintingName, AbstractCanvasData paintingData, Consumer<PaintingsResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -448,7 +449,7 @@ public class GalleryConnection {
             BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
-                final SaleRequest request = new SaleRequest(paintingData);
+                final SaleRequest request = new SaleRequest(paintingName, paintingData);
 
                 final HashMap<String, String> query = new HashMap<>();
                 query.put("save", "false");
@@ -477,7 +478,7 @@ public class GalleryConnection {
      * @param token
      * @param paintingData
      */
-    public void sellPainting(String token, PaintingData paintingData, Consumer<PaintingsResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void sellPainting(String token, String paintingName, AbstractCanvasData paintingData, Consumer<PaintingsResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -485,7 +486,7 @@ public class GalleryConnection {
             BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
-                final SaleRequest request = new SaleRequest(paintingData);
+                final SaleRequest request = new SaleRequest(paintingName, paintingData);
 
                 final URL saleUri = GalleryConnection.getUri(PAINTINGS_ENDPOINT);
                 PaintingsResponse response = makeRequest(saleUri, "POST", PaintingsResponse.class, token, request);

@@ -1,10 +1,6 @@
 package me.dantaeusb.zettergallery.gallery;
 
-import me.dantaeusb.zetter.canvastracker.CanvasClientTracker;
-import me.dantaeusb.zetter.canvastracker.CanvasServerTracker;
 import me.dantaeusb.zettergallery.core.ZetterGalleryCapabilities;
-import me.dantaeusb.zettergallery.gallery.GalleryServerCapability;
-import me.dantaeusb.zettergallery.gallery.IGalleryCapability;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;

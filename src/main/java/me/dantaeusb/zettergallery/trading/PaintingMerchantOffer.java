@@ -3,9 +3,11 @@ package me.dantaeusb.zettergallery.trading;
 import me.dantaeusb.zetter.Zetter;
 import me.dantaeusb.zetter.canvastracker.ICanvasTracker;
 import me.dantaeusb.zetter.core.Helper;
+import me.dantaeusb.zetter.core.ZetterCanvasTypes;
 import me.dantaeusb.zetter.core.ZetterItems;
 import me.dantaeusb.zetter.item.PaintingItem;
 import me.dantaeusb.zetter.storage.AbstractCanvasData;
+import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.core.ZetterGalleryCanvasTypes;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
@@ -16,15 +18,21 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
+import java.security.InvalidParameterException;
 import java.util.Optional;
 import java.util.UUID;
 
-public class PaintingMerchantOffer<T extends PaintingData> {
-    private final String canvasCode;
-    private final int price;
-    private final boolean saleOffer;
+public class PaintingMerchantOffer {
+    public final String canvasCode;
+    private DummyCanvasData paintingDataCopy;
 
-    private T paintingData;
+    public final UUID paintingUuid;
+    public final String paintingName;
+    public final UUID paintingAuthorUuid;
+    public final String paintingAuthorName;
+
+    public final int price;
+    public final boolean saleOffer;
 
     /**
      * If we're ready to make a transaction
@@ -38,9 +46,19 @@ public class PaintingMerchantOffer<T extends PaintingData> {
 
     private String feedName;
 
-    private PaintingMerchantOffer(String canvasCode, @Nullable T paintingData, int price, boolean sale) {
+    private PaintingMerchantOffer(
+        String canvasCode, @Nullable DummyCanvasData paintingData,
+        UUID paintingUuid, String paintingTitle, UUID paintingAuthorUuid, String paintingAuthorName,
+        int price, boolean sale
+    ) {
         this.canvasCode = canvasCode;
-        this.paintingData = paintingData;
+        this.paintingDataCopy = paintingData;
+
+        this.paintingUuid = paintingUuid;
+        this.paintingName = paintingTitle;
+        this.paintingAuthorUuid = paintingAuthorUuid;
+        this.paintingAuthorName = paintingAuthorName;
+
         this.price = price;
         this.saleOffer = sale;
 
@@ -51,44 +69,81 @@ public class PaintingMerchantOffer<T extends PaintingData> {
         }
     }
 
-    public static PaintingMerchantOffer<GalleryPaintingData> createOfferFromResponse(PaintingsResponse.PaintingItem paintingItem) {
-        return new PaintingMerchantOffer<>(
-                GalleryPaintingData.getCanvasCode(paintingItem.uuid),
-                PaintingMerchantOffer.createOfferDataFromItem(paintingItem),
-                paintingItem.price,
-                false
+    /**
+     * Creates painting merchant offer from Zetter Gallery HTTP response
+     * @param paintingItem
+     * @return
+     */
+    public static PaintingMerchantOffer createOfferFromGalleryResponse(PaintingsResponse.PaintingItem paintingItem) {
+        return new PaintingMerchantOffer(
+            GalleryPaintingData.getDummyOfferCanvasCode(paintingItem.uuid),
+            PaintingMerchantOffer.createDummyCanvasDataFromItem(paintingItem),
+            paintingItem.uuid,
+            paintingItem.name,
+            paintingItem.author.uuid,
+            paintingItem.author.nickname,
+            paintingItem.price,
+            false
         );
     }
 
-    public static PaintingMerchantOffer<PaintingData> createOfferFromPlayersPainting(String canvasCode, PaintingData paintingData, int price) {
-        return new PaintingMerchantOffer<>(
-                canvasCode,
-                paintingData,
-                price,
-                true
+    /**
+     * Creates painting merchant offer from player's painting
+     * @param canvasCode
+     * @param paintingData
+     * @param price
+     * @return
+     */
+    public static PaintingMerchantOffer createOfferFromPlayersPainting(String canvasCode, PaintingData paintingData, int price) {
+        DummyCanvasData paintingWrap = ZetterCanvasTypes.DUMMY.get().createWrap(
+            paintingData.getResolution(), paintingData.getWidth(), paintingData.getHeight(),
+            paintingData.getColorData()
+        );
+
+        return new PaintingMerchantOffer(
+            canvasCode,
+            paintingWrap,
+            new UUID(0L, 0L),
+            paintingData.getPaintingName(),
+            paintingData.getAuthorUuid(),
+            paintingData.getAuthorName(),
+            price,
+            true
         );
     }
 
-    public static PaintingMerchantOffer<GalleryPaintingData> createOfferFromPaintingData(GalleryPaintingData paintingData, int price) {
-        return new PaintingMerchantOffer<>(
-                GalleryPaintingData.getCanvasCode(paintingData.getUUID()),
-                paintingData,
-                price,
-                false
+    /**
+     * Creates painting merchant offer from
+     * @return
+     */
+    public static PaintingMerchantOffer createOfferFromNetwork(
+        DummyCanvasData canvasData, UUID paintingUuid, String paintingTitle,
+        UUID paintingAuthorUuid, String paintingAuthorName, int price
+    ) {
+
+        return new PaintingMerchantOffer(
+            GalleryPaintingData.getDummyOfferCanvasCode(paintingUuid),
+            canvasData,
+            paintingUuid,
+            paintingTitle,
+            paintingAuthorUuid,
+            paintingAuthorName,
+            price,
+            false
         );
     }
 
-    public void updatePaintingData(T paintingData) {
-        if (this.paintingData != null) {
+    public void updatePaintingData(DummyCanvasData paintingData) {
+        if (this.paintingDataCopy != null) {
             Zetter.LOG.error("Trying to update offer data which already has data");
             return;
         }
 
-        this.paintingData = paintingData;
+        this.paintingDataCopy = paintingData;
     }
 
-    public Optional<T> getPaintingData() {
-        return this.paintingData == null ? Optional.empty() : Optional.of(this.paintingData);
+    public Optional<DummyCanvasData> getPaintingData() {
+        return this.paintingDataCopy == null ? Optional.empty() : Optional.of(this.paintingDataCopy);
     }
 
     public String getCanvasCode() {
@@ -130,11 +185,25 @@ public class PaintingMerchantOffer<T extends PaintingData> {
             throw new IllegalStateException("Can only write data to painting");
         }
 
-        ICanvasTracker canvasTracker = Helper.getWorldCanvasTracker(level);
-        canvasTracker.registerCanvasData(this.canvasCode, this.paintingData);
-        // @todo: this spawns event that will replace offer
+        String galleryPaintingCanvasCode = GalleryPaintingData.getCanvasCode(this.paintingUuid);
+        GalleryPaintingData galleryPaintingData = ZetterGalleryCanvasTypes.GALLERY_PAINTING.get().createWrap(
+            this.paintingDataCopy.getResolution(),
+            this.paintingDataCopy.getWidth(),
+            this.paintingDataCopy.getHeight(),
+            this.paintingDataCopy.getColorData()
+        );
 
-        PaintingItem.storePaintingData(painting, this.canvasCode, this.paintingData, 1);
+        galleryPaintingData.setMetaProperties(
+            this.paintingUuid,
+            this.paintingAuthorUuid,
+            this.paintingAuthorName,
+            this.paintingName
+        );
+
+        ICanvasTracker canvasTracker = Helper.getWorldCanvasTracker(level);
+        canvasTracker.registerCanvasData(galleryPaintingCanvasCode, galleryPaintingData);
+
+        PaintingItem.storePaintingData(painting, galleryPaintingCanvasCode, galleryPaintingData, 1);
     }
 
     public boolean isLoading() {
@@ -168,8 +237,14 @@ public class PaintingMerchantOffer<T extends PaintingData> {
      * @param paintingItem
      * @return
      */
-    private static GalleryPaintingData createOfferDataFromItem(PaintingsResponse.PaintingItem paintingItem) {
-        final AbstractCanvasData.Resolution resolution = AbstractCanvasData.Resolution.x16;
+    private static DummyCanvasData createDummyCanvasDataFromItem(PaintingsResponse.PaintingItem paintingItem) {
+        final int numericResolution = paintingItem.resolution * Helper.getBasicResolution().getNumeric();
+        final AbstractCanvasData.Resolution resolution = AbstractCanvasData.Resolution.get(numericResolution);
+
+        if (resolution == null) {
+            throw new InvalidParameterException("Invalid resolution returned by Gallery: " + numericResolution);
+        }
+
         final int paintingSize = (paintingItem.sizeH * resolution.getNumeric()) * (paintingItem.sizeW * resolution.getNumeric());
         byte[] canvasData = new byte[paintingSize * 4];
 
@@ -181,14 +256,11 @@ public class PaintingMerchantOffer<T extends PaintingData> {
             // Skip alpha, it should not be used anyway
         }
 
-        GalleryPaintingData paintingData = ZetterGalleryCanvasTypes.GALLERY_PAINTING.get().createWrap(
+        DummyCanvasData paintingData = ZetterCanvasTypes.DUMMY.get().createWrap(
             resolution, paintingItem.sizeW * resolution.getNumeric(), paintingItem.sizeH * resolution.getNumeric(), canvasData
         );
 
-        paintingData.setMetaProperties(paintingItem.uuid, paintingItem.author.uuid, paintingItem.author.nickname, paintingItem.name);
-
         return paintingData;
-
     }
 
     public enum State {
