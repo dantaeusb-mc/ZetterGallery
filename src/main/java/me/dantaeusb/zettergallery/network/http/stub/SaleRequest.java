@@ -9,17 +9,17 @@ import java.nio.ByteBuffer;
 import java.util.Base64;
 
 public class SaleRequest {
-    public String paintingName;
+    public String name;
     public int resolution;
     public int sizeH;
     public int sizeW;
     @JsonAdapter(SaleRequest.ByteArrayToBase64TypeAdapter.class)
     public byte[] color;
 
-    public SaleRequest(String paintingName, AbstractCanvasData paintingData) {
+    public SaleRequest(String name, AbstractCanvasData paintingData) {
         final int resolution = paintingData.getResolution().getNumeric();
 
-        this.paintingName = paintingName;
+        this.name = name;
         this.resolution = resolution;
         this.sizeH = paintingData.getHeight() / resolution;
         this.sizeW = paintingData.getWidth() / resolution;

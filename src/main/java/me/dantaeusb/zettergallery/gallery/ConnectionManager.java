@@ -1,7 +1,6 @@
 package me.dantaeusb.zettergallery.gallery;
 
 import me.dantaeusb.zetter.Zetter;
-import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.core.Helper;
@@ -10,7 +9,8 @@ import me.dantaeusb.zettergallery.network.http.GalleryConnection;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.network.http.stub.AuthTokenResponse;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
-import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
 import me.dantaeusb.zettergallery.util.EventConsumer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -315,7 +315,7 @@ public class ConnectionManager {
         );
     }
 
-    public void validateSale(ServerPlayer player, PaintingMerchantOffer offer, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void validateSale(ServerPlayer player, PaintingMerchantSaleOffer offer, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
         PlayerFeed playerFeed = this.playerFeeds.get(player.getUUID());
 
         if (playerFeed == null) {
@@ -328,25 +328,30 @@ public class ConnectionManager {
             return;
         }
 
-        if (offer.getPaintingData().isEmpty()) {
+        if (offer.isLoading()) {
             errorConsumer.accept(new GalleryError(GalleryError.SERVER_RECEIVED_INVALID_PAINTING_DATA, "Painting data not ready"));
             return;
         }
 
         ConnectionManager.getInstance().getConnection().validatePainting(
             this.playerTokenStorage.getPlayerTokenString(player),
-            offer.paintingName,
-            (DummyCanvasData) offer.getPaintingData().get(),
+            offer.getPaintingName(),
+            offer.getDummyPaintingData(),
             (response) -> successConsumer.accept(),
             errorConsumer
         );
     }
 
-    public void registerSale(ServerPlayer player, PaintingMerchantOffer offer, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void registerSale(ServerPlayer player, PaintingMerchantSaleOffer offer, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
+        if (offer.isLoading()) {
+            errorConsumer.accept(new GalleryError(GalleryError.SERVER_RECEIVED_INVALID_PAINTING_DATA, "Painting data not ready"));
+            return;
+        }
+
         ConnectionManager.getInstance().getConnection().sellPainting(
             this.playerTokenStorage.getPlayerTokenString(player),
-            offer.paintingName,
-            offer.getPaintingData().get(),
+            offer.getPaintingName(),
+            offer.getDummyPaintingData(),
             (response) -> {
                 successConsumer.accept();
             },
@@ -360,12 +365,12 @@ public class ConnectionManager {
 
     public void requestOffers(
         ServerPlayer player, PaintingMerchantContainer paintingMerchantContainer,
-        Consumer<List<PaintingMerchantOffer>> successConsumer,
+        Consumer<List<PaintingMerchantPurchaseOffer>> successConsumer,
         Consumer<GalleryError> errorConsumer
     ) {
         if (this.playerFeeds.containsKey(player.getUUID())) {
             PlayerFeed feed = this.playerFeeds.get(player.getUUID());
-            List<PaintingMerchantOffer> offers = this.getOffersFromFeed(
+            List<PaintingMerchantPurchaseOffer> offers = this.getOffersFromFeed(
                 this.cycleSeed,
                 feed,
                 paintingMerchantContainer.getMenu().getMerchantId(),
@@ -382,7 +387,7 @@ public class ConnectionManager {
                     this.nextCycleEpoch = response.cycleInfo.endsAt.getTime();
 
                     PlayerFeed feed = this.createPlayerFeed(player, response);
-                    List<PaintingMerchantOffer> offers = this.getOffersFromFeed(
+                    List<PaintingMerchantPurchaseOffer> offers = this.getOffersFromFeed(
                         this.cycleSeed,
                         feed,
                         paintingMerchantContainer.getMenu().getMerchantId(),
@@ -412,7 +417,7 @@ public class ConnectionManager {
      * @param merchantLevel
      * @return
      */
-    private List<PaintingMerchantOffer> getOffersFromFeed(String seed, PlayerFeed feed, UUID merchantId, int merchantLevel) {
+    private List<PaintingMerchantPurchaseOffer> getOffersFromFeed(String seed, PlayerFeed feed, UUID merchantId, int merchantLevel) {
         ByteBuffer buffer = ByteBuffer.wrap(seed.getBytes(StandardCharsets.UTF_8), 0, 8);
         long seedLong = buffer.getLong();
 
@@ -427,18 +432,18 @@ public class ConnectionManager {
         Collections.shuffle(available, rng);
         available = available.subList(0, showCount);
 
-        List<PaintingMerchantOffer> randomOffers = available.stream().map(feed.getOffers()::get).toList();
+        List<PaintingMerchantPurchaseOffer> randomOffers = available.stream().map(feed.getOffers()::get).toList();
 
         // Remove duplicates from offers list if there are same paintings in different feeds
         List<String> offerIds = new LinkedList<>();
-        List<PaintingMerchantOffer> offers = new LinkedList<>();
+        List<PaintingMerchantPurchaseOffer> offers = new LinkedList<>();
 
-        for (PaintingMerchantOffer offer : randomOffers) {
-            if (offerIds.contains(offer.getCanvasCode())) {
+        for (PaintingMerchantPurchaseOffer offer : randomOffers) {
+            if (offerIds.contains(offer.getDummyCanvasCode())) {
                 continue;
             }
 
-            offerIds.add(offer.getCanvasCode());
+            offerIds.add(offer.getDummyCanvasCode());
             offers.add(offer);
         }
 

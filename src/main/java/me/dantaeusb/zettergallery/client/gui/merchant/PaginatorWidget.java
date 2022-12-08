@@ -3,6 +3,7 @@ package me.dantaeusb.zettergallery.client.gui.merchant;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
@@ -124,7 +125,7 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
      * @return
      */
     private boolean canSelect() {
-        return this.parentScreen.getOffersCount() > 1 && !this.parentScreen.getCurrentOffer().isSaleOffer();
+        return this.parentScreen.getOffersCount() > 1 && !(this.parentScreen.getCurrentOffer() instanceof PaintingMerchantSaleOffer);
     }
 
     @Override

@@ -5,7 +5,7 @@ import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.network.ClientHandler;
-import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.util.LogicalSidedProvider;
@@ -25,13 +25,13 @@ public class SGalleryOffersPacket {
     static final int MAX_NAME_LENGTH = 128;
     static final int MAX_AUTHOR_LENGTH = 64;
 
-    private final List<PaintingMerchantOffer> offers;
+    private final List<PaintingMerchantPurchaseOffer> offers;
 
-    public SGalleryOffersPacket(List<PaintingMerchantOffer> offers) {
+    public SGalleryOffersPacket(List<PaintingMerchantPurchaseOffer> offers) {
         this.offers = offers;
     }
 
-    public List<PaintingMerchantOffer> getOffers() {
+    public List<PaintingMerchantPurchaseOffer> getOffers() {
         return this.offers;
     }
 
@@ -43,7 +43,7 @@ public class SGalleryOffersPacket {
             final int size = networkBuffer.readInt();
             int i = 0;
 
-            Vector<PaintingMerchantOffer> offers = new Vector<>();
+            Vector<PaintingMerchantPurchaseOffer> offers = new Vector<>();
 
             while (i < size) {
                 final UUID paintingGalleryUuid = networkBuffer.readUUID();
@@ -59,7 +59,7 @@ public class SGalleryOffersPacket {
 
                 DummyCanvasData paintingData = ZetterCanvasTypes.DUMMY.get().createWrap(resolution, sizeW * resolution.getNumeric(), sizeH * resolution.getNumeric(), color);
 
-                PaintingMerchantOffer offer = PaintingMerchantOffer.createOfferFromNetwork(
+                PaintingMerchantPurchaseOffer offer = PaintingMerchantPurchaseOffer.createOfferFromNetwork(
                     paintingData, paintingGalleryUuid, paintingTitle,
                     paintingAuthorUuid, paintingAuthorName, price
                 );
@@ -83,25 +83,17 @@ public class SGalleryOffersPacket {
     public void writePacketData(FriendlyByteBuf networkBuffer) {
         networkBuffer.writeInt(this.offers.size());
 
-        for (PaintingMerchantOffer merchantOffer : this.offers) {
-            if (
-                merchantOffer.isSaleOffer()
-                || merchantOffer.getPaintingData().isEmpty()
-            ) {
-                ZetterGallery.LOG.error("Trying to send sale or empty offer over the net");
-                return;
-            }
-
-            DummyCanvasData paintingData = merchantOffer.getPaintingData().get();
+        for (PaintingMerchantPurchaseOffer merchantOffer : this.offers) {
+            DummyCanvasData paintingData = merchantOffer.getDummyPaintingData();
 
             int resolution = paintingData.getResolution().getNumeric();
             byte[] color = new byte[paintingData.getColorDataBuffer().remaining()];
             paintingData.getColorDataBuffer().get(color);
 
-            networkBuffer.writeUUID(merchantOffer.paintingUuid);
-            networkBuffer.writeUtf(merchantOffer.paintingName, MAX_NAME_LENGTH);
-            networkBuffer.writeUUID(merchantOffer.paintingAuthorUuid);
-            networkBuffer.writeUtf(merchantOffer.paintingAuthorName, MAX_AUTHOR_LENGTH);
+            networkBuffer.writeUUID(merchantOffer.getPaintingUuid());
+            networkBuffer.writeUtf(merchantOffer.getPaintingName(), MAX_NAME_LENGTH);
+            networkBuffer.writeUUID(merchantOffer.getAuthorUuid());
+            networkBuffer.writeUtf(merchantOffer.getAuthorName(), MAX_AUTHOR_LENGTH);
             networkBuffer.writeInt(paintingData.getResolution().getNumeric());
             networkBuffer.writeInt(paintingData.getHeight() / resolution);
             networkBuffer.writeInt(paintingData.getWidth() / resolution);

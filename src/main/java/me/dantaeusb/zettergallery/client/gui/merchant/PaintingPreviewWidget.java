@@ -3,9 +3,8 @@ package me.dantaeusb.zettergallery.client.gui.merchant;
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.dantaeusb.zetter.client.renderer.CanvasRenderer;
 import me.dantaeusb.zetter.storage.DummyCanvasData;
-import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
-import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.IPaintingMerchantOffer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -29,7 +28,7 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
 
     @Override
     public void render(@NotNull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
+        IPaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null || offer.isError()) {
             return;
@@ -37,44 +36,38 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
 
         if (this.isLoading()) {
             this.renderLoading(matrixStack);
+            return;
         }
 
-        String canvasCode = offer.getCanvasCode();
+        String canvasCode = offer.getDummyCanvasCode();
+        DummyCanvasData offerPaintingData = offer.getDummyPaintingData();
 
-        if (offer.getPaintingData().isPresent()) {
-            DummyCanvasData offerPaintingData = offer.getPaintingData().get();
+        float maxSize = Math.max(offerPaintingData.getHeight(), offerPaintingData.getWidth()) / 16.0F;
+        float scale = 4.0F / maxSize;
 
-            float maxSize = Math.max(offerPaintingData.getHeight(), offerPaintingData.getWidth()) / 16.0F;
-            float scale = 4.0F / maxSize;
+        final float scaledWidth = offerPaintingData.getWidth() * scale;
+        final float scaledHeight = offerPaintingData.getHeight() * scale;
 
-            final float scaledWidth = offerPaintingData.getWidth() * scale;
-            final float scaledHeight = offerPaintingData.getHeight() * scale;
+        float aspectRatio = scaledWidth / scaledHeight;
+        int offsetX = 0;
+        int offsetY = 0;
 
-            float aspectRatio = scaledWidth / scaledHeight;
-            int offsetX = 0;
-            int offsetY = 0;
-
-            if (aspectRatio > 1.0F) {
-                offsetY += Math.round((64.0F - scaledHeight) / 2.0F);
-            } else if (aspectRatio < 1.0F) {
-                offsetX += Math.round((64.0F - scaledWidth) / 2.0F);
-            }
-
-            matrixStack.pushPose();
-            matrixStack.translate(this.x + offsetX, this.y + offsetY, 1.0F);
-            matrixStack.scale(scale, scale, 1.0F);
-
-            MultiBufferSource.BufferSource renderBuffers = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
-
-            CanvasRenderer.getInstance().renderCanvas(matrixStack, renderBuffers, canvasCode, offerPaintingData, 0xF000F0);
-            renderBuffers.endBatch();
-
-            matrixStack.popPose();
-        } else {
-            this.renderLoading(matrixStack);
-
-            CanvasRenderer.getInstance().queueCanvasTextureUpdate(canvasCode);
+        if (aspectRatio > 1.0F) {
+            offsetY += Math.round((64.0F - scaledHeight) / 2.0F);
+        } else if (aspectRatio < 1.0F) {
+            offsetX += Math.round((64.0F - scaledWidth) / 2.0F);
         }
+
+        matrixStack.pushPose();
+        matrixStack.translate(this.x + offsetX, this.y + offsetY, 1.0F);
+        matrixStack.scale(scale, scale, 1.0F);
+
+        MultiBufferSource.BufferSource renderBuffers = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
+
+        CanvasRenderer.getInstance().renderCanvas(matrixStack, renderBuffers, canvasCode, offerPaintingData, 0xF000F0);
+        renderBuffers.endBatch();
+
+        matrixStack.popPose();
     }
 
     private static final int LOADING_WIDTH = 16;
@@ -108,13 +101,13 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
 
     @Override
     public @Nullable Component getTooltip(int mouseX, int mouseY) {
-        PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
+        IPaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null) {
             return null;
         }
 
-        if (offer.getPaintingData().isEmpty()) {
+        if (offer.isLoading()) {
             return LOADING_TEXT;
         }
 

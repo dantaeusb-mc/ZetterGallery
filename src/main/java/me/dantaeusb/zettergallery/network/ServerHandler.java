@@ -1,12 +1,8 @@
 package me.dantaeusb.zettergallery.network;
 
-import me.dantaeusb.zettergallery.ZetterGallery;
-import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.packet.CGalleryAuthorizationCheckPacket;
-import me.dantaeusb.zettergallery.network.packet.CGalleryProceedOfferPacket;
 import me.dantaeusb.zettergallery.network.packet.CGallerySelectOfferPacket;
-import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.UUID;
@@ -31,32 +27,6 @@ public class ServerHandler {
         if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
             PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)sendingPlayer.containerMenu;
             paintingMerchantMenu.updateCurrentOfferIndex(packetIn.offerIndex);
-
-            if (paintingMerchantMenu.getCurrentOffer() == null) {
-                throw new IllegalStateException("Selected offer is empty");
-            }
-
-            if (paintingMerchantMenu.getCurrentOffer().saleOffer) {
-                throw new IllegalStateException("Cannot select a select offer");
-            }
-
-            if (paintingMerchantMenu.getCurrentOffer().getPaintingData().isEmpty()) {
-                throw new IllegalStateException("Painting doesn't have data to register impression");
-            }
-
-            UUID paintingUuid = paintingMerchantMenu.getCurrentOffer().paintingUuid;
-
-            ConnectionManager.getInstance().registerImpression(sendingPlayer, paintingUuid, () -> {}, () -> {
-                ZetterGallery.LOG.error("Unable to register impression, maybe outdated mod version?");
-            });
         }
-    }
-
-    public static void processGalleryProceedOffer(final CGalleryProceedOfferPacket packetIn, ServerPlayer sendingPlayer) {
-        /*if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
-            // @todo: here we send request, but not yet proceed on container
-            PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)sendingPlayer.containerMenu;
-            paintingMerchantMenu.getContainer().checkout();
-        }*/
     }
 }

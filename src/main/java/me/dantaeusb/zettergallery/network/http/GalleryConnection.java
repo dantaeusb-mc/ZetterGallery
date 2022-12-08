@@ -41,8 +41,6 @@ public class GalleryConnection {
 
     private static final Gson GSON = new Gson();
 
-    private final PlayerTokenStorage tokenStorage = PlayerTokenStorage.getInstance();
-
     private final ExecutorService poolExecutor;
 
     public GalleryConnection() {

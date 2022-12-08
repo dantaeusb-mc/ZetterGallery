@@ -47,6 +47,15 @@ public class GalleryPaintingData extends PaintingData {
         return ZetterGallery.MOD_ID + "_offer_" + Long.toHexString(galleryPaintingUuid.getMostSignificantBits());
     }
 
+    /**
+     * Specifically for sale offer
+     *
+     * @return
+     */
+    public static String getDummySaleOfferCanvasCode() {
+        return ZetterGallery.MOD_ID + "_offer_sale";
+    }
+
     protected GalleryPaintingData() {}
 
     public void setMetaProperties(UUID galleryPaintingUuid, UUID authorUuid, String authorName, String name) {

@@ -11,9 +11,11 @@ import me.dantaeusb.zettergallery.gallery.PlayerToken;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.core.Helper;
 import me.dantaeusb.zettergallery.menu.paintingmerchant.MerchantAuthorizationController;
-import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.IPaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
@@ -250,9 +252,9 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
             return;
         }
 
-        PaintingMerchantOffer offer = this.getCurrentOffer();
+        IPaintingMerchantOffer offer = this.getCurrentOffer();
 
-        if (offer.isSaleOffer()) {
+        if (offer instanceof PaintingMerchantSaleOffer) {
             drawCenteredString(matrixStack, this.font, Component.translatable("container.zettergallery.merchant.sell"), COUNT_X, COUNT_Y, Color.white.getRGB());
         } else {
             int currentOffer = this.getCurrentOfferIndex() + 1;
@@ -382,7 +384,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     }
 
     @Nullable
-    public PaintingMerchantOffer getCurrentOffer() {
+    public IPaintingMerchantOffer getCurrentOffer() {
         return this.menu.getCurrentOffer();
     }
 

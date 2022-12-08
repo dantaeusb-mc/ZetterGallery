@@ -5,7 +5,8 @@ import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.core.ZetterGalleryContainerMenus;
 import me.dantaeusb.zettergallery.menu.paintingmerchant.MerchantAuthorizationController;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
-import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.IPaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerListener;
@@ -205,7 +206,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     }
 
     @Nullable
-    public PaintingMerchantOffer getCurrentOffer() {
+    public IPaintingMerchantOffer getCurrentOffer() {
         return this.container.getCurrentOffer();
     }
 
@@ -230,15 +231,15 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
      * @param state
      * @param message
      */
-    public void handleOfferState(String canvasCode, PaintingMerchantOffer.State state, String message) {
+    public void handleOfferState(String canvasCode, PaintingMerchantPurchaseOffer.State state, String message) {
         // If canvas code of the offer has changed since packet was formed, disregard it
-        if (this.getCurrentOffer() == null || !this.getCurrentOffer().getCanvasCode().equals(canvasCode)) {
+        if (this.getCurrentOffer() == null || !this.getCurrentOffer().getDummyCanvasCode().equals(canvasCode)) {
             return;
         }
 
-        if (state == PaintingMerchantOffer.State.ERROR) {
+        if (state == PaintingMerchantPurchaseOffer.State.ERROR) {
             this.getCurrentOffer().markError(new GalleryError(GalleryError.CLIENT_INVALID_OFFER, message));
-        } else if (state == PaintingMerchantOffer.State.READY) {
+        } else if (state == PaintingMerchantPurchaseOffer.State.READY) {
             this.getCurrentOffer().ready();
         }
 

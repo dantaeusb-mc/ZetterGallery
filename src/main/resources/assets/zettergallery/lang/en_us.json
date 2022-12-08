@@ -16,6 +16,7 @@
   "container.zettergallery.merchant.logged_in_player_tooltip": "Logged in as %1$s",
   "container.zettergallery.merchant.fetching_offers": "Requesting offers",
   "container.zettergallery.merchant.loading_painting": "Loading painting",
+  "container.zettergallery.merchant.another_players_painting": "Cannot sell painting made by another player",
   "container.zettergallery.merchant.unknown_error": "Unknown error occurred",
   "container.zettergallery.merchant.try_again": "Please try again later",
   "container.zettergallery.merchant.sell": "Sell"

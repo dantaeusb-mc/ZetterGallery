@@ -2,7 +2,7 @@ package me.dantaeusb.zettergallery.network.packet;
 
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.network.ClientHandler;
-import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.util.LogicalSidedProvider;
@@ -14,10 +14,10 @@ import java.util.function.Supplier;
 
 public class SGalleryOfferStatePacket {
     private final String canvasCode;
-    private final PaintingMerchantOffer.State state;
+    private final PaintingMerchantPurchaseOffer.State state;
     private final String message;
 
-    public SGalleryOfferStatePacket(String canvasCode, PaintingMerchantOffer.State state, String message) {
+    public SGalleryOfferStatePacket(String canvasCode, PaintingMerchantPurchaseOffer.State state, String message) {
         this.canvasCode = canvasCode;
         this.state = state;
         this.message = message;
@@ -27,7 +27,7 @@ public class SGalleryOfferStatePacket {
         return this.canvasCode;
     }
 
-    public PaintingMerchantOffer.State getState() {
+    public PaintingMerchantPurchaseOffer.State getState() {
         return this.state;
     }
 
@@ -44,7 +44,7 @@ public class SGalleryOfferStatePacket {
             String state = networkBuffer.readUtf(32767);
             String message = networkBuffer.readUtf(32767);
 
-            return new SGalleryOfferStatePacket(canvasCode, PaintingMerchantOffer.State.fromValue(state), message);
+            return new SGalleryOfferStatePacket(canvasCode, PaintingMerchantPurchaseOffer.State.fromValue(state), message);
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
             ZetterGallery.LOG.warn("Exception while reading SGalleryOfferStatePacket: " + e);
             return null;

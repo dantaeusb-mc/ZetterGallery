@@ -2,6 +2,7 @@ package me.dantaeusb.zettergallery.container;
 
 import me.dantaeusb.zetter.Zetter;
 import me.dantaeusb.zetter.canvastracker.ICanvasTracker;
+import me.dantaeusb.zetter.client.renderer.CanvasRenderer;
 import me.dantaeusb.zetter.core.Helper;
 import me.dantaeusb.zetter.core.ZetterCanvasTypes;
 import me.dantaeusb.zetter.core.ZetterItems;
@@ -16,8 +17,9 @@ import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.network.packet.*;
-import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
-import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.IPaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
 import net.minecraft.core.NonNullList;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
@@ -30,6 +32,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
@@ -49,7 +52,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
 
     @Nullable
     private List<ContainerListener> listeners;
-    private PaintingMerchantOffer currentOffer;
+    private IPaintingMerchantOffer currentOffer;
 
     // Waiting for the token check/update by default
     private OffersState state = OffersState.LOADING;
@@ -60,7 +63,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
     private int selectedPurchaseOfferIndex;
 
     @Nullable
-    private List<PaintingMerchantOffer> offers;
+    private List<PaintingMerchantPurchaseOffer> purchaseOffers;
 
     public PaintingMerchantContainer(Player player, Merchant merchant, PaintingMerchantMenu menu) {
         this.player = player;
@@ -104,10 +107,10 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
     @Override
     public void setChanged() {
         ItemStack inputStack = this.getInputSlot();
-        PaintingMerchantOffer selectedPurchaseOffer = null;
+        PaintingMerchantPurchaseOffer selectedPurchaseOffer = null;
 
-        if (this.offers != null && this.offers.size() > this.selectedPurchaseOfferIndex) {
-            selectedPurchaseOffer = this.offers.get(this.selectedPurchaseOfferIndex);
+        if (this.purchaseOffers != null && this.purchaseOffers.size() > this.selectedPurchaseOfferIndex) {
+            selectedPurchaseOffer = this.purchaseOffers.get(this.selectedPurchaseOfferIndex);
         }
 
         if (this.hasOffers()) {
@@ -133,8 +136,8 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
                      * Only need to update result
                      */
                     if (
-                        this.currentOffer != null && this.currentOffer.isSaleOffer()
-                            && this.currentOffer.getCanvasCode().equals(canvasCode)
+                        this.currentOffer != null && this.currentOffer instanceof PaintingMerchantSaleOffer
+                        && this.currentOffer.getRealCanvasCode().equals(canvasCode)
                     ) {
                         if (this.currentOffer.isReady()) {
                             this.setItem(OUTPUT_SLOT, currentOffer.getOfferResult());
@@ -144,40 +147,58 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
                     }
 
                     PaintingData paintingData = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().level).getCanvasData(canvasCode);
-                    PaintingMerchantOffer saleOffer = PaintingMerchantOffer.createOfferFromPlayersPainting(canvasCode, paintingData, 4);
+
+                    PaintingMerchantSaleOffer saleOffer;
+                    if (paintingData != null) {
+                        saleOffer = PaintingMerchantSaleOffer.createOfferFromPlayersPainting(canvasCode, paintingData, 4);
+
+                        Level level = this.merchant.getTradingPlayer().getLevel();
+                        if (level.isClientSide()) {
+                            saleOffer.register(this.merchant.getTradingPlayer().getLevel());
+                        }
+                    } else {
+                        saleOffer = PaintingMerchantSaleOffer.createOfferWithoutPlayersPainting(canvasCode, this.merchant.getTradingPlayer(), 4);
+                        CanvasRenderer.getInstance().queueCanvasTextureUpdate(canvasCode);
+                    }
 
                     this.currentOffer = saleOffer;
 
-                    // Ask Gallery if we can sell this painting
-                    if (!this.merchant.isClientSide()) {
-                        ConnectionManager.getInstance().validateSale(
+                    if (saleOffer.validate(this.merchant)) {
+                        // Ask Gallery if we can sell this painting
+                        if (!this.merchant.isClientSide()) {
+                            ConnectionManager.getInstance().validateSale(
                                 (ServerPlayer) this.merchant.getTradingPlayer(),
                                 saleOffer,
                                 () -> {
                                     saleOffer.ready();
 
-                                    SGalleryOfferStatePacket offerStatePacket = new SGalleryOfferStatePacket(saleOffer.getCanvasCode(), PaintingMerchantOffer.State.READY, "Ready");
+                                    SGalleryOfferStatePacket offerStatePacket = new SGalleryOfferStatePacket(saleOffer.getDummyCanvasCode(), PaintingMerchantPurchaseOffer.State.READY, "Ready");
                                     ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.merchant.getTradingPlayer()), offerStatePacket);
                                 },
                                 (error) -> {
                                     saleOffer.markError(error);
 
-                                    SGalleryOfferStatePacket offerStatePacket = new SGalleryOfferStatePacket(saleOffer.getCanvasCode(), PaintingMerchantOffer.State.ERROR, error.getClientMessage());
+                                    SGalleryOfferStatePacket offerStatePacket = new SGalleryOfferStatePacket(saleOffer.getDummyCanvasCode(), PaintingMerchantPurchaseOffer.State.ERROR, error.getClientMessage());
                                     ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.merchant.getTradingPlayer()), offerStatePacket);
                                 }
-                        );
+                            );
+                        }
                     }
                 } else if (inputStack.getItem() == Items.EMERALD) {
                     if (selectedPurchaseOffer != null && !selectedPurchaseOffer.equals(this.currentOffer)) {
                         this.currentOffer = selectedPurchaseOffer;
                     }
 
-                    if (this.currentOffer != null && currentOffer.getPrice() <= inputStack.getCount()) {
-                        this.currentOffer.ready();
+                    if (this.currentOffer != null) {
+                        if (currentOffer.getPrice() <= inputStack.getCount()) {
+                            this.currentOffer.ready();
 
-                        this.setItem(OUTPUT_SLOT, currentOffer.getOfferResult());
-                    } else {
-                        this.setItem(OUTPUT_SLOT, ItemStack.EMPTY);
+                            this.setItem(OUTPUT_SLOT, currentOffer.getOfferResult());
+                        } else {
+                            this.currentOffer.unfulfilled();
+
+                            this.setItem(OUTPUT_SLOT, ItemStack.EMPTY);
+                        }
                     }
                 }
             }
@@ -208,46 +229,49 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
      *
      * @param offers
      */
-    public void handleOffers(List<PaintingMerchantOffer> offers) {
+    public void handleOffers(List<PaintingMerchantPurchaseOffer> offers) {
         if (this.state == OffersState.LOADING) {
             this.state = this.state.success();
         }
 
-        this.offers = offers;
+        this.purchaseOffers = offers;
         this.updateCurrentOffer();
         this.registerOffersCanvases();
 
         if (!this.player.getLevel().isClientSide()) {
-            SGalleryOffersPacket salesPacket = new SGalleryOffersPacket(this.getOffers());
+            SGalleryOffersPacket salesPacket = new SGalleryOffersPacket(this.getPurchaseOffers());
             ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), salesPacket);
         }
     }
 
     public void registerOffersCanvases() {
-        if (this.merchant.isClientSide() && this.getOffers() != null) {
+        if (this.merchant.isClientSide() && this.getPurchaseOffers() != null) {
             // Maybe delegate that to some kind of ClientSalesManager?
             ICanvasTracker tracker = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().getLevel());
 
-            for (PaintingMerchantOffer offer : this.getOffers()) {
-                if (offer.getPaintingData().isEmpty()) {
-                    throw new IllegalStateException("Painting doesn't have data to be registered");
-                }
-
-                DummyCanvasData paintingData = offer.getPaintingData().get();
-                tracker.registerCanvasData(offer.getCanvasCode(), paintingData);
+            for (PaintingMerchantPurchaseOffer offer : this.getPurchaseOffers()) {
+                DummyCanvasData paintingData = offer.getDummyPaintingData();
+                tracker.registerCanvasData(offer.getDummyCanvasCode(), paintingData);
             }
         }
     }
 
     public void unregisterOffersCanvases() {
-        if (this.merchant.isClientSide() && this.getOffers() != null) {
-            ICanvasTracker tracker = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().getLevel());
+        if (this.merchant.isClientSide()) {
+            Level level = this.merchant.getTradingPlayer().getLevel();;
 
-            for (PaintingMerchantOffer offer : this.getOffers()) {
-                tracker.unregisterCanvasData(offer.getCanvasCode());
+            if (this.getPurchaseOffers() != null) {
+                ICanvasTracker tracker = Helper.getWorldCanvasTracker(level);
+
+                for (PaintingMerchantPurchaseOffer offer : this.getPurchaseOffers()) {
+                    tracker.unregisterCanvasData(offer.getDummyCanvasCode());
+                }
             }
+
+            PaintingMerchantSaleOffer.unregister(level);
         }
     }
+
     /**
      * Start sell/purchase process - send message to the server that player
      * intents to buy a painting.
@@ -259,37 +283,37 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
      * care about.
      */
     public void checkout(ItemStack purchaseStack) {
-        PaintingMerchantOffer offer = this.getCurrentOffer();
+        IPaintingMerchantOffer offer = this.getCurrentOffer();
 
-        if (offer.isSaleOffer()) {
-            if (offer.getPaintingData().isEmpty()) {
-                Zetter.LOG.error("Painting data is not ready for checkout");
+        if (offer instanceof PaintingMerchantSaleOffer saleOffer) {
+            if (!offer.isReady()) {
+                Zetter.LOG.error("Offer is not ready for checkout");
                 return;
             }
 
             if (!this.merchant.getTradingPlayer().getLevel().isClientSide()) {
                 ConnectionManager.getInstance().registerSale(
                     (ServerPlayer) this.player,
-                    offer,
+                    saleOffer,
                     this::finalizeCheckout,
                     offer::markError
                 );
             }
 
             this.itemStacks.set(INPUT_SLOT, ItemStack.EMPTY);
-        } else {
+        } else if (offer instanceof PaintingMerchantPurchaseOffer purchaseOffer) {
             if (!this.merchant.getTradingPlayer().getLevel().isClientSide()) {
                 ConnectionManager.getInstance().registerPurchase(
                     (ServerPlayer) this.player,
-                    offer.paintingUuid,
-                    offer.price,
+                    purchaseOffer.getPaintingUuid(),
+                    purchaseOffer.getPrice(),
                     this::finalizeCheckout,
                     offer::markError
                 );
             }
 
             this.itemStacks.get(INPUT_SLOT).shrink(offer.getPrice());
-            offer.writeOfferResultData(this.merchant.getTradingPlayer().getLevel(), purchaseStack);
+            purchaseOffer.writeOfferResultData(this.merchant.getTradingPlayer().getLevel(), purchaseStack);
         }
 
         // Reset item if we were selling item
@@ -304,7 +328,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
      * and we do nothing
      */
     public void finalizeCheckout() {
-        PaintingMerchantOffer offer = this.getCurrentOffer();
+        IPaintingMerchantOffer offer = this.getCurrentOffer();
         this.merchant.notifyTrade(this.getVanillaMerchantOffer(offer));
         this.playTradeSound();
     }
@@ -376,17 +400,17 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
     }
 
     @Nullable
-    public List<PaintingMerchantOffer> getOffers() {
-        return this.offers;
+    public List<PaintingMerchantPurchaseOffer> getPurchaseOffers() {
+        return this.purchaseOffers;
     }
 
     public boolean hasOffers() {
-        return this.offers != null && this.offers.size() > 0;
+        return this.purchaseOffers != null && this.purchaseOffers.size() > 0;
     }
 
     public int getOffersCount() {
         if (this.hasOffers()) {
-            return this.getOffers().size();
+            return this.getPurchaseOffers().size();
         }
 
         return 0;
@@ -398,8 +422,16 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
      * @param paintingData
      */
     public void updateSaleOfferPaintingData(String canvasCode, PaintingData paintingData) {
+        if (!this.merchant.getTradingPlayer().getLevel().isClientSide()) {
+            throw new IllegalStateException("Should not update offer painting data on server");
+        }
+
         // If offer has changed
-        if (this.getCurrentOffer() == null || !this.getCurrentOffer().getCanvasCode().equals(canvasCode)) {
+        if (
+            this.getCurrentOffer() == null
+            || !this.getCurrentOffer().getRealCanvasCode().equals(canvasCode)
+            || !(this.currentOffer instanceof PaintingMerchantSaleOffer saleOffer)
+        ) {
             return;
         }
 
@@ -408,7 +440,8 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
             paintingData.getColorData()
         );
 
-        this.currentOffer.updatePaintingData(paintingWrap);
+        saleOffer.updatePaintingData(paintingData.getPaintingName(), paintingWrap, paintingData.getAuthorUuid(), paintingData.getAuthorName());
+        saleOffer.register(this.merchant.getTradingPlayer().getLevel());
     }
 
     private void playTradeSound() {
@@ -419,7 +452,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
     }
 
     @Nullable
-    public PaintingMerchantOffer getCurrentOffer() {
+    public IPaintingMerchantOffer getCurrentOffer() {
         return this.currentOffer;
     }
 
@@ -431,8 +464,8 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
         this.setSelectedPurchaseOfferIndex(this.getSelectedPurchaseOfferIndex());
     }
 
-    private MerchantOffer getVanillaMerchantOffer(PaintingMerchantOffer offer) {
-        if (offer.isSaleOffer()) {
+    private MerchantOffer getVanillaMerchantOffer(IPaintingMerchantOffer offer) {
+        if (offer instanceof PaintingMerchantSaleOffer) {
             return this.merchant.getOffers().get(ZetterGalleryVillagerTrades.SELL_OFFER_ID);
         } else {
             return this.merchant.getOffers().get(ZetterGalleryVillagerTrades.BUY_OFFER_ID);
@@ -445,7 +478,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
             return;
         }
 
-        if (index >= this.offers.size()) {
+        if (index >= this.purchaseOffers.size()) {
             ZetterGallery.LOG.error("There's no offer with such index");
             return;
         }

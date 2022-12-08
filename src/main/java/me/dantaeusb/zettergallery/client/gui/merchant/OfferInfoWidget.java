@@ -3,11 +3,11 @@ package me.dantaeusb.zettergallery.client.gui.merchant;
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.dantaeusb.zetter.core.tools.Color;
 import me.dantaeusb.zetter.storage.DummyCanvasData;
-import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
-import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.IPaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -106,27 +106,30 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
     }
 
     private void renderPaintingInfo(PoseStack matrixStack) {
-        PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
+        IPaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null) {
             ZetterGallery.LOG.error("No offer to render info");
             return;
         }
 
-        if (this.isLoading() || offer.getPaintingData().isEmpty()) {
+        if (this.isLoading()) {
             // Preview widget will have loader
             drawCenteredString(matrixStack, this.font, LOADING_PAINTING, this.x + this.width / 2, this.y + this.height / 2 - 4, Color.white.getRGB());
             return;
         }
 
-        DummyCanvasData offerPaintingData = offer.getPaintingData().get();
-
         if (offer.isError()) {
-            final String errorMessage = offer.getMessage().orElse(UNKNOWN_OFFER_ERROR.getString());
+            String errorMessage = offer.getErrorMessage();
+            if (errorMessage == null) {
+                errorMessage = UNKNOWN_OFFER_ERROR.getString();
+            }
 
             this.renderErrorMessage(matrixStack, errorMessage);
             return;
         }
+
+        DummyCanvasData offerPaintingData = offer.getDummyPaintingData();
 
         String priceString = String.valueOf(offer.getPrice());
         final int priceWidth = this.font.width(priceString);
@@ -142,41 +145,44 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
         // Account for RTL?
         Component blockSize = (Component.translatable("item.zetter.painting.size", Integer.toString(widthBlocks), Integer.toString(heightBlocks)));
 
-        List<FormattedCharSequence> multilinePaintingTitle =  this.font.split(FormattedText.of(offer.paintingName), 80);
-        List<FormattedCharSequence> multilineNickname =  this.font.split(FormattedText.of(offer.paintingName), 80);
+        List<FormattedCharSequence> multilinePaintingTitle =  this.font.split(FormattedText.of(offer.getPaintingName()), 80);
+        List<FormattedCharSequence> multilineNickname =  this.font.split(FormattedText.of(offer.getAuthorName()), 80);
 
         // To avoid texture swapping, first draw icons, then text
         RenderSystem.setShaderTexture(0, PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
 
         // Feed icon
-        if (!offer.isSaleOffer() && offer.getFeedName() != null) {
-            int feedIconU = 0;
-            switch (offer.getFeedName()) {
-                case "new":
-                    feedIconU = 16;
-                    break;
-                case "top":
-                    feedIconU = 32;
-                    break;
-                case "favorite":
-                    feedIconU = 48;
-                    break;
-                case "hot":
-                default:
-                    break;
-            }
+        if (offer instanceof PaintingMerchantPurchaseOffer purchaseOffer) {
+            if (purchaseOffer.getFeedName() != null) {
+                int feedIconU = 16;
 
-            blit(
-                matrixStack,
-                this.x + WIDTH - 16 - 5,
-                this.y + 5,
-                304 + feedIconU,
-                0,
-                16,
-                16,
-                512,
-                256
-            );
+                switch (purchaseOffer.getFeedName()) {
+                    case "new":
+                        feedIconU = 16;
+                        break;
+                    case "top":
+                        feedIconU = 32;
+                        break;
+                    case "favorite":
+                        feedIconU = 48;
+                        break;
+                    case "hot":
+                    default:
+                        break;
+                }
+
+                blit(
+                    matrixStack,
+                    this.x + WIDTH - 16 - 5,
+                    this.y + 5,
+                    304 + feedIconU,
+                    0,
+                    16,
+                    16,
+                    512,
+                    256
+                );
+            }
         }
 
         final int ICON_OFFSET = 5 + 64 + 5;
