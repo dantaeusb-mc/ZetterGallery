@@ -14,6 +14,7 @@ import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.core.ZetterGalleryVillagerTrades;
 import me.dantaeusb.zettergallery.gallery.ConnectionManager;
+import me.dantaeusb.zettergallery.gallery.SalesManager;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
@@ -70,12 +71,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
     // We use half of that time
     private static final int FORCE_FEED_UPDATE_TIMEOUT = (int) (2.5f * 30 * 1000);
 
-    // Timestamp at which the current cycle ends, so new cycle should be offered
-    private @Nullable Date cycleEndTimestamp;
-
-    // Timestamp at which we should force the update of the feed, as previous one will
-    // stop receiving requests soon
-    private @Nullable Date cycleForceUpdateTimestamp;
+    private PaintingsResponse.CycleInfo currentCycle;
 
     @Nullable
     private List<PaintingMerchantPurchaseOffer> purchaseOffers;
@@ -111,20 +107,40 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
         return null;
     }
 
+    public @Nullable PaintingsResponse.CycleInfo getCurrentCycle() {
+        return this.currentCycle;
+    }
+
     public int getSecondsToNextCycle() {
-        if (this.cycleEndTimestamp == null) {
+        if (this.currentCycle == null) {
             return 0;
         }
 
-        return (int) (this.cycleEndTimestamp.getTime() - new Date().getTime()) / 1000;
+        return (int) (this.currentCycle.endsAt.getTime() - new Date().getTime()) / 1000;
     }
 
     public int getSecondsToForceUpdateCycle() {
-        if (this.cycleForceUpdateTimestamp == null) {
+        if (this.currentCycle == null) {
             return 0;
         }
 
-        return (int) (this.cycleForceUpdateTimestamp.getTime() - new Date().getTime()) / 1000;
+        return (int) ((this.currentCycle.endsAt.getTime() + FORCE_FEED_UPDATE_TIMEOUT) - new Date().getTime()) / 1000;
+    }
+
+    public boolean canUpdate() {
+        if (this.currentCycle == null) {
+            return false;
+        }
+
+        return this.getSecondsToNextCycle() < 0;
+    }
+
+    public boolean needUpdate() {
+        if (this.currentCycle == null) {
+            return false;
+        }
+
+        return this.getSecondsToForceUpdateCycle() < 0;
     }
 
     /**
@@ -203,13 +219,13 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
                                 () -> {
                                     saleOffer.ready();
 
-                                    SGalleryOfferStatePacket offerStatePacket = new SGalleryOfferStatePacket(saleOffer.getDummyCanvasCode(), PaintingMerchantPurchaseOffer.State.READY, "Ready");
+                                    SOfferStatePacket offerStatePacket = new SOfferStatePacket(saleOffer.getDummyCanvasCode(), PaintingMerchantPurchaseOffer.State.READY, "Ready");
                                     ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.merchant.getTradingPlayer()), offerStatePacket);
                                 },
                                 (error) -> {
                                     saleOffer.markError(error);
 
-                                    SGalleryOfferStatePacket offerStatePacket = new SGalleryOfferStatePacket(saleOffer.getDummyCanvasCode(), PaintingMerchantPurchaseOffer.State.ERROR, error.getClientMessage());
+                                    SOfferStatePacket offerStatePacket = new SOfferStatePacket(saleOffer.getDummyCanvasCode(), PaintingMerchantPurchaseOffer.State.ERROR, error.getClientMessage());
                                     ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.merchant.getTradingPlayer()), offerStatePacket);
                                 }
                             );
@@ -246,8 +262,12 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
      * Zetter Networking
      */
 
+    /**
+     * Server-only, asks sales manager to load offers for that player/merchant pair
+     */
     public void requestFeed() {
-        ConnectionManager.getInstance().requestOffers(
+        SalesManager.getInstance().registerTrackingPlayer((ServerPlayer) this.player);
+        SalesManager.getInstance().acquireMerchantOffers(
                 (ServerPlayer) this.player,
                 this,
                 this::handleFeed,
@@ -257,6 +277,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
 
     /**
      * This is callback for offers request in FETCHING_SALES state.
+     * Only on server, sends packet to client that is processed separately.
      *
      * @param offers
      */
@@ -265,15 +286,13 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
             this.state = this.state.success();
         }
 
+        this.currentCycle = cycleInfo;
         this.purchaseOffers = offers;
         this.updateCurrentOffer();
         this.registerOffersCanvases();
 
-        this.cycleEndTimestamp = cycleInfo.endsAt;
-        this.cycleForceUpdateTimestamp = new Date(cycleInfo.endsAt.getTime() + FORCE_FEED_UPDATE_TIMEOUT);
-
         if (!this.player.getLevel().isClientSide()) {
-            SGalleryOffersPacket salesPacket = new SGalleryOffersPacket(cycleInfo, this.getPurchaseOffers());
+            SOffersPacket salesPacket = new SOffersPacket(cycleInfo, this.getPurchaseOffers());
             ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), salesPacket);
         }
     }
@@ -374,7 +393,11 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
 
     @Override
     public void close() {
-        this.unregisterOffersCanvases();
+        if (this.merchant.getTradingPlayer().getLevel().isClientSide()) {
+            this.unregisterOffersCanvases();
+        } else {
+            SalesManager.getInstance().unregisterTrackingPlayer((ServerPlayer) this.player);
+        }
     }
 
     public enum OffersState {
@@ -524,7 +547,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
         this.setChanged();
 
         if (this.merchant.getTradingPlayer().level.isClientSide()) {
-            CGallerySelectOfferPacket selectOfferPacket = new CGallerySelectOfferPacket(index);
+            CSelectOfferPacket selectOfferPacket = new CSelectOfferPacket(index);
             ZetterGalleryNetwork.simpleChannel.sendToServer(selectOfferPacket);
         }
     }

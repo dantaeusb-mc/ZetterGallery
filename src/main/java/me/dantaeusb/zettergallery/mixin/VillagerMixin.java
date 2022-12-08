@@ -3,7 +3,7 @@ package me.dantaeusb.zettergallery.mixin;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.core.ZetterGalleryVillagers;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
-import me.dantaeusb.zettergallery.network.packet.SGalleryMerchantInfoPacket;
+import me.dantaeusb.zettergallery.network.packet.SMerchantInfoPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.EntityType;
@@ -46,7 +46,7 @@ public abstract class VillagerMixin extends AbstractVillager {
                     menu.setMerchantLevel(this.getVillagerData().getLevel());
 
                     // @todo: use Forge hooks somehow? ; container not initialized when message received
-                    SGalleryMerchantInfoPacket infoPacket = new SGalleryMerchantInfoPacket(this.getUUID(), this.getVillagerData().getLevel());
+                    SMerchantInfoPacket infoPacket = new SMerchantInfoPacket(this.getUUID(), this.getVillagerData().getLevel());
                     ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), infoPacket);
 
                     return menu;

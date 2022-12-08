@@ -12,12 +12,12 @@ import net.minecraftforge.network.NetworkEvent;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public class SGalleryOfferStatePacket {
+public class SOfferStatePacket {
     private final String canvasCode;
     private final PaintingMerchantPurchaseOffer.State state;
     private final String message;
 
-    public SGalleryOfferStatePacket(String canvasCode, PaintingMerchantPurchaseOffer.State state, String message) {
+    public SOfferStatePacket(String canvasCode, PaintingMerchantPurchaseOffer.State state, String message) {
         this.canvasCode = canvasCode;
         this.state = state;
         this.message = message;
@@ -38,13 +38,13 @@ public class SGalleryOfferStatePacket {
     /**
      * Reads the raw packet data from the data stream.
      */
-    public static SGalleryOfferStatePacket readPacketData(FriendlyByteBuf networkBuffer) {
+    public static SOfferStatePacket readPacketData(FriendlyByteBuf networkBuffer) {
         try {
             String canvasCode = networkBuffer.readUtf(32767);
             String state = networkBuffer.readUtf(32767);
             String message = networkBuffer.readUtf(32767);
 
-            return new SGalleryOfferStatePacket(canvasCode, PaintingMerchantPurchaseOffer.State.fromValue(state), message);
+            return new SOfferStatePacket(canvasCode, PaintingMerchantPurchaseOffer.State.fromValue(state), message);
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
             ZetterGallery.LOG.warn("Exception while reading SGalleryOfferStatePacket: " + e);
             return null;
@@ -60,7 +60,7 @@ public class SGalleryOfferStatePacket {
         networkBuffer.writeUtf(this.message, 32767);
     }
 
-    public static void handle(final SGalleryOfferStatePacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
+    public static void handle(final SOfferStatePacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
         LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
         ctx.setPacketHandled(true);

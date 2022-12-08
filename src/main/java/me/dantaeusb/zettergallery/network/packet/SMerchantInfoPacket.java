@@ -15,11 +15,11 @@ import java.util.function.Supplier;
 /**
  * @todo: Is that okay that we don't have classic handler here?
  */
-public class SGalleryMerchantInfoPacket {
+public class SMerchantInfoPacket {
     public final UUID merchantId;
     public final int merchantLevel;
 
-    public SGalleryMerchantInfoPacket(UUID merchantId, int merchantLevel) {
+    public SMerchantInfoPacket(UUID merchantId, int merchantLevel) {
         this.merchantId = merchantId;
         this.merchantLevel = merchantLevel;
     }
@@ -27,12 +27,12 @@ public class SGalleryMerchantInfoPacket {
     /**
      * Reads the raw packet data from the data stream.
      */
-    public static SGalleryMerchantInfoPacket readPacketData(FriendlyByteBuf networkBuffer) {
+    public static SMerchantInfoPacket readPacketData(FriendlyByteBuf networkBuffer) {
         try {
             UUID merchantId = networkBuffer.readUUID();
             int merchantLevel = networkBuffer.readInt();
 
-            return new SGalleryMerchantInfoPacket(merchantId, merchantLevel);
+            return new SMerchantInfoPacket(merchantId, merchantLevel);
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
             ZetterGallery.LOG.warn("Exception while reading SGalleryMerchantInfoPacket: " + e);
             return null;
@@ -47,7 +47,7 @@ public class SGalleryMerchantInfoPacket {
         networkBuffer.writeInt(this.merchantLevel);
     }
 
-    public static void handle(final SGalleryMerchantInfoPacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
+    public static void handle(final SMerchantInfoPacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
         LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
         ctx.setPacketHandled(true);

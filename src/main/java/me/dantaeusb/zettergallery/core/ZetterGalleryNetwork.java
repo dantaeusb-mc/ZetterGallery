@@ -26,7 +26,7 @@ public class ZetterGalleryNetwork {
     public static final byte GALLERY_AUTHORIZED_RESPONSE = 53;
     public static final byte GALLERY_OFFERS_RESPONSE = 54;
     public static final byte GALLERY_SELECT_OFFER = 55;
-    public static final byte GALLERY_UPDATE_OFFER = 56;
+    public static final byte GALLERY_REFRESH_OFFERS = 56;
     public static final byte GALLERY_MERCHANT_INFO = 58;
     public static final byte GALLERY_OFFERS_ERROR = 60;
     public static final byte GALLERY_OFFER_STATE = 61;
@@ -42,49 +42,54 @@ public class ZetterGalleryNetwork {
                 ZetterGalleryNetwork::isThisProtocolAcceptedByServer
         );
 
-        simpleChannel.registerMessage(GALLERY_AUTHORIZATION_CHECK, CGalleryAuthorizationCheckPacket.class,
-                CGalleryAuthorizationCheckPacket::writePacketData, CGalleryAuthorizationCheckPacket::readPacketData,
-                CGalleryAuthorizationCheckPacket::handle,
+        simpleChannel.registerMessage(GALLERY_AUTHORIZATION_CHECK, CAuthorizationCheckPacket.class,
+                CAuthorizationCheckPacket::writePacketData, CAuthorizationCheckPacket::readPacketData,
+                CAuthorizationCheckPacket::handle,
                 Optional.of(PLAY_TO_SERVER));
 
-        simpleChannel.registerMessage(GALLERY_UNAUTHORIZED_RESPONSE, SGalleryAuthorizationCodeResponsePacket.class,
-                SGalleryAuthorizationCodeResponsePacket::writePacketData, SGalleryAuthorizationCodeResponsePacket::readPacketData,
-                SGalleryAuthorizationCodeResponsePacket::handle,
+        simpleChannel.registerMessage(GALLERY_UNAUTHORIZED_RESPONSE, SAuthorizationCodeResponsePacket.class,
+                SAuthorizationCodeResponsePacket::writePacketData, SAuthorizationCodeResponsePacket::readPacketData,
+                SAuthorizationCodeResponsePacket::handle,
                 Optional.of(PLAY_TO_CLIENT));
 
-        simpleChannel.registerMessage(GALLERY_AUTHORIZED_RESPONSE, SGalleryAuthenticationPlayerResponsePacket.class,
-                SGalleryAuthenticationPlayerResponsePacket::writePacketData, SGalleryAuthenticationPlayerResponsePacket::readPacketData,
-                SGalleryAuthenticationPlayerResponsePacket::handle,
+        simpleChannel.registerMessage(GALLERY_AUTHORIZED_RESPONSE, SAuthenticationPlayerResponsePacket.class,
+                SAuthenticationPlayerResponsePacket::writePacketData, SAuthenticationPlayerResponsePacket::readPacketData,
+                SAuthenticationPlayerResponsePacket::handle,
                 Optional.of(PLAY_TO_CLIENT));
 
-        simpleChannel.registerMessage(GALLERY_OFFERS_RESPONSE, SGalleryOffersPacket.class,
-                SGalleryOffersPacket::writePacketData, SGalleryOffersPacket::readPacketData,
-                SGalleryOffersPacket::handle,
+        simpleChannel.registerMessage(GALLERY_OFFERS_RESPONSE, SOffersPacket.class,
+                SOffersPacket::writePacketData, SOffersPacket::readPacketData,
+                SOffersPacket::handle,
                 Optional.of(PLAY_TO_CLIENT));
 
-        simpleChannel.registerMessage(GALLERY_SELECT_OFFER, CGallerySelectOfferPacket.class,
-                CGallerySelectOfferPacket::writePacketData, CGallerySelectOfferPacket::readPacketData,
-                CGallerySelectOfferPacket::handle,
+        simpleChannel.registerMessage(GALLERY_SELECT_OFFER, CSelectOfferPacket.class,
+                CSelectOfferPacket::writePacketData, CSelectOfferPacket::readPacketData,
+                CSelectOfferPacket::handle,
                 Optional.of(PLAY_TO_SERVER));
 
-        simpleChannel.registerMessage(GALLERY_MERCHANT_INFO, SGalleryMerchantInfoPacket.class,
-                SGalleryMerchantInfoPacket::writePacketData, SGalleryMerchantInfoPacket::readPacketData,
-                SGalleryMerchantInfoPacket::handle,
+        simpleChannel.registerMessage(GALLERY_REFRESH_OFFERS, CFeedRefreshRequest.class,
+            CFeedRefreshRequest::writePacketData, CFeedRefreshRequest::readPacketData,
+            CFeedRefreshRequest::handle,
+            Optional.of(PLAY_TO_SERVER));
+
+        simpleChannel.registerMessage(GALLERY_MERCHANT_INFO, SMerchantInfoPacket.class,
+                SMerchantInfoPacket::writePacketData, SMerchantInfoPacket::readPacketData,
+                SMerchantInfoPacket::handle,
                 Optional.of(PLAY_TO_CLIENT));
 
-        simpleChannel.registerMessage(GALLERY_OFFERS_ERROR, SGalleryOffersErrorPacket.class,
-                SGalleryOffersErrorPacket::writePacketData, SGalleryOffersErrorPacket::readPacketData,
-                SGalleryOffersErrorPacket::handle,
+        simpleChannel.registerMessage(GALLERY_OFFERS_ERROR, SOffersErrorPacket.class,
+                SOffersErrorPacket::writePacketData, SOffersErrorPacket::readPacketData,
+                SOffersErrorPacket::handle,
                 Optional.of(PLAY_TO_CLIENT));
 
-        simpleChannel.registerMessage(GALLERY_AUTH_ERROR, SGalleryAuthErrorPacket.class,
-                SGalleryAuthErrorPacket::writePacketData, SGalleryAuthErrorPacket::readPacketData,
-                SGalleryAuthErrorPacket::handle,
+        simpleChannel.registerMessage(GALLERY_AUTH_ERROR, SAuthErrorPacket.class,
+                SAuthErrorPacket::writePacketData, SAuthErrorPacket::readPacketData,
+                SAuthErrorPacket::handle,
                 Optional.of(PLAY_TO_CLIENT));
 
-        simpleChannel.registerMessage(GALLERY_OFFER_STATE, SGalleryOfferStatePacket.class,
-                SGalleryOfferStatePacket::writePacketData, SGalleryOfferStatePacket::readPacketData,
-                SGalleryOfferStatePacket::handle,
+        simpleChannel.registerMessage(GALLERY_OFFER_STATE, SOfferStatePacket.class,
+                SOfferStatePacket::writePacketData, SOfferStatePacket::readPacketData,
+                SOfferStatePacket::handle,
                 Optional.of(PLAY_TO_CLIENT));
     }
 

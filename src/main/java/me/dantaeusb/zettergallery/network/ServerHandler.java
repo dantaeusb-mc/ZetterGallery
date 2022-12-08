@@ -1,11 +1,10 @@
 package me.dantaeusb.zettergallery.network;
 
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
-import me.dantaeusb.zettergallery.network.packet.CGalleryAuthorizationCheckPacket;
-import me.dantaeusb.zettergallery.network.packet.CGallerySelectOfferPacket;
+import me.dantaeusb.zettergallery.network.packet.CAuthorizationCheckPacket;
+import me.dantaeusb.zettergallery.network.packet.CFeedRefreshRequest;
+import me.dantaeusb.zettergallery.network.packet.CSelectOfferPacket;
 import net.minecraft.server.level.ServerPlayer;
-
-import java.util.UUID;
 
 public class ServerHandler {
     /**
@@ -15,7 +14,7 @@ public class ServerHandler {
      * @param packetIn
      * @param sendingPlayer
      */
-    public static void processGalleryAuthenticationRequest(final CGalleryAuthorizationCheckPacket packetIn, ServerPlayer sendingPlayer) {
+    public static void processGalleryAuthenticationRequest(final CAuthorizationCheckPacket packetIn, ServerPlayer sendingPlayer) {
         if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
             PaintingMerchantMenu menu = (PaintingMerchantMenu) sendingPlayer.containerMenu;
 
@@ -23,10 +22,23 @@ public class ServerHandler {
         }
     }
 
-    public static void processGallerySelectOffer(final CGallerySelectOfferPacket packetIn, ServerPlayer sendingPlayer) {
+    public static void processGallerySelectOffer(final CSelectOfferPacket packetIn, ServerPlayer sendingPlayer) {
         if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
             PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)sendingPlayer.containerMenu;
             paintingMerchantMenu.updateCurrentOfferIndex(packetIn.offerIndex);
+        }
+    }
+
+    /**
+     * Trigger updating of player's offers in painting merchant menu
+     * @param packetIn
+     * @param sendingPlayer
+     */
+    public static void processGalleryFeedRefreshRequest(final CFeedRefreshRequest packetIn, ServerPlayer sendingPlayer) {
+        if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
+            PaintingMerchantMenu menu = (PaintingMerchantMenu) sendingPlayer.containerMenu;
+
+            menu.getContainer().requestFeed();
         }
     }
 }

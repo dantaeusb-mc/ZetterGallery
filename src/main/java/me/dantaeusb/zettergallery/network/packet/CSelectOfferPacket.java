@@ -13,10 +13,10 @@ import java.util.function.Supplier;
  * there's no way to determine which purpose packet is used for
  * unless they're different classes for some reason
  */
-public class CGallerySelectOfferPacket {
+public class CSelectOfferPacket {
     public final int offerIndex;
 
-    public CGallerySelectOfferPacket(int offerIndex) {
+    public CSelectOfferPacket(int offerIndex) {
         this.offerIndex = offerIndex;
     }
 
@@ -24,10 +24,10 @@ public class CGallerySelectOfferPacket {
      * Reads the raw packet data from the data stream.
      * Seems like buf is always at least 256 bytes, so we have to process written buffer size
      */
-    public static CGallerySelectOfferPacket readPacketData(FriendlyByteBuf buf) {
+    public static CSelectOfferPacket readPacketData(FriendlyByteBuf buf) {
         final int offerIndex = buf.readInt();
 
-        CGallerySelectOfferPacket packet = new CGallerySelectOfferPacket(offerIndex);
+        CSelectOfferPacket packet = new CSelectOfferPacket(offerIndex);
 
         return packet;
     }
@@ -39,7 +39,7 @@ public class CGallerySelectOfferPacket {
         buf.writeInt(this.offerIndex);
     }
 
-    public static void handle(final CGallerySelectOfferPacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
+    public static void handle(final CSelectOfferPacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
         ctx.setPacketHandled(true);
 

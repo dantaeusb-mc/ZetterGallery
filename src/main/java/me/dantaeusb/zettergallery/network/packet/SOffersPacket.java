@@ -19,14 +19,14 @@ import java.util.function.Supplier;
 /**
  * @todo: Is that okay that we don't have classic handler here?
  */
-public class SGalleryOffersPacket {
+public class SOffersPacket {
     static final int MAX_NAME_LENGTH = 128;
     static final int MAX_AUTHOR_LENGTH = 64;
 
     private final PaintingsResponse.CycleInfo cycleInfo;
     private final List<PaintingMerchantPurchaseOffer> offers;
 
-    public SGalleryOffersPacket(PaintingsResponse.CycleInfo cycleInfo, List<PaintingMerchantPurchaseOffer> offers) {
+    public SOffersPacket(PaintingsResponse.CycleInfo cycleInfo, List<PaintingMerchantPurchaseOffer> offers) {
         this.cycleInfo = cycleInfo;
         this.offers = offers;
     }
@@ -42,7 +42,7 @@ public class SGalleryOffersPacket {
     /**
      * Reads the raw packet data from the data stream.
      */
-    public static SGalleryOffersPacket readPacketData(FriendlyByteBuf networkBuffer) {
+    public static SOffersPacket readPacketData(FriendlyByteBuf networkBuffer) {
         try {
             final int cycleIncrementId = networkBuffer.readInt();
             final Date cycleStartsAt = networkBuffer.readDate();
@@ -83,7 +83,7 @@ public class SGalleryOffersPacket {
                 i++;
             }
 
-            return new SGalleryOffersPacket(cycleInfo, offers);
+            return new SOffersPacket(cycleInfo, offers);
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
             ZetterGallery.LOG.warn("Exception while reading SGallerySalesPacket: " + e);
             return null;
@@ -121,7 +121,7 @@ public class SGalleryOffersPacket {
         }
     }
 
-    public static void handle(final SGalleryOffersPacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
+    public static void handle(final SOffersPacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
         LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
         ctx.setPacketHandled(true);

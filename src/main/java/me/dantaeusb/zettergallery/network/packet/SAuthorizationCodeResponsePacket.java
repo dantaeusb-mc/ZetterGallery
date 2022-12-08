@@ -17,17 +17,17 @@ import java.util.function.Supplier;
  * Send info to client that player is not authorized
  * but can authorize using cross-auth code
  */
-public class SGalleryAuthorizationCodeResponsePacket {
+public class SAuthorizationCodeResponsePacket {
     public final AuthorizationCode authorizationCode;
 
-    public SGalleryAuthorizationCodeResponsePacket(AuthorizationCode authorizationCode) {
+    public SAuthorizationCodeResponsePacket(AuthorizationCode authorizationCode) {
         this.authorizationCode = authorizationCode;
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public static SGalleryAuthorizationCodeResponsePacket readPacketData(FriendlyByteBuf networkBuffer) {
+    public static SAuthorizationCodeResponsePacket readPacketData(FriendlyByteBuf networkBuffer) {
         try {
             String code = networkBuffer.readUtf(32);
             Date issued = new Date(networkBuffer.readLong());
@@ -35,7 +35,7 @@ public class SGalleryAuthorizationCodeResponsePacket {
 
             AuthorizationCode crossAuthCode = new AuthorizationCode(code, issued, notAfter);
 
-            return new SGalleryAuthorizationCodeResponsePacket(crossAuthCode);
+            return new SAuthorizationCodeResponsePacket(crossAuthCode);
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
             ZetterGallery.LOG.warn("Exception while reading SGalleryAuthorizationResponsePacket: " + e);
             return null;
@@ -51,7 +51,7 @@ public class SGalleryAuthorizationCodeResponsePacket {
         networkBuffer.writeLong(this.authorizationCode.notAfter.getTime());
     }
 
-    public static void handle(final SGalleryAuthorizationCodeResponsePacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
+    public static void handle(final SAuthorizationCodeResponsePacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
         LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
         ctx.setPacketHandled(true);

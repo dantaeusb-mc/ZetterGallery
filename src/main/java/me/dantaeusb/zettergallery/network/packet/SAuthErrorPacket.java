@@ -15,31 +15,31 @@ import java.util.function.Supplier;
 /**
  * Handling auth errors
  */
-public class SGalleryAuthErrorPacket extends SGalleryAbstractErrorPacket {
-    public SGalleryAuthErrorPacket(GalleryError error) {
+public class SAuthErrorPacket extends SAbstractErrorPacket {
+    public SAuthErrorPacket(GalleryError error) {
         super(error);
     }
 
-    public SGalleryAuthErrorPacket(int code, String message) {
+    public SAuthErrorPacket(int code, String message) {
         super(code, message);
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public static SGalleryAuthErrorPacket readPacketData(FriendlyByteBuf networkBuffer) {
+    public static SAuthErrorPacket readPacketData(FriendlyByteBuf networkBuffer) {
         try {
             int code = networkBuffer.readInt();
             String message = networkBuffer.readUtf(32767);
 
-            return new SGalleryAuthErrorPacket(code, message);
+            return new SAuthErrorPacket(code, message);
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
             ZetterGallery.LOG.warn("Exception while reading SGalleryAuthErrorPacket: " + e);
             return null;
         }
     }
 
-    public static void handle(final SGalleryAuthErrorPacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
+    public static void handle(final SAuthErrorPacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
         LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
         ctx.setPacketHandled(true);

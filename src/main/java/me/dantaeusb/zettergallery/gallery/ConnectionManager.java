@@ -2,15 +2,11 @@ package me.dantaeusb.zettergallery.gallery;
 
 import me.dantaeusb.zetter.Zetter;
 import me.dantaeusb.zettergallery.ZetterGallery;
-import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.core.Helper;
-import me.dantaeusb.zettergallery.gallery.salesmanager.PlayerFeed;
-import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryConnection;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.network.http.stub.AuthTokenResponse;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
-import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
 import me.dantaeusb.zettergallery.util.EventConsumer;
 import net.minecraft.server.MinecraftServer;
@@ -18,13 +14,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * This singleton is responsible for Gallery interaction
@@ -50,16 +41,6 @@ public class ConnectionManager {
 
     private long errorTimestamp;
 
-    /**
-     * Player feed cache
-     */
-    private final HashMap<Integer, PaintingsResponse.CycleInfo> cycles = new HashMap<>();
-    private final HashMap<UUID, PlayerFeed> playerFeeds = new HashMap<>();
-
-    private final List<ServerPlayer> trackingPlayers = new ArrayList<>();
-
-    private Integer currentCycleIncrementId = null;
-
     private ConnectionManager(Level overworld) {
         this.overworld = overworld;
         this.connection = new GalleryConnection();
@@ -81,51 +62,6 @@ public class ConnectionManager {
 
     public static void close() {
         ConnectionManager.instance = null;
-    }
-
-    public @Nullable PaintingsResponse.CycleInfo getCurrentCycleInfo() {
-        if (this.currentCycleIncrementId == null) {
-            return null;
-        }
-
-        if (!this.cycles.containsKey(this.currentCycleIncrementId)) {
-            return null;
-        }
-
-        PaintingsResponse.CycleInfo currentCycle = this.cycles.get(this.currentCycleIncrementId);
-
-        if (new Date().getTime() > currentCycle.endsAt.getTime()) {
-            return null;
-        }
-
-        return currentCycle;
-    }
-
-    /**
-     * Check that current feed is not outdated, and update if it is
-     */
-    public void update() {
-        if (this.trackingPlayers.isEmpty()) {
-            return;
-        }
-
-        if (this.getCurrentCycleInfo() != null) {
-            return;
-        }
-
-        for (ServerPlayer trackingPlayer : this.trackingPlayers) {
-            if (!(trackingPlayer.containerMenu instanceof PaintingMerchantMenu)) {
-                ZetterGallery.LOG.warn("Player " + trackingPlayer.getName().getString() + " does not have Painting Merchant Menu opened!");
-                // @todo: [HIGH] Remove
-            }
-
-            this.requestOffers(
-                trackingPlayer,
-                ((PaintingMerchantMenu) trackingPlayer.containerMenu).getContainer(),
-                (cycle, feed) -> ((PaintingMerchantMenu) trackingPlayer.containerMenu).getContainer().handleFeed(cycle, feed),
-                (error) -> ((PaintingMerchantMenu) trackingPlayer.containerMenu).getContainer().handleError(error)
-            );
-        }
     }
 
     public void handleServerStart(MinecraftServer server) {
@@ -348,14 +284,7 @@ public class ConnectionManager {
     }
 
     public void validateSale(ServerPlayer player, PaintingMerchantSaleOffer offer, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
-        PlayerFeed playerFeed = this.playerFeeds.get(player.getUUID());
-
-        if (playerFeed == null) {
-            errorConsumer.accept(new GalleryError(GalleryError.PLAYER_FEED_UNAVAILABLE, "Unable to load feed"));
-            return;
-        }
-
-        if (!playerFeed.isSaleAllowed()) {
+        if (!SalesManager.getInstance().canPlayerSell(player)) {
             errorConsumer.accept(new GalleryError(GalleryError.SERVER_SALE_DISALLOWED, "Sale is not allowed on this server"));
             return;
         }
@@ -375,6 +304,11 @@ public class ConnectionManager {
     }
 
     public void registerSale(ServerPlayer player, PaintingMerchantSaleOffer offer, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
+        if (!SalesManager.getInstance().canPlayerSell(player)) {
+            errorConsumer.accept(new GalleryError(GalleryError.SERVER_SALE_DISALLOWED, "Sale is not allowed on this server"));
+            return;
+        }
+
         if (offer.isLoading()) {
             errorConsumer.accept(new GalleryError(GalleryError.SERVER_RECEIVED_INVALID_PAINTING_DATA, "Painting data not ready"));
             return;
@@ -395,110 +329,16 @@ public class ConnectionManager {
      * Feed
      */
 
-    public void requestOffers(
-        ServerPlayer player, PaintingMerchantContainer paintingMerchantContainer,
-        BiConsumer<PaintingsResponse.CycleInfo, List<PaintingMerchantPurchaseOffer>> successConsumer,
+    public void requestFeed(
+        ServerPlayer player,
+        Consumer<PaintingsResponse> successConsumer,
         Consumer<GalleryError> errorConsumer
     ) {
-        if (this.playerFeeds.containsKey(player.getUUID())) {
-            PlayerFeed feed = this.playerFeeds.get(player.getUUID());
-            PaintingsResponse.CycleInfo cycle = this.cycles.get(feed.getCycleIncrementId());
-
-            List<PaintingMerchantPurchaseOffer> offers = this.getOffersFromFeed(
-                cycle.seed,
-                feed,
-                paintingMerchantContainer.getMenu().getMerchantId(),
-                paintingMerchantContainer.getMenu().getMerchantLevel()
-            );
-
-            successConsumer.accept(cycle, offers);
-        } else {
-            // Will call handlePlayerFeed on response, which call handleOffers
-            this.getConnection().getPlayerFeed(
-                this.playerTokenStorage.getPlayerTokenString(player),
-                (response) -> {
-                    PaintingsResponse.CycleInfo cycle = this.processCurrentCycleInfo(response.cycleInfo);
-                    PlayerFeed feed = this.createPlayerFeed(player, response);
-
-                    List<PaintingMerchantPurchaseOffer> offers = this.getOffersFromFeed(
-                        cycle.seed,
-                        feed,
-                        paintingMerchantContainer.getMenu().getMerchantId(),
-                        paintingMerchantContainer.getMenu().getMerchantLevel()
-                    );
-
-                    successConsumer.accept(cycle, offers);
-                },
-                errorConsumer
-            );
-        }
-    }
-
-    private PaintingsResponse.CycleInfo processCurrentCycleInfo(PaintingsResponse.CycleInfo cycleInfo) {
-        if (this.cycles.containsKey(cycleInfo.incrementId)) {
-            if (!this.cycles.get(cycleInfo.incrementId).seed.equals(cycleInfo.seed)) {
-                throw new IllegalStateException("Got a new cycle with the same id as the current cycle, but data differs.");
-            }
-
-            return cycleInfo;
-        }
-
-        long currentEpochTime = new Date().getTime();
-        if (cycleInfo.endsAt.getTime() < currentEpochTime || cycleInfo.startsAt.getTime() > currentEpochTime) {
-            throw new IllegalStateException("Got a new cycle, but the system time is out of cycle bounds! Please check system time.");
-        }
-
-        this.cycles.put(cycleInfo.incrementId, cycleInfo);
-
-        return cycleInfo;
-    }
-
-    private PlayerFeed createPlayerFeed(ServerPlayer player, PaintingsResponse response) {
-        PlayerFeed feed = PlayerFeed.createFeedFromSaleResponse(player, response);
-        this.playerFeeds.put(player.getUUID(), feed);
-
-        return feed;
-    }
-
-    /**
-     * Depending on merchant ID and level pick some paintings from feed to show on sale
-     *
-     * @param feed
-     * @param merchantId
-     * @param merchantLevel
-     * @return
-     */
-    private List<PaintingMerchantPurchaseOffer> getOffersFromFeed(String seed, PlayerFeed feed, UUID merchantId, int merchantLevel) {
-        ByteBuffer buffer = ByteBuffer.wrap(seed.getBytes(StandardCharsets.UTF_8), 0, 8);
-        long seedLong = buffer.getLong();
-
-        Random rng = new Random(seedLong ^ feed.getPlayer().getUUID().getMostSignificantBits() ^ merchantId.getMostSignificantBits());
-
-        final int totalCount = feed.getOffersCount();
-
-        int showCount = 5 + merchantLevel * 2;
-        showCount = Math.min(showCount, totalCount);
-
-        List<Integer> available = IntStream.range(0, totalCount).boxed().collect(Collectors.toList());
-        Collections.shuffle(available, rng);
-        available = available.subList(0, showCount);
-
-        List<PaintingMerchantPurchaseOffer> randomOffers = available.stream().map(feed.getOffers()::get).toList();
-
-        // Remove duplicates from offers list if there are same paintings in different feeds
-        List<String> offerIds = new LinkedList<>();
-        List<PaintingMerchantPurchaseOffer> offers = new LinkedList<>();
-
-        for (PaintingMerchantPurchaseOffer offer : randomOffers) {
-            if (offerIds.contains(offer.getDummyCanvasCode())) {
-                continue;
-            }
-
-            offerIds.add(offer.getDummyCanvasCode());
-            offers.add(offer);
-        }
-
-        return offers;
+        this.getConnection().getPlayerFeed(
+            this.playerTokenStorage.getPlayerTokenString(player),
+            successConsumer,
+            errorConsumer
+        );
     }
 
     /*

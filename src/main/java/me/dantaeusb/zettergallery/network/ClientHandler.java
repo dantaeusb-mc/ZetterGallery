@@ -13,7 +13,7 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processGalleryPlayerNotAuthorized(final SGalleryAuthorizationCodeResponsePacket packetIn, Level world) {
+    public static void processGalleryPlayerNotAuthorized(final SAuthorizationCodeResponsePacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
         assert player != null;
 
@@ -28,7 +28,7 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processGalleryPlayerAuthorized(final SGalleryAuthenticationPlayerResponsePacket packetIn, Level world) {
+    public static void processGalleryPlayerAuthorized(final SAuthenticationPlayerResponsePacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
         assert player != null;
 
@@ -42,7 +42,7 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processPaintingMerchantInfo(final SGalleryMerchantInfoPacket packetIn, Level world) {
+    public static void processPaintingMerchantInfo(final SMerchantInfoPacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
         assert player != null;
 
@@ -57,7 +57,7 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processPaintingMerchantOffers(final SGalleryOffersPacket packetIn, Level world) {
+    public static void processPaintingMerchantOffers(final SOffersPacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
         assert player != null;
 
@@ -73,7 +73,7 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processPaintingMerchantOffersError(final SGalleryOffersErrorPacket packetIn, Level world) {
+    public static void processPaintingMerchantOffersError(final SOffersErrorPacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
         assert player != null;
 
@@ -87,7 +87,7 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processPaintingMerchantAuthError(final SGalleryAuthErrorPacket packetIn, Level world) {
+    public static void processPaintingMerchantAuthError(final SAuthErrorPacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
         assert player != null;
 
@@ -101,7 +101,7 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processPaintingOfferState(final SGalleryOfferStatePacket packetIn, Level world) {
+    public static void processPaintingOfferState(final SOfferStatePacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
         assert player != null;
 

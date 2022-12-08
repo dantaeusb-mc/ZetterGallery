@@ -15,31 +15,31 @@ import java.util.function.Supplier;
 /**
  * Handling offer errors
  */
-public class SGalleryOffersErrorPacket extends SGalleryAbstractErrorPacket {
-    public SGalleryOffersErrorPacket(GalleryError error) {
+public class SOffersErrorPacket extends SAbstractErrorPacket {
+    public SOffersErrorPacket(GalleryError error) {
         super(error);
     }
 
-    public SGalleryOffersErrorPacket(int code, String message) {
+    public SOffersErrorPacket(int code, String message) {
         super(code, message);
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public static SGalleryOffersErrorPacket readPacketData(FriendlyByteBuf networkBuffer) {
+    public static SOffersErrorPacket readPacketData(FriendlyByteBuf networkBuffer) {
         try {
             int code = networkBuffer.readInt();
             String message = networkBuffer.readUtf(32767);
 
-            return new SGalleryOffersErrorPacket(code, message);
+            return new SOffersErrorPacket(code, message);
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
             ZetterGallery.LOG.warn("Exception while reading SGalleryOffersErrorPacket: " + e);
             return null;
         }
     }
 
-    public static void handle(final SGalleryOffersErrorPacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
+    public static void handle(final SOffersErrorPacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
         LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
         ctx.setPacketHandled(true);

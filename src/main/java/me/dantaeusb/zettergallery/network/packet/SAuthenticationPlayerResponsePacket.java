@@ -17,22 +17,22 @@ import java.util.function.Supplier;
  * Send info to player that they are
  * authorizes as a player specified in this packet
  */
-public class SGalleryAuthenticationPlayerResponsePacket {
+public class SAuthenticationPlayerResponsePacket {
     public final PlayerToken.PlayerInfo playerInfo;
 
-    public SGalleryAuthenticationPlayerResponsePacket(PlayerToken.PlayerInfo playerInfo) {
+    public SAuthenticationPlayerResponsePacket(PlayerToken.PlayerInfo playerInfo) {
         this.playerInfo = playerInfo;
     }
 
     /**
      * Reads the raw packet data from the data stream.
      */
-    public static SGalleryAuthenticationPlayerResponsePacket readPacketData(FriendlyByteBuf networkBuffer) {
+    public static SAuthenticationPlayerResponsePacket readPacketData(FriendlyByteBuf networkBuffer) {
         try {
             UUID playerUuid = networkBuffer.readUUID();
             String playerNickname = networkBuffer.readUtf(32767);
 
-            return new SGalleryAuthenticationPlayerResponsePacket(new PlayerToken.PlayerInfo(playerUuid, playerNickname));
+            return new SAuthenticationPlayerResponsePacket(new PlayerToken.PlayerInfo(playerUuid, playerNickname));
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
             ZetterGallery.LOG.warn("Exception while reading SGalleryAuthenticationPlayerResponsePacket: " + e);
             return null;
@@ -47,7 +47,7 @@ public class SGalleryAuthenticationPlayerResponsePacket {
         networkBuffer.writeUtf(this.playerInfo.nickname(), 32767);
     }
 
-    public static void handle(final SGalleryAuthenticationPlayerResponsePacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
+    public static void handle(final SAuthenticationPlayerResponsePacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
         LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
         ctx.setPacketHandled(true);

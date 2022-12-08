@@ -6,11 +6,14 @@ import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.merchant.*;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.core.ClientHelper;
+import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.gallery.AuthorizationCode;
 import me.dantaeusb.zettergallery.gallery.PlayerToken;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.core.Helper;
 import me.dantaeusb.zettergallery.menu.paintingmerchant.MerchantAuthorizationController;
+import me.dantaeusb.zettergallery.network.packet.CAuthorizationCheckPacket;
+import me.dantaeusb.zettergallery.network.packet.CFeedRefreshRequest;
 import me.dantaeusb.zettergallery.trading.IPaintingMerchantOffer;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -80,7 +83,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     static final int INFO_POSITION_X = 6;
     static final int INFO_POSITION_Y = 26;
 
-    static final int REFRESH_POSITION_X = 146;
+    static final int REFRESH_POSITION_X = 156;
     static final int REFRESH_POSITION_Y = 5;
 
     @Override
@@ -376,6 +379,11 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
 
     private void updateCurrentOfferIndex(int newOffersIndex) {
         this.menu.updateCurrentOfferIndex(newOffersIndex);
+    }
+
+    public void requestNewOffers() {
+        CFeedRefreshRequest feedRefreshRequest = new CFeedRefreshRequest();
+        ZetterGalleryNetwork.simpleChannel.sendToServer(feedRefreshRequest);
     }
 
     public int getOffersCount() {

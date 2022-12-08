@@ -1,7 +1,7 @@
 package me.dantaeusb.zettergallery.core;
 
 import me.dantaeusb.zettergallery.ZetterGallery;
-import me.dantaeusb.zettergallery.gallery.ConnectionManager;
+import me.dantaeusb.zettergallery.gallery.SalesManager;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
@@ -12,7 +12,7 @@ import net.minecraftforge.fml.common.Mod;
 public class ZetterGalleryGameEvents {
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
-        ConnectionManager.getInstance().update();
+        SalesManager.getInstance().tick();
     }
 
     /**

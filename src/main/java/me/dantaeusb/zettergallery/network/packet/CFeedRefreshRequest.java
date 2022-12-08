@@ -12,17 +12,16 @@ import java.util.function.Supplier;
  * Asks player to check if token is authorized after
  * cross-authorization attempt
  */
-public class CGalleryAuthorizationCheckPacket {
-
-    public CGalleryAuthorizationCheckPacket() {
+public class CFeedRefreshRequest {
+    public CFeedRefreshRequest() {
     }
 
     /**
      * Reads the raw packet data from the data stream.
      * Seems like buf is always at least 256 bytes, so we have to process written buffer size
      */
-    public static CGalleryAuthorizationCheckPacket readPacketData(FriendlyByteBuf buf) {
-        CGalleryAuthorizationCheckPacket packet = new CGalleryAuthorizationCheckPacket();
+    public static CFeedRefreshRequest readPacketData(FriendlyByteBuf buf) {
+        CFeedRefreshRequest packet = new CFeedRefreshRequest();
 
         return packet;
     }
@@ -34,15 +33,15 @@ public class CGalleryAuthorizationCheckPacket {
 
     }
 
-    public static void handle(final CGalleryAuthorizationCheckPacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
+    public static void handle(final CFeedRefreshRequest packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
         NetworkEvent.Context ctx = ctxSupplier.get();
         ctx.setPacketHandled(true);
 
         final ServerPlayer sendingPlayer = ctx.getSender();
         if (sendingPlayer == null) {
-            ZetterGallery.LOG.warn("EntityPlayerMP was null when CGalleryAuthenticationCheckPacket was received");
+            ZetterGallery.LOG.warn("EntityPlayerMP was null when CGalleryFeedRefreshRequest was received");
         }
 
-        ctx.enqueueWork(() -> ServerHandler.processGalleryAuthenticationRequest(packetIn, sendingPlayer));
+        ctx.enqueueWork(() -> ServerHandler.processGalleryFeedRefreshRequest(packetIn, sendingPlayer));
     }
 }

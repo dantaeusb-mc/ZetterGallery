@@ -12,7 +12,7 @@ import net.minecraft.network.chat.Component;
 import javax.annotation.Nullable;
 
 public class RefreshWidget extends AbstractPaintingMerchantWidget {
-    private static final int WIDTH = 56;
+    private static final int WIDTH = 46;
     private static final int HEIGHT = 18;
 
     private static final int REFRESH_BUTTON_WIDTH = 18;
@@ -93,16 +93,12 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
             this.parentScreen.getMenu().getContainer().getSecondsToForceUpdateCycle()
             : this.parentScreen.getMenu().getContainer().getSecondsToNextCycle();
 
+        if (totalSecondsToUpdate < 0) {
+            return "-:--";
+        }
+
         int minutesToUpdate = totalSecondsToUpdate / 60;
         int secondsToUpdate = totalSecondsToUpdate % 60;
-
-        if (minutesToUpdate < 0) {
-            minutesToUpdate = 0;
-        }
-
-        if (secondsToUpdate < 0) {
-            secondsToUpdate = 0;
-        }
 
         return String.format("%d:%02d", minutesToUpdate, secondsToUpdate);
     }
@@ -122,7 +118,7 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
      * @return
      */
     private boolean canUpdate() {
-        return this.parentScreen.getMenu().getContainer().getSecondsToNextCycle() < 0;
+        return this.parentScreen.getMenu().getContainer().canUpdate();
     }
 
     @Override
@@ -130,12 +126,7 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
         if (this.canUpdate()) {
             if (isPointInRegion(REFRESH_BUTTON_XPOS, REFRESH_BUTTON_YPOS, REFRESH_BUTTON_WIDTH, REFRESH_BUTTON_HEIGHT, mouseX, mouseY)) {
                 this.playDownSound(Minecraft.getInstance().getSoundManager());
-                this.parentScreen.prevOffer();
-            }
-
-            if (isPointInRegion(REFRESH_BUTTON_XPOS, REFRESH_BUTTON_YPOS, REFRESH_BUTTON_WIDTH, REFRESH_BUTTON_HEIGHT, mouseX, mouseY)) {
-                this.playDownSound(Minecraft.getInstance().getSoundManager());
-                this.parentScreen.nextOffer();
+                this.parentScreen.requestNewOffers();
             }
         }
 
@@ -156,7 +147,6 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
     }
 
     /**
-     * @see net.minecraft.client.gui.screen.inventory.ContainerScreen#isPointInRegion(int, int, int, int, double, double)
      * @param x
      * @param y
      * @param width
