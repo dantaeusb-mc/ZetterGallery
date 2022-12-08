@@ -20,6 +20,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.Merchant;
 
 import javax.annotation.Nullable;
+import java.util.Date;
 import java.util.UUID;
 
 public class PaintingMerchantMenu extends AbstractContainerMenu implements ContainerListener {
@@ -39,7 +40,6 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
 
     private UUID merchantId;
     private int merchantLevel;
-
 
     private PaintingMerchantMenu(int windowID, Inventory invPlayer, Merchant merchant) {
         super(ZetterGalleryContainerMenus.PAINTING_MERCHANT.get(), windowID);

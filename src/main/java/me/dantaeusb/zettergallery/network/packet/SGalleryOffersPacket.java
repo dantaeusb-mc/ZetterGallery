@@ -5,6 +5,7 @@ import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.network.ClientHandler;
+import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
@@ -12,10 +13,7 @@ import net.minecraftforge.common.util.LogicalSidedProvider;
 import net.minecraftforge.fml.LogicalSide;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.Vector;
+import java.util.*;
 import java.util.function.Supplier;
 
 /**
@@ -25,10 +23,16 @@ public class SGalleryOffersPacket {
     static final int MAX_NAME_LENGTH = 128;
     static final int MAX_AUTHOR_LENGTH = 64;
 
+    private final PaintingsResponse.CycleInfo cycleInfo;
     private final List<PaintingMerchantPurchaseOffer> offers;
 
-    public SGalleryOffersPacket(List<PaintingMerchantPurchaseOffer> offers) {
+    public SGalleryOffersPacket(PaintingsResponse.CycleInfo cycleInfo, List<PaintingMerchantPurchaseOffer> offers) {
+        this.cycleInfo = cycleInfo;
         this.offers = offers;
+    }
+
+    public PaintingsResponse.CycleInfo getCycleInfo() {
+        return this.cycleInfo;
     }
 
     public List<PaintingMerchantPurchaseOffer> getOffers() {
@@ -40,6 +44,15 @@ public class SGalleryOffersPacket {
      */
     public static SGalleryOffersPacket readPacketData(FriendlyByteBuf networkBuffer) {
         try {
+            final int cycleIncrementId = networkBuffer.readInt();
+            final Date cycleStartsAt = networkBuffer.readDate();
+            final Date cycleEndsAt = networkBuffer.readDate();
+            final String cycleSeed = networkBuffer.readUtf(16);
+
+            final PaintingsResponse.CycleInfo cycleInfo = new PaintingsResponse.CycleInfo(
+                cycleIncrementId, cycleSeed, cycleStartsAt, cycleEndsAt
+            );
+
             final int size = networkBuffer.readInt();
             int i = 0;
 
@@ -70,7 +83,7 @@ public class SGalleryOffersPacket {
                 i++;
             }
 
-            return new SGalleryOffersPacket(offers);
+            return new SGalleryOffersPacket(cycleInfo, offers);
         } catch (IllegalArgumentException | IndexOutOfBoundsException e) {
             ZetterGallery.LOG.warn("Exception while reading SGallerySalesPacket: " + e);
             return null;
@@ -81,6 +94,11 @@ public class SGalleryOffersPacket {
      * Writes the raw packet data to the data stream.
      */
     public void writePacketData(FriendlyByteBuf networkBuffer) {
+        networkBuffer.writeInt(this.cycleInfo.incrementId);
+        networkBuffer.writeDate(this.cycleInfo.startsAt);
+        networkBuffer.writeDate(this.cycleInfo.endsAt);
+        networkBuffer.writeUtf(this.cycleInfo.seed, 16);
+
         networkBuffer.writeInt(this.offers.size());
 
         for (PaintingMerchantPurchaseOffer merchantOffer : this.offers) {

@@ -15,6 +15,7 @@ public class ClientHandler {
      */
     public static void processGalleryPlayerNotAuthorized(final SGalleryAuthorizationCodeResponsePacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
+        assert player != null;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
             ((PaintingMerchantMenu) player.containerMenu).getAuthController().handleUnauthorized(packetIn.authorizationCode);
@@ -29,6 +30,7 @@ public class ClientHandler {
      */
     public static void processGalleryPlayerAuthorized(final SGalleryAuthenticationPlayerResponsePacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
+        assert player != null;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
             ((PaintingMerchantMenu) player.containerMenu).getAuthController().handleAuthorized(packetIn.playerInfo);
@@ -42,6 +44,7 @@ public class ClientHandler {
      */
     public static void processPaintingMerchantInfo(final SGalleryMerchantInfoPacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
+        assert player != null;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
             ((PaintingMerchantMenu) player.containerMenu).setMerchantId(packetIn.merchantId);
@@ -56,9 +59,12 @@ public class ClientHandler {
      */
     public static void processPaintingMerchantOffers(final SGalleryOffersPacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
+        assert player != null;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
-            ((PaintingMerchantMenu) player.containerMenu).getContainer().handleOffers(packetIn.getOffers());
+            ((PaintingMerchantMenu) player.containerMenu).getContainer().handleFeed(
+                packetIn.getCycleInfo(), packetIn.getOffers()
+            );
         }
     }
 
@@ -69,6 +75,7 @@ public class ClientHandler {
      */
     public static void processPaintingMerchantOffersError(final SGalleryOffersErrorPacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
+        assert player != null;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
             ((PaintingMerchantMenu) player.containerMenu).getContainer().handleError(packetIn.getError());
@@ -82,6 +89,7 @@ public class ClientHandler {
      */
     public static void processPaintingMerchantAuthError(final SGalleryAuthErrorPacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
+        assert player != null;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
             ((PaintingMerchantMenu) player.containerMenu).getAuthController().handleError(packetIn.getError());
@@ -95,6 +103,7 @@ public class ClientHandler {
      */
     public static void processPaintingOfferState(final SGalleryOfferStatePacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
+        assert player != null;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
             ((PaintingMerchantMenu) player.containerMenu).handleOfferState(packetIn.getCanvasCode(), packetIn.getState(), packetIn.getMessage());

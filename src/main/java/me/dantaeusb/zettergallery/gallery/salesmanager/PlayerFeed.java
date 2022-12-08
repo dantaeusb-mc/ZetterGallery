@@ -8,12 +8,14 @@ import java.util.List;
 import java.util.Vector;
 
 public class PlayerFeed {
+    private final int cycleIncrementId;
     private final ServerPlayer player;
     private final List<PaintingMerchantPurchaseOffer> offers;
     private final boolean saleAllowed;
 
-    public PlayerFeed(ServerPlayer player, boolean saleAllowed, List<PaintingMerchantPurchaseOffer> offers) {
+    public PlayerFeed(ServerPlayer player, int cycleIncrementId, boolean saleAllowed, List<PaintingMerchantPurchaseOffer> offers) {
         this.player = player;
+        this.cycleIncrementId = cycleIncrementId;
         this.saleAllowed = saleAllowed;
         this.offers = offers;
     }
@@ -30,7 +32,7 @@ public class PlayerFeed {
             }
         }
 
-        return new PlayerFeed(player, true, offers);
+        return new PlayerFeed(player, response.cycleInfo.incrementId, true, offers);
     }
 
     public boolean isSaleAllowed() {
@@ -47,5 +49,9 @@ public class PlayerFeed {
 
     public ServerPlayer getPlayer() {
         return this.player;
+    }
+
+    public int getCycleIncrementId() {
+        return this.cycleIncrementId;
     }
 }

@@ -16,6 +16,7 @@ import me.dantaeusb.zettergallery.core.ZetterGalleryVillagerTrades;
 import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
+import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import me.dantaeusb.zettergallery.network.packet.*;
 import me.dantaeusb.zettergallery.trading.IPaintingMerchantOffer;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
@@ -36,6 +37,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
+import java.util.Date;
 import java.util.List;
 
 public class PaintingMerchantContainer implements Container, AutoCloseable {
@@ -61,6 +63,19 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
     // @todo: [HIGH] I don't think we need that anymore
     private boolean locked = false;
     private int selectedPurchaseOfferIndex;
+
+    // Time, in milliseconds, for which we allow player to use previous feed
+    // By design of Zetter Gallery API, it's allowed to query only one
+    // Previous cycle, so it should be feed time (Currently 5minutes) at max
+    // We use half of that time
+    private static final int FORCE_FEED_UPDATE_TIMEOUT = (int) (2.5f * 30 * 1000);
+
+    // Timestamp at which the current cycle ends, so new cycle should be offered
+    private @Nullable Date cycleEndTimestamp;
+
+    // Timestamp at which we should force the update of the feed, as previous one will
+    // stop receiving requests soon
+    private @Nullable Date cycleForceUpdateTimestamp;
 
     @Nullable
     private List<PaintingMerchantPurchaseOffer> purchaseOffers;
@@ -94,6 +109,22 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
         }
 
         return null;
+    }
+
+    public int getSecondsToNextCycle() {
+        if (this.cycleEndTimestamp == null) {
+            return 0;
+        }
+
+        return (int) (this.cycleEndTimestamp.getTime() - new Date().getTime()) / 1000;
+    }
+
+    public int getSecondsToForceUpdateCycle() {
+        if (this.cycleForceUpdateTimestamp == null) {
+            return 0;
+        }
+
+        return (int) (this.cycleForceUpdateTimestamp.getTime() - new Date().getTime()) / 1000;
     }
 
     /**
@@ -215,11 +246,11 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
      * Zetter Networking
      */
 
-    public void requrestOffers() {
+    public void requestFeed() {
         ConnectionManager.getInstance().requestOffers(
                 (ServerPlayer) this.player,
                 this,
-                this::handleOffers,
+                this::handleFeed,
                 this::handleError
         );
     }
@@ -229,7 +260,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
      *
      * @param offers
      */
-    public void handleOffers(List<PaintingMerchantPurchaseOffer> offers) {
+    public void handleFeed(PaintingsResponse.CycleInfo cycleInfo, List<PaintingMerchantPurchaseOffer> offers) {
         if (this.state == OffersState.LOADING) {
             this.state = this.state.success();
         }
@@ -238,8 +269,11 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
         this.updateCurrentOffer();
         this.registerOffersCanvases();
 
+        this.cycleEndTimestamp = cycleInfo.endsAt;
+        this.cycleForceUpdateTimestamp = new Date(cycleInfo.endsAt.getTime() + FORCE_FEED_UPDATE_TIMEOUT);
+
         if (!this.player.getLevel().isClientSide()) {
-            SGalleryOffersPacket salesPacket = new SGalleryOffersPacket(this.getPurchaseOffers());
+            SGalleryOffersPacket salesPacket = new SGalleryOffersPacket(cycleInfo, this.getPurchaseOffers());
             ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), salesPacket);
         }
     }

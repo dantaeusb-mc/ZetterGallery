@@ -19,5 +19,8 @@
   "container.zettergallery.merchant.another_players_painting": "Cannot sell painting made by another player",
   "container.zettergallery.merchant.unknown_error": "Unknown error occurred",
   "container.zettergallery.merchant.try_again": "Please try again later",
-  "container.zettergallery.merchant.sell": "Sell"
+  "container.zettergallery.merchant.sell": "Sell",
+  "container.zettergallery.merchant.refresh": "Refresh offers",
+  "container.zettergallery.merchant.refresh.before": "New offers available in %1$s",
+  "container.zettergallery.merchant.refresh.available": "Press to refresh offers. Auto refresh in %1$s"
 }

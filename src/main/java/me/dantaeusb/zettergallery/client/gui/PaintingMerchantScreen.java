@@ -43,6 +43,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     private PaintingPreviewWidget previewWidget;
     private PaginatorWidget paginatorWidget;
     private OfferInfoWidget infoWidget;
+    private RefreshWidget refreshWidget;
 
     private final List<AbstractPaintingMerchantWidget> paintingMerchantWidgets = Lists.newArrayList();
 
@@ -79,6 +80,9 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     static final int INFO_POSITION_X = 6;
     static final int INFO_POSITION_Y = 26;
 
+    static final int REFRESH_POSITION_X = 146;
+    static final int REFRESH_POSITION_Y = 5;
+
     @Override
     protected void init() {
         super.init();
@@ -94,11 +98,13 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         this.previewWidget = new PaintingPreviewWidget(this, this.getGuiLeft() + PREVIEW_POSITION_X, this.getGuiTop() + PREVIEW_POSITION_Y);
         this.paginatorWidget = new PaginatorWidget(this, this.getGuiLeft() + PAGINATOR_POSITION_X, this.getGuiTop() + PAGINATOR_POSITION_Y);
         this.infoWidget = new OfferInfoWidget(this, this.getGuiLeft() + INFO_POSITION_X, this.getGuiTop() + INFO_POSITION_Y);
+        this.refreshWidget = new RefreshWidget(this, this.getGuiLeft() + REFRESH_POSITION_X, this.getGuiTop() + REFRESH_POSITION_Y);
 
         this.addPaintingMerchantWidget(this.authWidget);
         this.addPaintingMerchantWidget(this.previewWidget);
         this.addPaintingMerchantWidget(this.paginatorWidget);
         this.addPaintingMerchantWidget(this.infoWidget);
+        this.addPaintingMerchantWidget(this.refreshWidget);
     }
 
     @Override
@@ -293,6 +299,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         this.previewWidget.render(poseStack, mouseX, mouseY, partialTicks);
         this.paginatorWidget.render(poseStack, mouseX, mouseY, partialTicks);
         this.infoWidget.render(poseStack, mouseX, mouseY, partialTicks);
+        this.refreshWidget.render(poseStack, mouseX, mouseY, partialTicks);
     }
 
     public void onClose() {

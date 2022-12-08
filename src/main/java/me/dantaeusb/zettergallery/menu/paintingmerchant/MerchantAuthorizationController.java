@@ -8,7 +8,6 @@ import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.gallery.PlayerToken;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
-import me.dantaeusb.zettergallery.network.http.stub.ServerResponse;
 import me.dantaeusb.zettergallery.network.packet.CGalleryAuthorizationCheckPacket;
 import me.dantaeusb.zettergallery.network.packet.SGalleryAuthErrorPacket;
 import me.dantaeusb.zettergallery.network.packet.SGalleryAuthorizationCodeResponsePacket;
@@ -19,7 +18,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
-import java.util.Optional;
 
 public class MerchantAuthorizationController {
     // We do not share token info because token only belongs to one client (Minecraft server)
@@ -111,7 +109,7 @@ public class MerchantAuthorizationController {
         // Ask to load offers only if we were waiting for server auth
         // When first loading or when retried after client authorization
         if (previousState == PlayerAuthorizationState.SERVER_AUTHENTICATION) {
-            this.menu.getContainer().requrestOffers();
+            this.menu.getContainer().requestFeed();
         }
     }
 

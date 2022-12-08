@@ -5,6 +5,7 @@ import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.core.Helper;
 import me.dantaeusb.zettergallery.gallery.salesmanager.PlayerFeed;
+import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryConnection;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.network.http.stub.AuthTokenResponse;
@@ -20,6 +21,7 @@ import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -51,10 +53,12 @@ public class ConnectionManager {
     /**
      * Player feed cache
      */
+    private final HashMap<Integer, PaintingsResponse.CycleInfo> cycles = new HashMap<>();
     private final HashMap<UUID, PlayerFeed> playerFeeds = new HashMap<>();
 
-    private long nextCycleEpoch;
-    private String cycleSeed;
+    private final List<ServerPlayer> trackingPlayers = new ArrayList<>();
+
+    private Integer currentCycleIncrementId = null;
 
     private ConnectionManager(Level overworld) {
         this.overworld = overworld;
@@ -79,20 +83,48 @@ public class ConnectionManager {
         ConnectionManager.instance = null;
     }
 
+    public @Nullable PaintingsResponse.CycleInfo getCurrentCycleInfo() {
+        if (this.currentCycleIncrementId == null) {
+            return null;
+        }
+
+        if (!this.cycles.containsKey(this.currentCycleIncrementId)) {
+            return null;
+        }
+
+        PaintingsResponse.CycleInfo currentCycle = this.cycles.get(this.currentCycleIncrementId);
+
+        if (new Date().getTime() > currentCycle.endsAt.getTime()) {
+            return null;
+        }
+
+        return currentCycle;
+    }
+
     /**
      * Check that current feed is not outdated, and update if it is
-     *
-     * @todo: Update if player has trading screen opened
      */
     public void update() {
-        if (this.nextCycleEpoch == 0L) {
+        if (this.trackingPlayers.isEmpty()) {
             return;
         }
 
-        long unixTime = System.currentTimeMillis();
+        if (this.getCurrentCycleInfo() != null) {
+            return;
+        }
 
-        if (this.playerFeeds.size() > 0 && unixTime > this.nextCycleEpoch) {
-            this.playerFeeds.clear();
+        for (ServerPlayer trackingPlayer : this.trackingPlayers) {
+            if (!(trackingPlayer.containerMenu instanceof PaintingMerchantMenu)) {
+                ZetterGallery.LOG.warn("Player " + trackingPlayer.getName().getString() + " does not have Painting Merchant Menu opened!");
+                // @todo: [HIGH] Remove
+            }
+
+            this.requestOffers(
+                trackingPlayer,
+                ((PaintingMerchantMenu) trackingPlayer.containerMenu).getContainer(),
+                (cycle, feed) -> ((PaintingMerchantMenu) trackingPlayer.containerMenu).getContainer().handleFeed(cycle, feed),
+                (error) -> ((PaintingMerchantMenu) trackingPlayer.containerMenu).getContainer().handleError(error)
+            );
         }
     }
 
@@ -365,45 +397,64 @@ public class ConnectionManager {
 
     public void requestOffers(
         ServerPlayer player, PaintingMerchantContainer paintingMerchantContainer,
-        Consumer<List<PaintingMerchantPurchaseOffer>> successConsumer,
+        BiConsumer<PaintingsResponse.CycleInfo, List<PaintingMerchantPurchaseOffer>> successConsumer,
         Consumer<GalleryError> errorConsumer
     ) {
         if (this.playerFeeds.containsKey(player.getUUID())) {
             PlayerFeed feed = this.playerFeeds.get(player.getUUID());
+            PaintingsResponse.CycleInfo cycle = this.cycles.get(feed.getCycleIncrementId());
+
             List<PaintingMerchantPurchaseOffer> offers = this.getOffersFromFeed(
-                this.cycleSeed,
+                cycle.seed,
                 feed,
                 paintingMerchantContainer.getMenu().getMerchantId(),
                 paintingMerchantContainer.getMenu().getMerchantLevel()
             );
 
-            successConsumer.accept(offers);
+            successConsumer.accept(cycle, offers);
         } else {
             // Will call handlePlayerFeed on response, which call handleOffers
             this.getConnection().getPlayerFeed(
                 this.playerTokenStorage.getPlayerTokenString(player),
                 (response) -> {
-                    this.cycleSeed = response.cycleInfo.seed;
-                    this.nextCycleEpoch = response.cycleInfo.endsAt.getTime();
-
+                    PaintingsResponse.CycleInfo cycle = this.processCurrentCycleInfo(response.cycleInfo);
                     PlayerFeed feed = this.createPlayerFeed(player, response);
+
                     List<PaintingMerchantPurchaseOffer> offers = this.getOffersFromFeed(
-                        this.cycleSeed,
+                        cycle.seed,
                         feed,
                         paintingMerchantContainer.getMenu().getMerchantId(),
                         paintingMerchantContainer.getMenu().getMerchantLevel()
                     );
 
-                    successConsumer.accept(offers);
+                    successConsumer.accept(cycle, offers);
                 },
                 errorConsumer
             );
         }
     }
 
+    private PaintingsResponse.CycleInfo processCurrentCycleInfo(PaintingsResponse.CycleInfo cycleInfo) {
+        if (this.cycles.containsKey(cycleInfo.incrementId)) {
+            if (!this.cycles.get(cycleInfo.incrementId).seed.equals(cycleInfo.seed)) {
+                throw new IllegalStateException("Got a new cycle with the same id as the current cycle, but data differs.");
+            }
+
+            return cycleInfo;
+        }
+
+        long currentEpochTime = new Date().getTime();
+        if (cycleInfo.endsAt.getTime() < currentEpochTime || cycleInfo.startsAt.getTime() > currentEpochTime) {
+            throw new IllegalStateException("Got a new cycle, but the system time is out of cycle bounds! Please check system time.");
+        }
+
+        this.cycles.put(cycleInfo.incrementId, cycleInfo);
+
+        return cycleInfo;
+    }
+
     private PlayerFeed createPlayerFeed(ServerPlayer player, PaintingsResponse response) {
         PlayerFeed feed = PlayerFeed.createFeedFromSaleResponse(player, response);
-
         this.playerFeeds.put(player.getUUID(), feed);
 
         return feed;
