@@ -126,23 +126,21 @@ public class SalesManager {
 
         // Cleanup every 5 minutes
         if (this.tick % 5 * 60 * 20 == 0) {
-            this.cleeanup();
+            this.cleanup();
         }
     }
 
-    private void cleeanup() {
-        for (Map.Entry<Integer, PaintingsResponse.CycleInfo> cycleInfoEntry : this.cycles.entrySet()) {
-            // If cycle is older than half of an hour
-            if ((new Date().getTime() - cycleInfoEntry.getValue().endsAt.getTime()) > 30 * 60 * 1000) {
-                this.cycles.remove(cycleInfoEntry.getKey());
-            }
-        }
+    /**
+     * Remove old cycles created more than 30 minutes ago and remove feed information
+     */
+    private void cleanup() {
+        this.cycles.entrySet().removeIf((cycleInfoEntry ->
+            (new Date().getTime() - cycleInfoEntry.getValue().endsAt.getTime()) > 30 * 60 * 1000
+        ));
 
-        for (Map.Entry<UUID, PlayerFeed> playerFeedEntry: this.playerFeeds.entrySet()) {
-            if (!this.cycles.containsKey(playerFeedEntry.getValue().getCycleIncrementId())) {
-                this.playerFeeds.remove(playerFeedEntry.getKey());
-            }
-        }
+        this.playerFeeds.entrySet().removeIf(playerFeedEntry ->
+            !this.cycles.containsKey(playerFeedEntry.getValue().getCycleIncrementId())
+        );
     }
 
     /*
