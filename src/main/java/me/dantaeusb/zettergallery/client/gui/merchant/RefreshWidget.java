@@ -139,6 +139,10 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
             return null;
         }
 
+        if (this.parentScreen.getMenu().getContainer().hasError()) {
+            return null;
+        }
+
         if (this.canUpdate()) {
             return Component.translatable("container.zettergallery.merchant.refresh.available", this.getUpdateTimeout());
         } else {

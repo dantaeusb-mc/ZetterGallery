@@ -41,7 +41,7 @@ import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.List;
 
-public class PaintingMerchantContainer implements Container, AutoCloseable {
+public class PaintingMerchantContainer implements Container {
     public static final int STORAGE_SIZE = 2;
 
     public static final int INPUT_SLOT = 0;
@@ -391,8 +391,7 @@ public class PaintingMerchantContainer implements Container, AutoCloseable {
         this.state = this.state.error();
     }
 
-    @Override
-    public void close() {
+    public void removed() {
         if (this.merchant.getTradingPlayer().getLevel().isClientSide()) {
             this.unregisterOffersCanvases();
         } else {

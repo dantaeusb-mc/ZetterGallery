@@ -22,7 +22,7 @@ apply from: "https://moddingtutorials.org/applesilicon.gradle"
 apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'maven-publish'
 
-version = '0.4.0-1.19.2-beta'
+version = '0.4.0-1.19.2-rc'
 group = 'com.dantaeusb.zettergallery' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'zettergallery'
 
@@ -105,7 +105,7 @@ dependencies {
     minecraft 'net.minecraftforge:forge:1.19.2-43.1.1'
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    implementation fg.deobf("com.dantaeusb.zetter:Zetter:0.18.6-1.19.2-beta")
+    implementation fg.deobf("com.dantaeusb.zetter:Zetter:0.19.0-1.19.2-rc")
 }
 
 mixin {

@@ -203,11 +203,11 @@ public class GalleryConnection {
             } catch (GalleryException e) {
                 ZetterGallery.LOG.error(String.format("Unable to request player token, Gallery returned error: [%d] %s", e.getCode(), e.getMessage()));
 
-                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), e.getMessage())));
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(e.getCode(), "Unable to request player token")));
             } catch (Exception e) {
                 ZetterGallery.LOG.error(String.format("Unable to request player token: %s", e.getMessage()));
 
-                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, e.getMessage())));
+                executor.submitAsync(() -> errorConsumer.accept(new GalleryError(0, "Unable to request player token")));
             }
         });
     }

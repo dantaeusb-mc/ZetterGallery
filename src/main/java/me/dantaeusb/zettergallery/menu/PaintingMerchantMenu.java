@@ -255,11 +255,8 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
      */
     public void removed(Player player) {
         super.removed(player);
-        this.merchant.setTradingPlayer(null);
 
         if (!this.merchant.isClientSide()) {
-            this.container.unregisterOffersCanvases();
-
             if (!player.isAlive() || player instanceof ServerPlayer && ((ServerPlayer) player).hasDisconnected()) {
                 ItemStack itemstack = this.container.removeItemNoUpdate(PaintingMerchantContainer.INPUT_SLOT);
                 if (!itemstack.isEmpty()) {
@@ -274,6 +271,9 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
                 player.getInventory().placeItemBackInInventory(this.container.removeItemNoUpdate(0));
             }
         }
+
+        this.container.removed();
+        this.merchant.setTradingPlayer(null);
     }
 
     private boolean areItemStacksEqual(ItemStack stack1, ItemStack stack2) {
