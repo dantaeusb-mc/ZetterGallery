@@ -374,8 +374,6 @@ public class PaintingMerchantContainer implements Container {
     }
 
     /**
-     * @todo: [HIGH] Remove
-     *
      * Response from server after sell/purchase request: either
      * request was fulfilled and player may take the painting or something went wrong
      * and we do nothing

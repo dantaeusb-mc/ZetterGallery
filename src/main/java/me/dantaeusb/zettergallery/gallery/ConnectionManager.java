@@ -66,7 +66,7 @@ public class ConnectionManager {
 
     public void handleServerStart(MinecraftServer server) {
         if (server.isDedicatedServer()) {
-            this.serverInfo = ServerInfo.createMultiplayerServer(server.getLocalIp() + ":" + server.getPort(), server.getMotd(), server.getServerVersion());
+            this.serverInfo = ServerInfo.createMultiplayerServer(server.getMotd(), server.getServerVersion());
         } else {
             this.serverInfo = ServerInfo.createSingleplayerServer(server.getServerVersion());
         }

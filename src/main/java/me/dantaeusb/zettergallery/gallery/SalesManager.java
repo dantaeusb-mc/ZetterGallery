@@ -60,10 +60,18 @@ public class SalesManager {
     }
 
     public void registerTrackingPlayer(ServerPlayer player) {
+        if (this.trackingPlayers.contains(player)) {
+            return;
+        }
+
         this.trackingPlayers.add(player);
     }
 
     public void unregisterTrackingPlayer(ServerPlayer player) {
+        if (!this.trackingPlayers.contains(player)) {
+            return;
+        }
+
         this.trackingPlayers.remove(player);
     }
 
