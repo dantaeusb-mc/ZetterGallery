@@ -26,7 +26,7 @@ public class PlayerFeed {
         for (String feedName : response.feeds.keySet()) {
             for (PaintingsResponse.PaintingItem item : response.feeds.get(feedName)) {
                 PaintingMerchantPurchaseOffer offer = PaintingMerchantPurchaseOffer.createOfferFromGalleryResponse(item);
-                offer.setFeedName(feedName);
+                offer.setCycleInfo(response.cycleInfo.incrementId, feedName);
 
                 offers.add(offer);
             }

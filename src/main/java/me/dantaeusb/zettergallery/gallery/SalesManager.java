@@ -75,6 +75,14 @@ public class SalesManager {
         this.trackingPlayers.remove(player);
     }
 
+    public @Nullable PaintingsResponse.CycleInfo getCycleInfo(int cycleIncrementId) {
+        if (!this.cycles.containsKey(cycleIncrementId)) {
+            return null;
+        }
+
+        return this.cycles.get(cycleIncrementId);
+    }
+
     public @Nullable PaintingsResponse.CycleInfo getCurrentCycleInfo() {
         if (this.currentCycleIncrementId == null) {
             return null;

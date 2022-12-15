@@ -361,6 +361,7 @@ public class PaintingMerchantContainer implements Container {
                     (ServerPlayer) this.player,
                     purchaseOffer.getPaintingUuid(),
                     purchaseOffer.getPrice(),
+                    purchaseOffer.getCycleIncrementId(),
                     this::finalizeCheckout,
                     offer::markError
                 );

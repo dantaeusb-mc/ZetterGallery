@@ -377,7 +377,7 @@ public class GalleryConnection {
      * Register that player sees a painting
      *
      */
-    public void registerImpression(String token, UUID paintingUuid, Consumer<GenericMessageResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void registerImpression(String token, UUID paintingUuid, int cycleId, Consumer<GenericMessageResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -385,8 +385,10 @@ public class GalleryConnection {
             BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
-                final URL saleUri = GalleryConnection.getUri(PAINTINGS_ENDPOINT + "/" + paintingUuid.toString() + "/" + PAINTINGS_IMPRESSION_ENDPOINT);
-                GenericMessageResponse response = makeRequest(saleUri, "POST", GenericMessageResponse.class, token, null);
+                final ImpressionRequest request = new ImpressionRequest(cycleId);
+
+                final URL impressionUri = GalleryConnection.getUri(PAINTINGS_ENDPOINT + "/" + paintingUuid.toString() + "/" + PAINTINGS_IMPRESSION_ENDPOINT);
+                GenericMessageResponse response = makeRequest(impressionUri, "POST", GenericMessageResponse.class, token, request);
 
                 executor.submitAsync(() -> successConsumer.accept(response));
             } catch (GalleryException e) {
@@ -407,7 +409,7 @@ public class GalleryConnection {
      * @param paintingUuid uuid of purchased painting
      * @param price price in emeralds, 1-10
      */
-    public void registerPurchase(String token, UUID paintingUuid, int price, Consumer<GenericMessageResponse> success, Consumer<GalleryError> errorConsumer) {
+    public void registerPurchase(String token, UUID paintingUuid, int price, int cycleId, Consumer<GenericMessageResponse> success, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
@@ -415,7 +417,7 @@ public class GalleryConnection {
             BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
-                final PurchaseRequest request = new PurchaseRequest(price);
+                final PurchaseRequest request = new PurchaseRequest(price, cycleId);
 
                 final URL saleUri = GalleryConnection.getUri(PAINTINGS_ENDPOINT + "/" + paintingUuid.toString() + "/" + PAINTINGS_PURCHASES_ENDPOINT);
                 GenericMessageResponse response = makeRequest(saleUri, "POST", GenericMessageResponse.class, token, request);

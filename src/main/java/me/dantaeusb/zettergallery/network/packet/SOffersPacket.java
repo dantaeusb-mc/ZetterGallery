@@ -76,7 +76,7 @@ public class SOffersPacket {
                     paintingData, paintingGalleryUuid, paintingTitle,
                     paintingAuthorUuid, paintingAuthorName, price
                 );
-                offer.setFeedName(feedName);
+                offer.setCycleInfo(cycleIncrementId, feedName);
 
                 offers.add(offer);
 

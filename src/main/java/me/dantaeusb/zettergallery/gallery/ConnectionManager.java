@@ -257,10 +257,11 @@ public class ConnectionManager {
      * Paintings
      */
 
-    public void registerImpression(ServerPlayer player, UUID paintingUuid, EventConsumer successConsumer, EventConsumer errorConsumer) {
+    public void registerImpression(ServerPlayer player, UUID paintingUuid, int cycleId, EventConsumer successConsumer, EventConsumer errorConsumer) {
         ConnectionManager.getInstance().getConnection().registerImpression(
             this.playerTokenStorage.getPlayerTokenString(player),
             paintingUuid,
+            cycleId,
             (response) -> {
                 successConsumer.accept();
             },
@@ -271,11 +272,12 @@ public class ConnectionManager {
         );
     }
 
-    public void registerPurchase(ServerPlayer player, UUID paintingUuid, int price, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void registerPurchase(ServerPlayer player, UUID paintingUuid, int price, int cycleId, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
         ConnectionManager.getInstance().getConnection().registerPurchase(
             this.playerTokenStorage.getPlayerTokenString(player),
             paintingUuid,
             price,
+            cycleId,
             (response) -> {
                 successConsumer.accept();
             },

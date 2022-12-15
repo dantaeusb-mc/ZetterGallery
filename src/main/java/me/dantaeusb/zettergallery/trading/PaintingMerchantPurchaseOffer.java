@@ -11,7 +11,6 @@ import me.dantaeusb.zettergallery.core.ZetterGalleryCanvasTypes;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
 import java.security.InvalidParameterException;
@@ -29,16 +28,7 @@ public class PaintingMerchantPurchaseOffer extends PaintingMerchantAbstractOffer
     private final UUID paintingAuthorUuid;
     private final String paintingAuthorName;
 
-    /**
-     * If we're ready to make a transaction
-     */
-    private State state;
-
-    /**
-     * Describe error or action
-     */
-    private String message;
-
+    private int cycleIncrementId;
     private String feedName;
 
     /**
@@ -140,12 +130,17 @@ public class PaintingMerchantPurchaseOffer extends PaintingMerchantAbstractOffer
         return this.paintingAuthorName;
     }
 
-    public void setFeedName(String feedName) {
+    public void setCycleInfo(int cycleIncrementId, String feedName) {
+        this.cycleIncrementId = cycleIncrementId;
         this.feedName = feedName;
     }
 
     public String getFeedName() {
         return this.feedName;
+    }
+
+    public int getCycleIncrementId() {
+        return this.cycleIncrementId;
     }
 
     public Optional<String> getMessage() {

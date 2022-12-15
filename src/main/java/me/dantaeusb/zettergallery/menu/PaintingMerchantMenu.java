@@ -215,9 +215,14 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         this.container.setSelectedPurchaseOfferIndex(index);
 
         if (!this.merchant.isClientSide()) {
-            ConnectionManager.getInstance().registerImpression((ServerPlayer) this.player, this.container.getCurrentPurchaseOffer().getPaintingUuid(), () -> {}, () -> {
-                ZetterGallery.LOG.error("Unable to register impression, maybe outdated mod version?");
-            });
+            PaintingMerchantPurchaseOffer currentPurchaseOffer = this.container.getCurrentPurchaseOffer();
+            assert currentPurchaseOffer != null;
+
+            ConnectionManager.getInstance().registerImpression((ServerPlayer) this.player, currentPurchaseOffer.getPaintingUuid(),
+                currentPurchaseOffer.getCycleIncrementId(), () -> {
+                }, () -> {
+                    ZetterGallery.LOG.error("Unable to register impression, maybe outdated mod version?");
+                });
         }
     }
 
@@ -250,7 +255,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
             this.getCurrentOffer().ready();
         }
 
-         this.container.setChanged();
+        this.container.setChanged();
     }
 
     /*
