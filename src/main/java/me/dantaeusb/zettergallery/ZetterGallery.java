@@ -1,6 +1,5 @@
 package me.dantaeusb.zettergallery;
 
-import me.dantaeusb.zetter.core.ZetterContainerMenus;
 import me.dantaeusb.zettergallery.core.ZetterGalleryCanvasTypes;
 import me.dantaeusb.zettergallery.core.ZetterGalleryContainerMenus;
 import me.dantaeusb.zettergallery.core.ZetterGalleryVillagers;
