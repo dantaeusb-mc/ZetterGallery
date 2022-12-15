@@ -1,18 +1,18 @@
 package me.dantaeusb.zettergallery.core;
 
 import me.dantaeusb.zetter.core.ZetterCanvasTypes;
-import me.dantaeusb.zetter.event.CanvasRenderPostRegisterEvent;
+import me.dantaeusb.zetter.event.CanvasRegisterEvent;
+import me.dantaeusb.zetter.event.PaintingInfoOverlayEvent;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
-import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = ZetterGallery.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-public class ZetterGalleryModEvents {
+public class ZetterGalleryClientModEvents {
     /**
      * Handle event when new canvas registered,
      * used to handle the moment when canvas that was not
@@ -23,7 +23,11 @@ public class ZetterGalleryModEvents {
      * @param event
      */
     @SubscribeEvent
-    public static void onCanvasSynced(CanvasRenderPostRegisterEvent event) {
+    public static void onCanvasSynced(CanvasRegisterEvent.Post event) {
+        if (!event.level.isClientSide()) {
+            return;
+        }
+
         if (Minecraft.getInstance().player.containerMenu == null) {
             return;
         }
@@ -34,5 +38,10 @@ public class ZetterGalleryModEvents {
                 paintingMerchantMenu.getContainer().updateSaleOfferPaintingData(event.canvasCode, (PaintingData) event.canvasData);
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void overlayViewEvent(PaintingInfoOverlayEvent event) {
+        ZetterGalleryOverlays.GALLERY_PAINTING_INFO.hide();
     }
 }

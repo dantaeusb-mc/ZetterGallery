@@ -6,7 +6,7 @@ import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
-import me.dantaeusb.zettergallery.trading.IPaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -106,7 +106,7 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
     }
 
     private void renderPaintingInfo(PoseStack matrixStack) {
-        IPaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
+        PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null) {
             ZetterGallery.LOG.error("No offer to render info");

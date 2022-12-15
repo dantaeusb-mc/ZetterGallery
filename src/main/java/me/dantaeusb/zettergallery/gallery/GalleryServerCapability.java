@@ -2,7 +2,6 @@ package me.dantaeusb.zettergallery.gallery;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
@@ -10,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class GalleryServerCapability implements IGalleryCapability {
+public class GalleryServerCapability implements GalleryCapability {
     private static final String NBT_TAG_PAINTINGS_TRACKER = "PaintingsTracker";
     private static final String NBT_TAG_CLIENT_ID = "ClientID";
     private static final String NBT_TAG_CLIENT_NAME = "ClientName";

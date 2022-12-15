@@ -103,14 +103,14 @@ public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
     }
 
     public void register(Level level) {
-        Helper.getWorldCanvasTracker(level).registerCanvasData(
+        Helper.getLevelCanvasTracker(level).registerCanvasData(
             this.getDummyCanvasCode(),
             this.getDummyPaintingData()
         );
     }
 
     public static void unregister(Level level) {
-        Helper.getWorldCanvasTracker(level).unregisterCanvasData(
+        Helper.getLevelCanvasTracker(level).unregisterCanvasData(
             PaintingMerchantSaleOffer.getStaticCanvasCode()
         );
     }
@@ -187,6 +187,10 @@ public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
     }
 
     public ItemStack getOfferResult() {
-        return new ItemStack(Items.EMERALD, this.price);
+        if (this.isReady()) {
+            return new ItemStack(Items.EMERALD, this.price);
+        } else {
+            return ItemStack.EMPTY;
+        }
     }
 }

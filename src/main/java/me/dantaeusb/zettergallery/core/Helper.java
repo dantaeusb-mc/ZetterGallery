@@ -1,16 +1,9 @@
 package me.dantaeusb.zettergallery.core;
 
-import me.dantaeusb.zetter.canvastracker.ICanvasTracker;
-import me.dantaeusb.zetter.core.ZetterCapabilities;
-import me.dantaeusb.zettergallery.ZetterGallery;
-import me.dantaeusb.zettergallery.gallery.IGalleryCapability;
+import me.dantaeusb.zettergallery.gallery.GalleryCapability;
 import net.minecraft.world.level.Level;
 
-import java.util.UUID;
-
 public class Helper {
-    public static int CANVAS_COLOR = 0xFFE0DACE;
-
     private static Helper instance;
 
     public static final String GALLERY_AUTH_SERVER_ENDPOINT = "auth/consent";
@@ -31,8 +24,8 @@ public class Helper {
         return Helper.instance;
     }
 
-    public static IGalleryCapability getWorldGalleryCapability(Level world) {
-        IGalleryCapability galleryCapability;
+    public static GalleryCapability getWorldGalleryCapability(Level world) {
+        GalleryCapability galleryCapability;
 
         if (!world.isClientSide()) {
             // looking for a server canvas tracker in the overworld, since canvases are world-independent

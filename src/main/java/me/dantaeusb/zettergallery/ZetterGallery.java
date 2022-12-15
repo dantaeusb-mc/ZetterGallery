@@ -16,7 +16,7 @@ public class ZetterGallery
 {
     public static final String MOD_ID = "zettergallery";
     public static boolean DEBUG_MODE = false;
-    public static boolean DEBUG_LOCALHOST = false;
+    public static boolean DEBUG_LOCALHOST = true;
 
     // get a reference to the event bus for this mod;  Registration events are fired on this bus.
     public static IEventBus MOD_EVENT_BUS;

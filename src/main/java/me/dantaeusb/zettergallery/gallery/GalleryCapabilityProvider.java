@@ -13,7 +13,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class GalleryCapabilityProvider implements ICapabilitySerializable<CompoundTag> {
-    private final IGalleryCapability galleryCapability;
+    private final GalleryCapability galleryCapability;
 
     private final String TAG_NAME_GALLERY_CAPABILITY = "ZetterGallery";
 

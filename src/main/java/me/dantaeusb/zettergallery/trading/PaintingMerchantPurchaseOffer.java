@@ -1,6 +1,6 @@
 package me.dantaeusb.zettergallery.trading;
 
-import me.dantaeusb.zetter.canvastracker.ICanvasTracker;
+import me.dantaeusb.zetter.capability.canvastracker.CanvasTracker;
 import me.dantaeusb.zetter.core.Helper;
 import me.dantaeusb.zetter.core.ZetterCanvasTypes;
 import me.dantaeusb.zetter.core.ZetterItems;
@@ -160,7 +160,7 @@ public class PaintingMerchantPurchaseOffer extends PaintingMerchantAbstractOffer
     @Override
     public ItemStack getOfferResult() {
         if (this.isReady()) {
-            return new ItemStack(Items.EMERALD, this.price);
+            return new ItemStack(ZetterItems.PAINTING.get(), 1);
         } else {
             return ItemStack.EMPTY;
         }
@@ -185,7 +185,7 @@ public class PaintingMerchantPurchaseOffer extends PaintingMerchantAbstractOffer
             this.paintingName
         );
 
-        ICanvasTracker canvasTracker = Helper.getWorldCanvasTracker(level);
+        CanvasTracker canvasTracker = Helper.getLevelCanvasTracker(level);
         canvasTracker.registerCanvasData(this.realCanvasCode, galleryPaintingData);
 
         PaintingItem.storePaintingData(painting, this.realCanvasCode, galleryPaintingData, 1);

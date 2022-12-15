@@ -12,10 +12,8 @@ import me.dantaeusb.zettergallery.gallery.PlayerToken;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.core.Helper;
 import me.dantaeusb.zettergallery.menu.paintingmerchant.MerchantAuthorizationController;
-import me.dantaeusb.zettergallery.network.packet.CAuthorizationCheckPacket;
 import me.dantaeusb.zettergallery.network.packet.CFeedRefreshRequest;
-import me.dantaeusb.zettergallery.trading.IPaintingMerchantOffer;
-import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
@@ -261,7 +259,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
             return;
         }
 
-        IPaintingMerchantOffer offer = this.getCurrentOffer();
+        PaintingMerchantOffer offer = this.getCurrentOffer();
 
         if (offer instanceof PaintingMerchantSaleOffer) {
             drawCenteredString(matrixStack, this.font, Component.translatable("container.zettergallery.merchant.sell"), COUNT_X, COUNT_Y, Color.white.getRGB());
@@ -399,7 +397,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     }
 
     @Nullable
-    public IPaintingMerchantOffer getCurrentOffer() {
+    public PaintingMerchantOffer getCurrentOffer() {
         return this.menu.getCurrentOffer();
     }
 

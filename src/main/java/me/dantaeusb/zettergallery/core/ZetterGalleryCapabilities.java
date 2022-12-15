@@ -2,8 +2,7 @@ package me.dantaeusb.zettergallery.core;
 
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.gallery.GalleryCapabilityProvider;
-import me.dantaeusb.zettergallery.gallery.GalleryServerCapability;
-import me.dantaeusb.zettergallery.gallery.IGalleryCapability;
+import me.dantaeusb.zettergallery.gallery.GalleryCapability;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.Capability;
@@ -17,7 +16,7 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = ZetterGallery.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ZetterGalleryCapabilities
 {
-    public static Capability<IGalleryCapability> GALLERY = CapabilityManager.get(new CapabilityToken<>(){});
+    public static Capability<GalleryCapability> GALLERY = CapabilityManager.get(new CapabilityToken<>(){});
 
     private static ResourceLocation GALLERY_CAPABILITY_LOCATION = new ResourceLocation(ZetterGallery.MOD_ID, "gallery_capability");
 
@@ -33,6 +32,6 @@ public class ZetterGalleryCapabilities
 
     @SubscribeEvent
     public static void registerCapabilityHandler(RegisterCapabilitiesEvent event) {
-        event.register(IGalleryCapability.class);
+        event.register(GalleryCapability.class);
     }
 }

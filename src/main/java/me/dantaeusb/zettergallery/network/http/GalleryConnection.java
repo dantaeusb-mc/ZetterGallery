@@ -55,7 +55,7 @@ public class GalleryConnection {
             BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
-                final ServerRegisterRequest request = new ServerRegisterRequest(serverInfo.singleplayer, serverInfo.title, serverInfo.motd, serverInfo.gameVersion, serverInfo.galleryVersion);
+                final ServerRegisterRequest request = new ServerRegisterRequest(serverInfo.singleplayer, serverInfo.motd, serverInfo.gameVersion, serverInfo.galleryVersion);
                 URL authUri = GalleryConnection.getUri(SERVERS_ENDPOINT);
 
                 ServerResponse response = makeRequest(authUri, "POST", ServerResponse.class, null, request);

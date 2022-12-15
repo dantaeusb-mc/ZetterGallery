@@ -1,7 +1,7 @@
 package me.dantaeusb.zettergallery.container;
 
 import me.dantaeusb.zetter.Zetter;
-import me.dantaeusb.zetter.canvastracker.ICanvasTracker;
+import me.dantaeusb.zetter.capability.canvastracker.CanvasTracker;
 import me.dantaeusb.zetter.client.renderer.CanvasRenderer;
 import me.dantaeusb.zetter.core.Helper;
 import me.dantaeusb.zetter.core.ZetterCanvasTypes;
@@ -19,7 +19,7 @@ import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import me.dantaeusb.zettergallery.network.packet.*;
-import me.dantaeusb.zettergallery.trading.IPaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
 import net.minecraft.core.NonNullList;
@@ -55,7 +55,7 @@ public class PaintingMerchantContainer implements Container {
 
     @Nullable
     private List<ContainerListener> listeners;
-    private IPaintingMerchantOffer currentOffer;
+    private PaintingMerchantOffer currentOffer;
 
     // Waiting for the token check/update by default
     private OffersState state = OffersState.LOADING;
@@ -193,7 +193,7 @@ public class PaintingMerchantContainer implements Container {
                         return;
                     }
 
-                    PaintingData paintingData = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().level).getCanvasData(canvasCode);
+                    PaintingData paintingData = Helper.getLevelCanvasTracker(this.merchant.getTradingPlayer().level).getCanvasData(canvasCode);
 
                     PaintingMerchantSaleOffer saleOffer;
                     if (paintingData != null) {
@@ -240,7 +240,7 @@ public class PaintingMerchantContainer implements Container {
                         if (currentOffer.getPrice() <= inputStack.getCount()) {
                             this.currentOffer.ready();
 
-                            this.setItem(OUTPUT_SLOT, currentOffer.getOfferResult());
+                            this.setItem(OUTPUT_SLOT, this.currentOffer.getOfferResult());
                         } else {
                             this.currentOffer.unfulfilled();
 
@@ -288,6 +288,7 @@ public class PaintingMerchantContainer implements Container {
 
         this.currentCycle = cycleInfo;
         this.purchaseOffers = offers;
+        this.selectedPurchaseOfferIndex = 0;
         this.updateCurrentOffer();
         this.registerOffersCanvases();
 
@@ -300,7 +301,7 @@ public class PaintingMerchantContainer implements Container {
     public void registerOffersCanvases() {
         if (this.merchant.isClientSide() && this.getPurchaseOffers() != null) {
             // Maybe delegate that to some kind of ClientSalesManager?
-            ICanvasTracker tracker = Helper.getWorldCanvasTracker(this.merchant.getTradingPlayer().getLevel());
+            CanvasTracker tracker = Helper.getLevelCanvasTracker(this.merchant.getTradingPlayer().getLevel());
 
             for (PaintingMerchantPurchaseOffer offer : this.getPurchaseOffers()) {
                 DummyCanvasData paintingData = offer.getDummyPaintingData();
@@ -314,7 +315,7 @@ public class PaintingMerchantContainer implements Container {
             Level level = this.merchant.getTradingPlayer().getLevel();;
 
             if (this.getPurchaseOffers() != null) {
-                ICanvasTracker tracker = Helper.getWorldCanvasTracker(level);
+                CanvasTracker tracker = Helper.getLevelCanvasTracker(level);
 
                 for (PaintingMerchantPurchaseOffer offer : this.getPurchaseOffers()) {
                     tracker.unregisterCanvasData(offer.getDummyCanvasCode());
@@ -336,7 +337,7 @@ public class PaintingMerchantContainer implements Container {
      * care about.
      */
     public void checkout(ItemStack purchaseStack) {
-        IPaintingMerchantOffer offer = this.getCurrentOffer();
+        PaintingMerchantOffer offer = this.getCurrentOffer();
 
         if (offer instanceof PaintingMerchantSaleOffer saleOffer) {
             if (!offer.isReady()) {
@@ -379,7 +380,7 @@ public class PaintingMerchantContainer implements Container {
      * and we do nothing
      */
     public void finalizeCheckout() {
-        IPaintingMerchantOffer offer = this.getCurrentOffer();
+        PaintingMerchantOffer offer = this.getCurrentOffer();
         this.merchant.notifyTrade(this.getVanillaMerchantOffer(offer));
         this.playTradeSound();
     }
@@ -506,8 +507,13 @@ public class PaintingMerchantContainer implements Container {
     }
 
     @Nullable
-    public IPaintingMerchantOffer getCurrentOffer() {
+    public PaintingMerchantOffer getCurrentOffer() {
         return this.currentOffer;
+    }
+
+    @Nullable
+    public PaintingMerchantPurchaseOffer getCurrentPurchaseOffer() {
+        return this.purchaseOffers.get(this.getSelectedPurchaseOfferIndex());
     }
 
     public int getSelectedPurchaseOfferIndex() {
@@ -518,7 +524,7 @@ public class PaintingMerchantContainer implements Container {
         this.setSelectedPurchaseOfferIndex(this.getSelectedPurchaseOfferIndex());
     }
 
-    private MerchantOffer getVanillaMerchantOffer(IPaintingMerchantOffer offer) {
+    private MerchantOffer getVanillaMerchantOffer(PaintingMerchantOffer offer) {
         if (offer instanceof PaintingMerchantSaleOffer) {
             return this.merchant.getOffers().get(ZetterGalleryVillagerTrades.SELL_OFFER_ID);
         } else {

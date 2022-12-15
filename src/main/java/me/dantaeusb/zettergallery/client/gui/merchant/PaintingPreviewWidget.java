@@ -4,7 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import me.dantaeusb.zetter.client.renderer.CanvasRenderer;
 import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
-import me.dantaeusb.zettergallery.trading.IPaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -28,7 +28,7 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
 
     @Override
     public void render(@NotNull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        IPaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
+        PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null || offer.isError()) {
             return;
@@ -101,7 +101,7 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
 
     @Override
     public @Nullable Component getTooltip(int mouseX, int mouseY) {
-        IPaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
+        PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null) {
             return null;

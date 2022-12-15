@@ -5,16 +5,14 @@ import java.util.List;
 public class ServerRegisterRequest {
     public boolean singleplayer;
 
-    public String title;
     public String motd;
     public String gameVersion;
     public String galleryVersion;
 
     public List<String> rating;
 
-    public ServerRegisterRequest(boolean singleplayer, String title, String motd, String gameVersion, String galleryVersion) {
+    public ServerRegisterRequest(boolean singleplayer, String motd, String gameVersion, String galleryVersion) {
         this.singleplayer = singleplayer;
-        this.title = title;
         this.motd = motd;
         this.gameVersion = gameVersion;
         this.galleryVersion = galleryVersion;

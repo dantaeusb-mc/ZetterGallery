@@ -1,11 +1,13 @@
 package me.dantaeusb.zettergallery.menu;
 
 import me.dantaeusb.zetter.core.ZetterItems;
+import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.core.ZetterGalleryContainerMenus;
+import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.menu.paintingmerchant.MerchantAuthorizationController;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
-import me.dantaeusb.zettergallery.trading.IPaintingMerchantOffer;
+import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
@@ -20,7 +22,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.Merchant;
 
 import javax.annotation.Nullable;
-import java.util.Date;
 import java.util.UUID;
 
 public class PaintingMerchantMenu extends AbstractContainerMenu implements ContainerListener {
@@ -206,12 +207,18 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     }
 
     @Nullable
-    public IPaintingMerchantOffer getCurrentOffer() {
+    public PaintingMerchantOffer getCurrentOffer() {
         return this.container.getCurrentOffer();
     }
 
     public void updateCurrentOfferIndex(int index) {
         this.container.setSelectedPurchaseOfferIndex(index);
+
+        if (!this.merchant.isClientSide()) {
+            ConnectionManager.getInstance().registerImpression((ServerPlayer) this.player, this.container.getCurrentPurchaseOffer().getPaintingUuid(), () -> {}, () -> {
+                ZetterGallery.LOG.error("Unable to register impression, maybe outdated mod version?");
+            });
+        }
     }
 
     public int getCurrentOfferIndex() {

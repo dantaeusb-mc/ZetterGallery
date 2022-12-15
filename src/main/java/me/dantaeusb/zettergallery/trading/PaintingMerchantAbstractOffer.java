@@ -1,19 +1,8 @@
 package me.dantaeusb.zettergallery.trading;
 
-import me.dantaeusb.zetter.core.ZetterCanvasTypes;
-import me.dantaeusb.zetter.storage.DummyCanvasData;
-import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
-import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Optional;
-import java.util.UUID;
-
-public abstract class PaintingMerchantAbstractOffer implements IPaintingMerchantOffer {
+public abstract class PaintingMerchantAbstractOffer implements PaintingMerchantOffer {
     protected final int price;
 
     /**

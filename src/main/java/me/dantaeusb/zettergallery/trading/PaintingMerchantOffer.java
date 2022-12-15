@@ -6,7 +6,7 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.UUID;
 
-public interface IPaintingMerchantOffer {
+public interface PaintingMerchantOffer {
     /**
      * Used to make a painting, real code of the painting behind the offer
      * @return
