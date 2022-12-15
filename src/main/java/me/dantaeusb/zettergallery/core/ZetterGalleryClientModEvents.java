@@ -28,10 +28,6 @@ public class ZetterGalleryClientModEvents {
             return;
         }
 
-        if (Minecraft.getInstance().player.containerMenu == null) {
-            return;
-        }
-
         if (Minecraft.getInstance().player.containerMenu instanceof PaintingMerchantMenu paintingMerchantMenu) {
             // We use both gallery painting for purchase offers and zetter paintings for sale
             if (event.canvasData.getType().equals(ZetterCanvasTypes.PAINTING.get())) {

@@ -13,8 +13,7 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import java.security.InvalidParameterException;
 
 public class GalleryPaintingInfoOverlay extends PaintingInfoOverlay implements IGuiOverlay {
-    private GalleryPaintingData paintingData = null;
-    private int overlayMessageTime = 0;
+    protected GalleryPaintingData paintingData;
 
     @Override
     public void setPainting(PaintingData galleryPaintingData) {
@@ -24,6 +23,10 @@ public class GalleryPaintingInfoOverlay extends PaintingInfoOverlay implements I
 
         this.paintingData = (GalleryPaintingData) galleryPaintingData;
         this.overlayMessageTime = 15 * 20;
+    }
+
+    public void hide() {
+        this.paintingData = null;
     }
 
     @Override
