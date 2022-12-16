@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
-public class GalleryConnection {
+public class GalleryConnection implements AutoCloseable {
     private static final String API_VERSION = "v1";
     // Game Server is a specific type of oAuth2 client
     private static final String SERVERS_ENDPOINT = "servers";
@@ -45,6 +45,10 @@ public class GalleryConnection {
 
     public GalleryConnection() {
         this.poolExecutor = Executors.newSingleThreadExecutor();
+    }
+
+    public void close() {
+        this.poolExecutor.shutdownNow();
     }
 
     public void createServerClient(ServerInfo serverInfo, Consumer<ServerResponse> successConsumer, Consumer<GalleryError> errorConsumer) {

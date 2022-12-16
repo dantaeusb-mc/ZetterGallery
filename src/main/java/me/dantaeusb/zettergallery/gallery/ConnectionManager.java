@@ -23,7 +23,7 @@ import java.util.function.Consumer;
  * <p>
  * Deferred server registration
  */
-public class ConnectionManager {
+public class ConnectionManager implements AutoCloseable {
     private static @Nullable ConnectionManager instance;
 
     private final GalleryConnection connection;
@@ -60,8 +60,16 @@ public class ConnectionManager {
         ConnectionManager.instance = new ConnectionManager(overworld);
     }
 
-    public static void close() {
-        ConnectionManager.instance = null;
+    @Override
+    public void close() {
+        this.connection.close();
+    }
+
+    public static void closeConnection() {
+        if (ConnectionManager.instance != null) {
+            ConnectionManager.instance.close();
+            ConnectionManager.instance = null;
+        }
     }
 
     public void handleServerStart(MinecraftServer server) {

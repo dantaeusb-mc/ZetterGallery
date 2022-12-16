@@ -25,7 +25,7 @@ public class ZetterGalleryServerEvents {
     public static void serverStopped(final ServerStoppingEvent event)
     {
         ConnectionManager.getInstance().handleServerStop(event.getServer());
-        ConnectionManager.close();
+        ConnectionManager.closeConnection();
         SalesManager.close();
     }
 }
