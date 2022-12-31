@@ -1,6 +1,6 @@
 package me.dantaeusb.zettergallery.network.http.stub;
 
-import me.dantaeusb.zetter.storage.PaintingData;
+import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import com.google.gson.*;
 import com.google.gson.annotations.JsonAdapter;
 
@@ -16,10 +16,10 @@ public class SaleRequest {
     @JsonAdapter(SaleRequest.ByteArrayToBase64TypeAdapter.class)
     public byte[] color;
 
-    public SaleRequest(PaintingData paintingData) {
+    public SaleRequest(String name, AbstractCanvasData paintingData) {
         final int resolution = paintingData.getResolution().getNumeric();
 
-        this.name = paintingData.getPaintingName();
+        this.name = name;
         this.resolution = resolution;
         this.sizeH = paintingData.getHeight() / resolution;
         this.sizeW = paintingData.getWidth() / resolution;
@@ -31,7 +31,7 @@ public class SaleRequest {
      * @param paintingData
      * @return
      */
-    private byte[] extractColorData(PaintingData paintingData) {
+    private byte[] extractColorData(AbstractCanvasData paintingData) {
         final int paintingSize = paintingData.getHeight() * paintingData.getWidth();
         ByteBuffer inColor = paintingData.getColorDataBuffer();
         ByteBuffer outColor = ByteBuffer.allocate(inColor.rewind().remaining());

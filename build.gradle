@@ -10,14 +10,19 @@ buildscript {
     }
 }
 
+plugins {
+    // Other plugins like maven-publish, idea, eclipse, etc. go here
+    id 'net.minecraftforge.gradle' version '5.1.+'
+    id 'org.parchmentmc.librarian.forgegradle' version '1.+'
+}
+
 apply plugin: 'net.minecraftforge.gradle'
 // Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
 apply from: "https://moddingtutorials.org/applesilicon.gradle"
 apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'maven-publish'
-apply from: 'https://raw.githubusercontent.com/SizableShrimp/Forge-Class-Remapper/main/classremapper.gradle'
 
-version = '0.3.4-1.18.2-rc'
+version = '0.4.0-1.19.2-rc'
 group = 'com.dantaeusb.zettergallery' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = 'zettergallery'
 
@@ -25,7 +30,7 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 minecraft {
-    mappings channel: 'official', version: '1.18.2'
+    mappings channel: 'parchment', version: '2022.08.14-1.19.2'
 
     runs {
         client {
@@ -92,15 +97,15 @@ repositories {
     maven {
         // for Zetter
         name "dantaeusb"
-        url "../../../Zetter/1.18/mcmodsrepo"
+        url "../../../Zetter/1.19/mcmodsrepo"
     }
 }
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.18.2-40.1.0'
+    minecraft 'net.minecraftforge:forge:1.19.2-43.1.1'
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    implementation fg.deobf("com.dantaeusb.zetter:Zetter:0.15.1-1.18.2-rc")
+    implementation fg.deobf("com.dantaeusb.zetter:Zetter:0.19.0-1.19.2-rc")
 }
 
 mixin {
@@ -117,7 +122,7 @@ jar {
         attributes([
             "Specification-Title": "ZetterGallery",
             "Specification-Vendor": "dantaeusb",
-            "Specification-Version": "0.3.4-rc",
+            "Specification-Version": "0.4.0-1.19.2-rc",
             "Implementation-Title": project.name,
             "Implementation-Version": project.version,
             "Implementation-Vendor" :"dantaeusb",

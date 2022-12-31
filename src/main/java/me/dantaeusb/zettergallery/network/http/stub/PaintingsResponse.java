@@ -45,11 +45,13 @@ public class PaintingsResponse {
     }
 
     public static class CycleInfo {
+        public int incrementId;
         public String seed;
         public Date startsAt;
         public Date endsAt;
 
-        public CycleInfo(String seed, Date startsAt, Date endsAt) {
+        public CycleInfo(int incrementId, String seed, Date startsAt, Date endsAt) {
+            this.incrementId = incrementId;
             this.seed = seed;
             this.startsAt = startsAt;
             this.endsAt = endsAt;

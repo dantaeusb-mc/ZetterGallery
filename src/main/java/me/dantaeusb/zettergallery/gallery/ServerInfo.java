@@ -1,5 +1,6 @@
 package me.dantaeusb.zettergallery.gallery;
 
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.forgespi.language.IModInfo;
@@ -8,23 +9,23 @@ import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 
 public class ServerInfo {
     public final boolean singleplayer;
-    public final String title;
     public final String motd;
+    public final String gameVersion;
     public final String galleryVersion;
 
-    private ServerInfo(boolean singleplayer, String title, String motd, String galleryVersion) {
+    private ServerInfo(boolean singleplayer, String motd, String gameVersion, String galleryVersion) {
         this.singleplayer = singleplayer;
-        this.title = title;
         this.motd = motd;
+        this.gameVersion = gameVersion;
         this.galleryVersion = galleryVersion;
     }
 
-    public static ServerInfo createSingleplayerServer() {
-        return new ServerInfo(true, "Singleplayer world", "Singleplayer world", ServerInfo.getGalleryVersion());
+    public static ServerInfo createSingleplayerServer(String gameVersion) {
+        return new ServerInfo(true, "Singleplayer world", gameVersion, ServerInfo.getGalleryVersion());
     }
 
-    public static ServerInfo createMultiplayerServer(String title, String motd) {
-        return new ServerInfo(false, title, motd, ServerInfo.getGalleryVersion());
+    public static ServerInfo createMultiplayerServer(String motd, String gameVersion) {
+        return new ServerInfo(false, motd, gameVersion, ServerInfo.getGalleryVersion());
     }
 
     private static String getGalleryVersion() {

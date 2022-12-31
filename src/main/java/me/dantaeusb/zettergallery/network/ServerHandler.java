@@ -1,14 +1,10 @@
 package me.dantaeusb.zettergallery.network;
 
-import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
-import me.dantaeusb.zettergallery.network.packet.CGalleryAuthorizationCheckPacket;
-import me.dantaeusb.zettergallery.network.packet.CGalleryProceedOfferPacket;
-import me.dantaeusb.zettergallery.network.packet.CGallerySelectOfferPacket;
-import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
+import me.dantaeusb.zettergallery.network.packet.CAuthorizationCheckPacket;
+import me.dantaeusb.zettergallery.network.packet.CFeedRefreshRequest;
+import me.dantaeusb.zettergallery.network.packet.CSelectOfferPacket;
 import net.minecraft.server.level.ServerPlayer;
-
-import java.util.UUID;
 
 public class ServerHandler {
     /**
@@ -18,38 +14,31 @@ public class ServerHandler {
      * @param packetIn
      * @param sendingPlayer
      */
-    public static void processGalleryAuthenticationRequest(final CGalleryAuthorizationCheckPacket packetIn, ServerPlayer sendingPlayer) {
+    public static void processGalleryAuthenticationRequest(final CAuthorizationCheckPacket packetIn, ServerPlayer sendingPlayer) {
         if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
             PaintingMerchantMenu menu = (PaintingMerchantMenu) sendingPlayer.containerMenu;
 
-            menu.handleServerAuthenticationRetry();
+            menu.getAuthController().handleAuthorizationRetry();
         }
     }
 
-    public static void processGallerySelectOffer(final CGallerySelectOfferPacket packetIn, ServerPlayer sendingPlayer) {
+    public static void processGallerySelectOffer(final CSelectOfferPacket packetIn, ServerPlayer sendingPlayer) {
         if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
             PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)sendingPlayer.containerMenu;
-            paintingMerchantMenu.updateCurrentOfferIndex(packetIn.getOfferIndex());
-
-            if (paintingMerchantMenu.getCurrentOffer() == null) {
-                throw new IllegalStateException("Selected offer is empty");
-            }
-
-            if (paintingMerchantMenu.getCurrentOffer().getPaintingData().isEmpty()) {
-                throw new IllegalStateException("Painting doesn't have data to register impression");
-            }
-
-            UUID paintingUuid = ((GalleryPaintingData) paintingMerchantMenu.getCurrentOffer().getPaintingData().get()).getUUID();
-
-            ConnectionManager.getInstance().registerImpression(sendingPlayer, paintingUuid, null, null);
+            paintingMerchantMenu.updateCurrentOfferIndex(packetIn.offerIndex);
         }
     }
 
-    public static void processGalleryProceedOffer(final CGalleryProceedOfferPacket packetIn, ServerPlayer sendingPlayer) {
+    /**
+     * Trigger updating of player's offers in painting merchant menu
+     * @param packetIn
+     * @param sendingPlayer
+     */
+    public static void processGalleryFeedRefreshRequest(final CFeedRefreshRequest packetIn, ServerPlayer sendingPlayer) {
         if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
-            // @todo: here we send request, but not yet proceed on container
-            PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)sendingPlayer.containerMenu;
-            paintingMerchantMenu.startCheckout();
+            PaintingMerchantMenu menu = (PaintingMerchantMenu) sendingPlayer.containerMenu;
+
+            menu.getContainer().requestFeed();
         }
     }
 }

@@ -1,6 +1,6 @@
 package me.dantaeusb.zettergallery;
 
-import me.dantaeusb.zetter.core.ZetterContainerMenus;
+import me.dantaeusb.zettergallery.core.ZetterGalleryCanvasTypes;
 import me.dantaeusb.zettergallery.core.ZetterGalleryContainerMenus;
 import me.dantaeusb.zettergallery.core.ZetterGalleryVillagers;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -15,6 +15,7 @@ public class ZetterGallery
 {
     public static final String MOD_ID = "zettergallery";
     public static boolean DEBUG_MODE = false;
+    public static boolean DEBUG_LOCALHOST = false;
 
     // get a reference to the event bus for this mod;  Registration events are fired on this bus.
     public static IEventBus MOD_EVENT_BUS;
@@ -31,5 +32,7 @@ public class ZetterGallery
 
         ZetterGalleryVillagers.init(MOD_EVENT_BUS);
         ZetterGalleryContainerMenus.init(MOD_EVENT_BUS);
+
+        ZetterGalleryCanvasTypes.init(MOD_EVENT_BUS);
     }
 }

@@ -1,6 +1,6 @@
 modLoader="javafml"
 
-loaderVersion="[40,)"
+loaderVersion="[43,)"
 
 license="Mozilla Public License 2.0"
 
@@ -16,9 +16,16 @@ displayName="Zetter Gallery"
 
 displayURL="https://www.curseforge.com/minecraft/mc-mods/zettergallery"
 
-logoFile="zetter.png"
+logoFile="zetter-gallery.png"
 
 credits='''
+Idea, direction & programming:
+* Dmitry Burlakov @dantaeusb
+
+Assets & arts:
+* Eliath "Eliathx" Velasco @eliathx
+* Sam Pxlsamosa @pxlsamosa
+* GrimmNail @grimmnail
 
 Forge Discord:
 diesieben07#0714
@@ -34,23 +41,23 @@ description='''
 
 '''
 
-[[dependencies.zetter_gallery]]
+[[dependencies.zettergallery]]
     modId="forge"
     mandatory=true
-    versionRange="[40,)"
+    versionRange="[43,)"
     ordering="NONE"
     side="BOTH"
 
-[[dependencies.zetter_gallery]]
+[[dependencies.zettergallery]]
     modId="zetter"
     mandatory=true
-    versionRange="[0.15.1-1.18.2-beta,)"
+    versionRange="[0.19.0-1.19.2-alpha,)"
     ordering="NONE"
     side="BOTH"
 
-[[dependencies.zetter_gallery]]
+[[dependencies.zettergallery]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.18.2]"
+    versionRange="[1.19.2]"
     ordering="NONE"
     side="BOTH"

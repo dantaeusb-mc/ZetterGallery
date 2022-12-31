@@ -1,27 +1,43 @@
 package me.dantaeusb.zettergallery.gallery;
 
+import javax.annotation.Nullable;
 import java.util.Date;
+import java.util.UUID;
 
 public class PlayerToken extends Token {
-    public CrossAuthCode crossAuthCode;
+    public @Nullable PlayerInfo authorizedAs;
+    public @Nullable AuthorizationCode authorizationCode;
 
     PlayerToken(String token, Date issuedAt, Date notAfter) {
         super(token, issuedAt, notAfter);
     }
 
-    public void setCrossAuthCode(String code, Date issued, Date notAfter) {
-        this.crossAuthCode = new CrossAuthCode(code, issued, notAfter);
+    public void setAuthorizedAs(PlayerInfo authorizedAs) {
+        this.authorizedAs = authorizedAs;
     }
 
-    class CrossAuthCode {
-        public String code;
-        public Date issued;
-        public Date notAfter;
+    @Nullable
+    public PlayerInfo getAuthorizedAs() {
+        return this.authorizedAs;
+    }
 
-        public CrossAuthCode(String code, Date issued, Date notAfter) {
-            this.code = code;
-            this.issued = issued;
-            this.notAfter = notAfter;
-        }
+    public boolean isAuthorized() {
+        return this.authorizedAs != null;
+    }
+
+    public void setAuthorizationCode(AuthorizationCode authorizationCode) {
+        this.authorizationCode = authorizationCode;
+    }
+
+    public void dropAuthorizationCode() {
+        this.authorizationCode = null;
+    }
+
+    @Nullable
+    public AuthorizationCode getAuthorizationCode() {
+        return this.authorizationCode;
+    }
+
+    public record PlayerInfo(UUID uuid, String nickname) {
     }
 }
