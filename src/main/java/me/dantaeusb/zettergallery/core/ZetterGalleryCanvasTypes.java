@@ -13,7 +13,6 @@ public class ZetterGalleryCanvasTypes {
     private static final DeferredRegister<CanvasDataType<?>> CANVAS_TYPES = DeferredRegister.create(ZetterRegistries.CANVAS_TYPE_REGISTRY_NAME, ZetterGallery.MOD_ID);
 
     public static final RegistryObject<CanvasDataType<GalleryPaintingData>> GALLERY_PAINTING = CANVAS_TYPES.register(GalleryPaintingData.TYPE, () -> new CanvasDataType<>(
-        new ResourceLocation(ZetterGallery.MOD_ID, GalleryPaintingData.TYPE),
         GalleryPaintingData.BUILDER
     ));
 

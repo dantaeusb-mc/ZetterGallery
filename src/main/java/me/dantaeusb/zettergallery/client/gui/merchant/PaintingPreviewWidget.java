@@ -10,12 +10,13 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
 public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
-    private static final Component LOADING_TEXT = Component.translatable("container.zettergallery.merchant.preview.loading");
+    private static final Component LOADING_TEXT = new TranslatableComponent("container.zettergallery.merchant.preview.loading");
 
     static final int WIDTH = 64;
     static final int HEIGHT = 64;
@@ -23,7 +24,7 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
     private int tick = 0;
 
     public PaintingPreviewWidget(PaintingMerchantScreen parentScreen, int x, int y) {
-        super(parentScreen, x, y, WIDTH, HEIGHT, Component.translatable("container.zettergallery.merchant.preview"));
+        super(parentScreen, x, y, WIDTH, HEIGHT, new TranslatableComponent("container.zettergallery.merchant.preview"));
     }
 
     @Override

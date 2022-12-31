@@ -18,9 +18,12 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
@@ -38,7 +41,7 @@ import java.util.List;
 public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerchantMenu> {
     public static final ResourceLocation GUI_TEXTURE_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade.png");
 
-    private static final Component LEVEL_SEPARATOR = Component.literal(" - ");
+    private static final Component LEVEL_SEPARATOR = new TextComponent(" - ");
 
     private AuthWidget authWidget;
     private PaintingPreviewWidget previewWidget;
@@ -89,11 +92,8 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         super.init();
 
         this.inventoryLabelX = 107;
-    }
 
-    @Override
-    protected void rebuildWidgets() {
-        super.rebuildWidgets();
+        this.clearWidgets();
 
         this.authWidget = new AuthWidget(this, this.getGuiLeft() + AUTH_POSITION_X, this.getGuiTop() + AUTH_POSITION_Y);
         this.previewWidget = new PaintingPreviewWidget(this, this.getGuiLeft() + PREVIEW_POSITION_X, this.getGuiTop() + PREVIEW_POSITION_Y);
@@ -240,7 +240,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
 
         // Draw level
         if (merchantLevel > 0 && merchantLevel <= 5) {
-            Component levelText = this.title.copy().append(LEVEL_SEPARATOR).append(Component.translatable("merchant.level." + merchantLevel));
+            Component levelText = this.title.copy().append(LEVEL_SEPARATOR).append(new TranslatableComponent("merchant.level." + merchantLevel));
             int textWidth = this.font.width(levelText);
             int textPos = this.imageWidth / 2 - textWidth / 2;
             this.font.draw(poseStack, levelText, (float)textPos, 6.0F, Color.darkGray.getRGB());
@@ -262,7 +262,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         PaintingMerchantOffer offer = this.getCurrentOffer();
 
         if (offer instanceof PaintingMerchantSaleOffer) {
-            drawCenteredString(matrixStack, this.font, Component.translatable("container.zettergallery.merchant.sell"), COUNT_X, COUNT_Y, Color.white.getRGB());
+            drawCenteredString(matrixStack, this.font, new TranslatableComponent("container.zettergallery.merchant.sell"), COUNT_X, COUNT_Y, Color.white.getRGB());
         } else {
             int currentOffer = this.getCurrentOfferIndex() + 1;
             int offersCount = this.getOffersCount();

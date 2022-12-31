@@ -8,6 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 
 import javax.annotation.Nullable;
 
@@ -28,7 +29,7 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
     protected Font font;
 
     public RefreshWidget(PaintingMerchantScreen parentScreen, int x, int y) {
-        super(parentScreen, x, y, WIDTH, HEIGHT, Component.translatable("container.zettergallery.merchant.refresh"));
+        super(parentScreen, x, y, WIDTH, HEIGHT, new TranslatableComponent("container.zettergallery.merchant.refresh"));
 
         this.minecraft = parentScreen.getMinecraft();
         this.font = minecraft.font;
@@ -144,9 +145,9 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
         }
 
         if (this.canUpdate()) {
-            return Component.translatable("container.zettergallery.merchant.refresh.available", this.getUpdateTimeout());
+            return new TranslatableComponent("container.zettergallery.merchant.refresh.available", this.getUpdateTimeout());
         } else {
-            return Component.translatable("container.zettergallery.merchant.refresh.before", this.getUpdateTimeout());
+            return new TranslatableComponent("container.zettergallery.merchant.refresh.before", this.getUpdateTimeout());
         }
     }
 

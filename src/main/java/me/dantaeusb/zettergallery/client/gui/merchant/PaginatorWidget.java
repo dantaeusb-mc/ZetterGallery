@@ -7,6 +7,7 @@ import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 
 import javax.annotation.Nullable;
 
@@ -25,12 +26,12 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
     private static final int NEXT_OFFER_BUTTON_UPOS = 208;
     private static final int NEXT_OFFER_BUTTON_VPOS = 10;
 
-    private static final Component PREVIOUS_PAINTING = Component.translatable("container.zettergallery.merchant.paginator.previous");
-    private static final Component NEXT_PAINTING = Component.translatable("container.zettergallery.merchant.paginator.next");
+    private static final Component PREVIOUS_PAINTING = new TranslatableComponent("container.zettergallery.merchant.paginator.previous");
+    private static final Component NEXT_PAINTING = new TranslatableComponent("container.zettergallery.merchant.paginator.next");
 
 
     public PaginatorWidget(PaintingMerchantScreen parentScreen, int x, int y) {
-        super(parentScreen, x, y, WIDTH, HEIGHT, Component.translatable("container.zettergallery.merchant.paginator"));
+        super(parentScreen, x, y, WIDTH, HEIGHT, new TranslatableComponent("container.zettergallery.merchant.paginator"));
     }
 
     @Override

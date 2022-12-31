@@ -20,7 +20,7 @@ public class ClientHelper {
     private static final Set<String> ALLOWED_PROTOCOLS = Sets.newHashSet("http", "https");
 
     public static boolean openUriAllowed() {
-        return Minecraft.getInstance().options.chatLinks().get();
+        return Minecraft.getInstance().options.chatLinks;
     }
 
     /**
@@ -51,7 +51,7 @@ public class ClientHelper {
                 throw new URISyntaxException(href, "Unsupported protocol: " + s.toLowerCase(Locale.ROOT));
             }
 
-            if (mc.options.chatLinksPrompt().get()) {
+            if (mc.options.chatLinksPrompt) {
                 mc.setScreen(new ConfirmLinkScreen((result) -> {
                     if (result) {
                         openUri(uri);

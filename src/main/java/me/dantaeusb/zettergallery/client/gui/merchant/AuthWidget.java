@@ -11,6 +11,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.util.FormattedCharSequence;
 
 import javax.annotation.Nullable;
@@ -30,18 +31,18 @@ public class AuthWidget extends AbstractPaintingMerchantWidget {
 
     private int tick = 0;
 
-    private static final Component AUTHENTICATING_TEXT = Component.translatable("container.zettergallery.merchant.authenticating");
-    private static final Component LOGIN_TEXT = Component.translatable("container.zettergallery.merchant.login_request");
-    private static final Component UNKNOWN_ERROR_TEXT = Component.translatable("container.zettergallery.merchant.unknown_error");
-    private static final Component TRY_AGAIN_TEXT = Component.translatable("container.zettergallery.merchant.try_again");
-    private static final Component DISABLED_TEXT = Component.translatable("container.zettergallery.merchant.login_disabled");
+    private static final Component AUTHENTICATING_TEXT = new TranslatableComponent("container.zettergallery.merchant.authenticating");
+    private static final Component LOGIN_TEXT = new TranslatableComponent("container.zettergallery.merchant.login_request");
+    private static final Component UNKNOWN_ERROR_TEXT = new TranslatableComponent("container.zettergallery.merchant.unknown_error");
+    private static final Component TRY_AGAIN_TEXT = new TranslatableComponent("container.zettergallery.merchant.try_again");
+    private static final Component DISABLED_TEXT = new TranslatableComponent("container.zettergallery.merchant.login_disabled");
 
-    private static final Component LINKS_DISABLED_TOOLTIP_TEXT = Component.translatable("container.zettergallery.merchant.links_disabled_tooltip");
-    private static final Component LOGIN_TOOLTIP_TEXT = Component.translatable("container.zettergallery.merchant.login_request_tooltip");
-    private static final Component WAITING_TOOLTIP_TEXT = Component.translatable("container.zettergallery.merchant.login_waiting");
+    private static final Component LINKS_DISABLED_TOOLTIP_TEXT = new TranslatableComponent("container.zettergallery.merchant.links_disabled_tooltip");
+    private static final Component LOGIN_TOOLTIP_TEXT = new TranslatableComponent("container.zettergallery.merchant.login_request_tooltip");
+    private static final Component WAITING_TOOLTIP_TEXT = new TranslatableComponent("container.zettergallery.merchant.login_waiting");
 
     public AuthWidget(PaintingMerchantScreen parentScreen, int x, int y) {
-        super(parentScreen, x, y, WIDTH, HEIGHT, Component.translatable("container.zetter.painting.status"));
+        super(parentScreen, x, y, WIDTH, HEIGHT, new TranslatableComponent("container.zetter.painting.status"));
 
         this.minecraft = parentScreen.getMinecraft();
         this.itemRenderer = minecraft.getItemRenderer();
@@ -229,7 +230,7 @@ public class AuthWidget extends AbstractPaintingMerchantWidget {
 
                 return LOGIN_TOOLTIP_TEXT;
             case LOGGED_IN:
-                return Component.translatable("container.zettergallery.merchant.logged_in_player_tooltip", this.parentScreen.getAuthorizedPlayerNickname());
+                return new TranslatableComponent("container.zettergallery.merchant.logged_in_player_tooltip", this.parentScreen.getAuthorizedPlayerNickname());
             case ERROR:
                 return null;
         }

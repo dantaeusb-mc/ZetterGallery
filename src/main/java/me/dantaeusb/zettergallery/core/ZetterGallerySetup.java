@@ -1,9 +1,11 @@
 package me.dantaeusb.zettergallery.core;
 
+import me.dantaeusb.zetter.core.ZetterOverlays;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraftforge.client.gui.OverlayRegistry;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -16,6 +18,8 @@ public class ZetterGallerySetup {
     public static void onClientSetupEvent(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             MenuScreens.register(ZetterGalleryContainerMenus.PAINTING_MERCHANT.get(), PaintingMerchantScreen::new);
+
+            OverlayRegistry.registerOverlayTop("zettergallery:painting_info", ZetterGalleryOverlays.GALLERY_PAINTING_INFO);
         });
     }
 }

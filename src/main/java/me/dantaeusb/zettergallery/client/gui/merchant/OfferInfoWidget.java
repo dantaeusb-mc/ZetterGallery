@@ -15,6 +15,7 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -23,9 +24,9 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
-    private static final Component FETCHING_OFFERS = Component.translatable("container.zettergallery.merchant.fetching_offers");
-    private static final Component LOADING_PAINTING = Component.translatable("container.zettergallery.merchant.loading_painting");
-    private static final Component UNKNOWN_OFFER_ERROR = Component.translatable("container.zettergallery.merchant.offer.unknown_error");
+    private static final Component FETCHING_OFFERS = new TranslatableComponent("container.zettergallery.merchant.fetching_offers");
+    private static final Component LOADING_PAINTING = new TranslatableComponent("container.zettergallery.merchant.loading_painting");
+    private static final Component UNKNOWN_OFFER_ERROR = new TranslatableComponent("container.zettergallery.merchant.offer.unknown_error");
 
     @Nullable
     protected Minecraft minecraft;
@@ -38,7 +39,7 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
     private static final int HEIGHT = 74;
 
     public OfferInfoWidget(PaintingMerchantScreen parentScreen, int x, int y) {
-        super(parentScreen, x, y, WIDTH, HEIGHT, Component.translatable("container.zetter.painting.info"));
+        super(parentScreen, x, y, WIDTH, HEIGHT, new TranslatableComponent("container.zetter.painting.info"));
 
         this.minecraft = parentScreen.getMinecraft();
         this.itemRenderer = minecraft.getItemRenderer();
@@ -143,7 +144,7 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
         int heightBlocks = offerPaintingData.getHeight() / offerPaintingData.getResolution().getNumeric();
 
         // Account for RTL?
-        Component blockSize = (Component.translatable("item.zetter.painting.size", Integer.toString(widthBlocks), Integer.toString(heightBlocks)));
+        Component blockSize = (new TranslatableComponent("item.zetter.painting.size", Integer.toString(widthBlocks), Integer.toString(heightBlocks)));
 
         List<FormattedCharSequence> multilinePaintingTitle =  this.font.split(FormattedText.of(offer.getPaintingName()), 80);
         List<FormattedCharSequence> multilineNickname =  this.font.split(FormattedText.of(offer.getAuthorName()), 80);

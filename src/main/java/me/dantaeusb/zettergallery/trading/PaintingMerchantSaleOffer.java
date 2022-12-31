@@ -7,6 +7,7 @@ import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -16,7 +17,7 @@ import net.minecraft.world.level.Level;
 import java.util.UUID;
 
 public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
-    public static final Component ANOTHER_PLAYERS_PAINTING_ERROR = Component.translatable("container.zettergallery.merchant.another_players_painting");
+    public static final Component ANOTHER_PLAYERS_PAINTING_ERROR = new TranslatableComponent("container.zettergallery.merchant.another_players_painting");
 
     private final String realCanvasCode;
 
