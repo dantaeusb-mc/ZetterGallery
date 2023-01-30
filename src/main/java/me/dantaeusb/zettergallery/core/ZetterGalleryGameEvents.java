@@ -2,6 +2,8 @@ package me.dantaeusb.zettergallery.core;
 
 import me.dantaeusb.zetter.client.renderer.CanvasRenderer;
 import me.dantaeusb.zetter.core.ZetterOverlays;
+import me.dantaeusb.zetter.event.CanvasRegisterEvent;
+import me.dantaeusb.zetter.event.CanvasUnregisterEvent;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.gallery.SalesManager;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;

@@ -6,6 +6,7 @@ import me.dantaeusb.zetter.core.tools.Color;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
 
@@ -47,8 +48,8 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
             if (isPointInRegion(REFRESH_BUTTON_XPOS, REFRESH_BUTTON_YPOS, REFRESH_BUTTON_WIDTH, REFRESH_BUTTON_HEIGHT, mouseX, mouseY)) {
                 blit(
                     matrixStack,
-                    this.x + REFRESH_BUTTON_XPOS,
-                    this.y + REFRESH_BUTTON_YPOS,
+                    this.getX() + REFRESH_BUTTON_XPOS,
+                    this.getY() + REFRESH_BUTTON_YPOS,
                     REFRESH_BUTTON_UPOS + REFRESH_BUTTON_WIDTH * 2,
                     REFRESH_BUTTON_VPOS,
                     REFRESH_BUTTON_WIDTH,
@@ -59,8 +60,8 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
             } else {
                 blit(
                     matrixStack,
-                    this.x + REFRESH_BUTTON_XPOS,
-                    this.y + REFRESH_BUTTON_YPOS,
+                    this.getX() + REFRESH_BUTTON_XPOS,
+                    this.getY() + REFRESH_BUTTON_YPOS,
                     REFRESH_BUTTON_UPOS + REFRESH_BUTTON_WIDTH,
                     REFRESH_BUTTON_VPOS,
                     REFRESH_BUTTON_WIDTH,
@@ -72,8 +73,8 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
         } else {
             blit(
                 matrixStack,
-                this.x + REFRESH_BUTTON_XPOS,
-                this.y + REFRESH_BUTTON_YPOS,
+                this.getX() + REFRESH_BUTTON_XPOS,
+                this.getY() + REFRESH_BUTTON_YPOS,
                 REFRESH_BUTTON_UPOS,
                 REFRESH_BUTTON_VPOS,
                 REFRESH_BUTTON_WIDTH,
@@ -85,7 +86,7 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
 
         final String timeToUpdate = this.getUpdateTimeout();
         final int timerWidth = this.font.width(timeToUpdate);
-        this.font.draw(matrixStack, timeToUpdate, this.x + WIDTH - REFRESH_BUTTON_WIDTH - timerWidth - 2, this.y + 5, Color.gray.getRGB());
+        this.font.draw(matrixStack, timeToUpdate, this.getX() + WIDTH - REFRESH_BUTTON_WIDTH - timerWidth - 2, this.getY() + 5, Color.gray.getRGB());
     }
 
     public String getUpdateTimeout() {
@@ -160,15 +161,15 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
      * @return
      */
     protected boolean isPointInRegion(int x, int y, int width, int height, double mouseX, double mouseY) {
-        int i = this.x;
-        int j = this.y;
+        int i = this.getX();
+        int j = this.getY();
         mouseX = mouseX - (double)i;
         mouseY = mouseY - (double)j;
         return mouseX >= (double)(x - 1) && mouseX < (double)(x + width + 1) && mouseY >= (double)(y - 1) && mouseY < (double)(y + height + 1);
     }
 
     @Override
-    public void updateNarration(NarrationElementOutput pNarrationElementOutput) {
-
+    protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
+        narrationElementOutput.add(NarratedElementType.TITLE, this.createNarrationMessage());
     }
 }
