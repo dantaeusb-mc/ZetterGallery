@@ -38,6 +38,13 @@ public class PlayerToken extends Token {
         return this.authorizationCode;
     }
 
-    public record PlayerInfo(UUID uuid, String nickname) {
+    public static class PlayerInfo {
+        public final UUID uuid;
+        public final String nickname;
+
+        public PlayerInfo(UUID uuid, String nickname) {
+            this.uuid = uuid;
+            this.nickname = nickname;
+        }
     }
 }

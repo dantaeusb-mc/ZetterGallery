@@ -343,7 +343,8 @@ public class PaintingMerchantContainer extends ItemStackHandler implements IInve
     public void checkout(ItemStack purchaseStack) {
         PaintingMerchantOffer offer = this.getCurrentOffer();
 
-        if (offer instanceof PaintingMerchantSaleOffer saleOffer) {
+        if (offer instanceof PaintingMerchantSaleOffer) {
+            PaintingMerchantSaleOffer saleOffer = (PaintingMerchantSaleOffer) offer;
             if (!offer.isReady()) {
                 Zetter.LOG.error("Offer is not ready for checkout");
                 return;
@@ -359,7 +360,9 @@ public class PaintingMerchantContainer extends ItemStackHandler implements IInve
             }
 
             this.itemStacks.set(INPUT_SLOT, ItemStack.EMPTY);
-        } else if (offer instanceof PaintingMerchantPurchaseOffer purchaseOffer) {
+        } else if (offer instanceof PaintingMerchantPurchaseOffer) {
+            PaintingMerchantPurchaseOffer purchaseOffer = (PaintingMerchantPurchaseOffer) offer;
+
             if (!this.merchant.getTradingPlayer().level.isClientSide()) {
                 ConnectionManager.getInstance().registerPurchase(
                     (ServerPlayerEntity) this.player,
@@ -490,10 +493,12 @@ public class PaintingMerchantContainer extends ItemStackHandler implements IInve
         if (
             this.getCurrentOffer() == null
             || !this.getCurrentOffer().getRealCanvasCode().equals(canvasCode)
-            || !(this.currentOffer instanceof PaintingMerchantSaleOffer saleOffer)
+            || !(this.currentOffer instanceof PaintingMerchantSaleOffer)
         ) {
             return;
         }
+
+        PaintingMerchantSaleOffer saleOffer = (PaintingMerchantSaleOffer) this.currentOffer;
 
         DummyCanvasData paintingWrap = ZetterCanvasTypes.DUMMY.get().createWrap(
             canvasCode, paintingData.getResolution(), paintingData.getWidth(), paintingData.getHeight(),

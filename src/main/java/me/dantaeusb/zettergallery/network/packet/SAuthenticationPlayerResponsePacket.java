@@ -43,8 +43,8 @@ public class SAuthenticationPlayerResponsePacket {
      * Writes the raw packet data to the data stream.
      */
     public void writePacketData(PacketBuffer networkBuffer) {
-        networkBuffer.writeUUID(this.playerInfo.uuid());
-        networkBuffer.writeUtf(this.playerInfo.nickname(), 32767);
+        networkBuffer.writeUUID(this.playerInfo.uuid);
+        networkBuffer.writeUtf(this.playerInfo.nickname, 32767);
     }
 
     public static void handle(final SAuthenticationPlayerResponsePacket packetIn, Supplier<NetworkEvent.Context> ctxSupplier) {
@@ -64,6 +64,6 @@ public class SAuthenticationPlayerResponsePacket {
     @Override
     public String toString()
     {
-        return "SGalleryAuthenticationPlayerResponsePacket[uuid=" + this.playerInfo.uuid() + ",nickname=" + this.playerInfo.nickname() + "]";
+        return "SGalleryAuthenticationPlayerResponsePacket[uuid=" + this.playerInfo.uuid + ",nickname=" + this.playerInfo.nickname + "]";
     }
 }

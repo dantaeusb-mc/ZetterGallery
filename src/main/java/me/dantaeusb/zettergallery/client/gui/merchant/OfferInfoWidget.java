@@ -151,7 +151,9 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
         this.parentScreen.getMinecraft().getTextureManager().bind(PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
 
         // Feed icon
-        if (offer instanceof PaintingMerchantPurchaseOffer purchaseOffer) {
+        if (offer instanceof PaintingMerchantPurchaseOffer) {
+            PaintingMerchantPurchaseOffer purchaseOffer = (PaintingMerchantPurchaseOffer) offer;
+
             if (purchaseOffer.getFeedName() != null) {
                 int feedIconU = 16;
 

@@ -118,12 +118,14 @@ public class SalesManager {
         do {
             ServerPlayerEntity trackingPlayer = trackingPlayerIterator.next();
 
-            if (!(trackingPlayer.containerMenu instanceof PaintingMerchantMenu paintingMerchantMenu)) {
+            if (!(trackingPlayer.containerMenu instanceof PaintingMerchantMenu)) {
                 ZetterGallery.LOG.warn("Player " + trackingPlayer.getName().getString() + " does not have Painting Merchant Menu opened, but not unregistered!");
 
                 trackingPlayerIterator.remove();
                 continue;
             }
+
+            PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu) trackingPlayer.containerMenu;
 
             if (paintingMerchantMenu.getContainer().canUpdate()) {
                 this.acquireMerchantOffers(
@@ -319,7 +321,7 @@ public class SalesManager {
         Collections.shuffle(available, rng);
         available = available.subList(0, showCount);
 
-        List<PaintingMerchantPurchaseOffer> randomOffers = available.stream().map(feed.getOffers()::get).toList();
+        List<PaintingMerchantPurchaseOffer> randomOffers = available.stream().map(feed.getOffers()::get).collect(Collectors.toList());
 
         // Remove duplicates from offers list if there are same paintings in different feeds
         List<String> offerIds = new LinkedList<>();

@@ -412,7 +412,7 @@ public class PaintingMerchantScreen extends ContainerScreen<PaintingMerchantMenu
         PlayerToken.PlayerInfo playerInfo = this.menu.getAuthController().getPlayerInfo();
 
         if (playerInfo != null) {
-            return playerInfo.nickname();
+            return playerInfo.nickname;
         }
 
         return "Anonymous";

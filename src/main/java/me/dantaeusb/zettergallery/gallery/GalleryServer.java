@@ -113,14 +113,14 @@ public class GalleryServer implements Gallery {
     }
 
     // Convert to/from NBT
-    static class GalleryStorage implements Capability.IStorage<GalleryServer> {
+    static class GalleryStorage implements Capability.IStorage<Gallery> {
         @Override
-        public INBT writeNBT(Capability<GalleryServer> capability, GalleryServer instance, @Nullable Direction side) {
+        public INBT writeNBT(Capability<Gallery> capability, Gallery instance, @Nullable Direction side) {
             return instance.serializeNBT();
         }
 
         @Override
-        public void readNBT(Capability<GalleryServer> capability, GalleryServer instance, Direction side, @Nullable INBT nbt) {
+        public void readNBT(Capability<Gallery> capability, Gallery instance, Direction side, @Nullable INBT nbt) {
             instance.deserializeNBT(nbt);
         }
     }

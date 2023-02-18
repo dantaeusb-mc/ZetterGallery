@@ -1,5 +1,6 @@
 package me.dantaeusb.zettergallery.network.http.stub;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,6 +21,10 @@ public class ServerPlayerRegisterRequest {
          * Used by PEGI to describe minecraft, so as long as Minecraft is ok,
          * These tags are too.
          */
-        this.rating = List.of("L", "FW", "F");
+        this.rating = new ArrayList<String>(){{
+            add("L");
+            add("FW");
+            add("F");
+        }};
     }
 }
