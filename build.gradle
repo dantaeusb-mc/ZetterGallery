@@ -95,7 +95,7 @@ repositories {
     maven {
         // for Zetter
         name "dantaeusb"
-        url "../../Zetter/1.16/mcmodsrepo"
+        url "../../../Zetter/1.16/mcmodsrepo"
     }
 }
 

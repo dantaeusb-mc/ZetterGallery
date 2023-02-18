@@ -1,7 +1,7 @@
 package me.dantaeusb.zettergallery.core;
 
 import me.dantaeusb.zettergallery.ZetterGallery;
-import me.dantaeusb.zettergallery.gallery.GalleryCapabilityProvider;
+import me.dantaeusb.zettergallery.capability.gallery.GalleryCapabilityProvider;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import net.minecraftforge.event.AttachCapabilitiesEvent;

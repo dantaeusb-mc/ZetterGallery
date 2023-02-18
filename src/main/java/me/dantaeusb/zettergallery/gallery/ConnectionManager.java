@@ -2,6 +2,7 @@ package me.dantaeusb.zettergallery.gallery;
 
 import me.dantaeusb.zetter.Zetter;
 import me.dantaeusb.zettergallery.ZetterGallery;
+import me.dantaeusb.zettergallery.capability.gallery.GalleryServer;
 import me.dantaeusb.zettergallery.core.Helper;
 import me.dantaeusb.zettergallery.network.http.GalleryConnection;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
@@ -450,7 +451,7 @@ public class ConnectionManager implements AutoCloseable {
                     return;
                 }
 
-                galleryServerCapability.saveClientInfo(serverResponse.client);
+                galleryServerCapability.setClientInfo(serverResponse.client);
 
                 successConsumer.accept();
             },

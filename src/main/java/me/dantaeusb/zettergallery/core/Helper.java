@@ -1,7 +1,7 @@
 package me.dantaeusb.zettergallery.core;
 
-import me.dantaeusb.zettergallery.gallery.Gallery;
-import me.dantaeusb.zettergallery.gallery.GalleryCapability;
+import me.dantaeusb.zettergallery.capability.gallery.Gallery;
+import me.dantaeusb.zettergallery.capability.gallery.GalleryCapability;
 import net.minecraft.world.World;
 
 public class Helper {

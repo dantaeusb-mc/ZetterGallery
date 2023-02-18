@@ -15,7 +15,7 @@ public class ZetterGalleryOverlays {
     @SubscribeEvent
     public static void onRenderOverlays(RenderGameOverlayEvent.Post event) {
         if(event.getType().equals(RenderGameOverlayEvent.ElementType.ALL)) {
-            GALLERY_PAINTING_INFO.render(Minecraft.getInstance().gui, event.getMatrixStack(), event.getPartialTicks(), event.getWindow().getWidth(), event.getWindow().getHeight());
+            GALLERY_PAINTING_INFO.render(Minecraft.getInstance().gui, event.getMatrixStack(), event.getPartialTicks(), event.getWindow().getGuiScaledWidth(), event.getWindow().getGuiScaledHeight());
         }
     }
 }

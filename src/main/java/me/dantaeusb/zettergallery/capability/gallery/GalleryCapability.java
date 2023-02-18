@@ -1,4 +1,4 @@
-package me.dantaeusb.zettergallery.gallery;
+package me.dantaeusb.zettergallery.capability.gallery;
 
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.CapabilityInject;
@@ -10,8 +10,8 @@ public class GalleryCapability {
 
     public static void register() {
         CapabilityManager.INSTANCE.register(
-            GalleryServer.class,
-            new GalleryServer.GalleryStorage(),
+            Gallery.class,
+            new GalleryStorage(),
             GalleryServer::new
         );
     }

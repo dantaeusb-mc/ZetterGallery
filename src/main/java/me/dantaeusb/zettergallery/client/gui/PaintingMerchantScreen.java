@@ -191,16 +191,16 @@ public class PaintingMerchantScreen extends ContainerScreen<PaintingMerchantMenu
 
         if (merchantLevel < 5) {
             blit(
-                    poseStack,
-                    xPos,
-                    yPos,
-                    this.getBlitOffset(), // hmmmm
-                    BAR_U,
-                    BAR_V,
-                    BAR_WIDTH,
-                    BAR_HEIGHT,
-                    512,
-                    256
+                poseStack,
+                xPos,
+                yPos,
+                this.getBlitOffset(), // hmmmm
+                BAR_U,
+                BAR_V,
+                BAR_WIDTH,
+                BAR_HEIGHT,
+                256,
+                512
             );
 
             int k = VillagerData.getMinXpPerLevel(merchantLevel);

@@ -63,7 +63,7 @@ public class GalleryPaintingInfoOverlay extends PaintingInfoOverlay {
 
         if (msLeft > 8) {
             poseStack.pushPose();
-            poseStack.translate(screenWidth / 2, screenHeight - 68, 0.0D);
+            poseStack.translate(screenWidth / 2.0D, screenHeight - 68.0D, 0.0D);
             RenderSystem.enableBlend();
             RenderSystem.defaultBlendFunc();
 

@@ -1,10 +1,8 @@
 package me.dantaeusb.zettergallery.core;
 
-import me.dantaeusb.zetter.capability.canvastracker.CanvasTrackerCapability;
-import me.dantaeusb.zetter.capability.paintingregistry.PaintingRegistryCapability;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
-import me.dantaeusb.zettergallery.gallery.GalleryCapability;
+import me.dantaeusb.zettergallery.capability.gallery.GalleryCapability;
 import net.minecraft.client.gui.ScreenManager;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;

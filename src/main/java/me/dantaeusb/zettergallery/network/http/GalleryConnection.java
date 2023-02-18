@@ -6,7 +6,7 @@ import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.core.Helper;
 import me.dantaeusb.zettergallery.gallery.AuthorizationCode;
-import me.dantaeusb.zettergallery.gallery.GalleryServer;
+import me.dantaeusb.zettergallery.capability.gallery.GalleryServer;
 import me.dantaeusb.zettergallery.gallery.ServerInfo;
 import me.dantaeusb.zettergallery.gallery.Token;
 import me.dantaeusb.zettergallery.network.http.stub.*;

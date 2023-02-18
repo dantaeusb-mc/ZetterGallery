@@ -1,6 +1,6 @@
 package me.dantaeusb.zettergallery.network.http.stub;
 
-import me.dantaeusb.zettergallery.gallery.GalleryServer;
+import me.dantaeusb.zettergallery.capability.gallery.GalleryServer;
 
 import java.util.UUID;
 
