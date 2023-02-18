@@ -44,14 +44,14 @@ description='''
 [[dependencies.zettergallery]]
     modId="forge"
     mandatory=true
-    versionRange="[43,)"
+    versionRange="[44,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.zettergallery]]
     modId="zetter"
     mandatory=true
-    versionRange="[0.19.0-1.19.2-alpha,)"
+    versionRange="[0.19.2,)"
     ordering="NONE"
     side="BOTH"
 
