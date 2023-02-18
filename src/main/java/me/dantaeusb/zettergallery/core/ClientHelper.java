@@ -2,10 +2,10 @@ package me.dantaeusb.zettergallery.core;
 
 import com.google.common.collect.Sets;
 import me.dantaeusb.zetter.Zetter;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.ConfirmLinkScreen;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screen.ConfirmOpenLinkScreen;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.util.Util;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -20,7 +20,7 @@ public class ClientHelper {
     private static final Set<String> ALLOWED_PROTOCOLS = Sets.newHashSet("http", "https");
 
     public static boolean openUriAllowed() {
-        return Minecraft.getInstance().options.chatLinks().get();
+        return Minecraft.getInstance().options.chatLinks;
     }
 
     /**
@@ -51,8 +51,8 @@ public class ClientHelper {
                 throw new URISyntaxException(href, "Unsupported protocol: " + s.toLowerCase(Locale.ROOT));
             }
 
-            if (mc.options.chatLinksPrompt().get()) {
-                mc.setScreen(new ConfirmLinkScreen((result) -> {
+            if (mc.options.chatLinksPrompt) {
+                mc.setScreen(new ConfirmOpenLinkScreen((result) -> {
                     if (result) {
                         openUri(uri);
                     }

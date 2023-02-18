@@ -10,12 +10,12 @@ import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.network.packet.CAuthorizationCheckPacket;
 import me.dantaeusb.zettergallery.network.packet.SAuthErrorPacket;
-import me.dantaeusb.zettergallery.network.packet.SAuthorizationCodeResponsePacket;
 import me.dantaeusb.zettergallery.network.packet.SAuthenticationPlayerResponsePacket;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.PacketDistributor;
+import me.dantaeusb.zettergallery.network.packet.SAuthorizationCodeResponsePacket;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraftforge.fml.network.PacketDistributor;
 
 import javax.annotation.Nullable;
 
@@ -26,13 +26,13 @@ public class MerchantAuthorizationController {
 
     private boolean canSell = true;
 
-    private final Player player;
+    private final PlayerEntity player;
     private final PaintingMerchantMenu menu;
 
     private PlayerAuthorizationState state = PlayerAuthorizationState.SERVER_AUTHENTICATION;
     private GalleryError error;
 
-    public MerchantAuthorizationController(Player player, PaintingMerchantMenu menu) {
+    public MerchantAuthorizationController(PlayerEntity player, PaintingMerchantMenu menu) {
         this.player = player;
         this.menu = menu;
     }
@@ -86,7 +86,7 @@ public class MerchantAuthorizationController {
      */
     public void startFlow() {
         ConnectionManager.getInstance().authenticateServerPlayer(
-                (ServerPlayer) this.player,
+                (ServerPlayerEntity) this.player,
                 this::handleServerAuthentication,
                 this::handleError
         );
@@ -125,9 +125,9 @@ public class MerchantAuthorizationController {
         this.authorizationCode = null;
         this.playerInfo = authorizedAs;
 
-        if (!this.player.getLevel().isClientSide()) {
+        if (!this.player.level.isClientSide()) {
             SAuthenticationPlayerResponsePacket authorizationPacket = new SAuthenticationPlayerResponsePacket(authorizedAs);
-            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), authorizationPacket);
+            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity) this.player), authorizationPacket);
         }
     }
 
@@ -142,9 +142,9 @@ public class MerchantAuthorizationController {
 
         this.authorizationCode = authorizationCodeInfo;
 
-        if (!this.player.getLevel().isClientSide()) {
+        if (!this.player.level.isClientSide()) {
             SAuthorizationCodeResponsePacket authorizationRequestPacket = new SAuthorizationCodeResponsePacket(authorizationCodeInfo);
-            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), authorizationRequestPacket);
+            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity) this.player), authorizationRequestPacket);
         }
     }
 
@@ -160,7 +160,7 @@ public class MerchantAuthorizationController {
         this.state = this.state.retry();
         this.assertTargetState(PlayerAuthorizationState.SERVER_AUTHENTICATION);
 
-        if (this.player.getLevel().isClientSide()) {
+        if (this.player.level.isClientSide()) {
             CAuthorizationCheckPacket authenticationCheckPacket = new CAuthorizationCheckPacket();
             ZetterGalleryNetwork.simpleChannel.sendToServer(authenticationCheckPacket);
         } else {
@@ -179,10 +179,10 @@ public class MerchantAuthorizationController {
             this.menu.getContainer().handleError(this.error);
         }
 
-        if (!this.player.getLevel().isClientSide()) {
+        if (!this.player.level.isClientSide()) {
             // Send message to server, code in else section will be called
             SAuthErrorPacket selectOfferPacket = new SAuthErrorPacket(this.error);
-            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), selectOfferPacket);
+            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity) this.player), selectOfferPacket);
         }
     }
 

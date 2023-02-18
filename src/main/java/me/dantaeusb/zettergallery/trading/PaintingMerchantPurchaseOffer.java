@@ -10,8 +10,8 @@ import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zettergallery.core.ZetterGalleryCanvasTypes;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.item.ItemStack;
+import net.minecraft.world.World;
 
 import java.security.InvalidParameterException;
 import java.util.Optional;
@@ -62,6 +62,7 @@ public class PaintingMerchantPurchaseOffer extends PaintingMerchantAbstractOffer
 
     /**
      * Creates painting merchant offer from Zetter Gallery HTTP response
+     *
      * @param paintingItem
      * @return
      */
@@ -79,6 +80,7 @@ public class PaintingMerchantPurchaseOffer extends PaintingMerchantAbstractOffer
 
     /**
      * Creates painting merchant offer from
+     *
      * @return
      */
     public static PaintingMerchantPurchaseOffer createOfferFromNetwork(
@@ -161,12 +163,13 @@ public class PaintingMerchantPurchaseOffer extends PaintingMerchantAbstractOffer
         }
     }
 
-    public void writeOfferResultData(Level level, ItemStack painting) {
-        if (!painting.is(ZetterItems.PAINTING.get())) {
+    public void writeOfferResultData(World level, ItemStack painting) {
+        if (!painting.getItem().equals(ZetterItems.PAINTING.get())) {
             throw new IllegalStateException("Can only write data to painting");
         }
 
         GalleryPaintingData galleryPaintingData = ZetterGalleryCanvasTypes.GALLERY_PAINTING.get().createWrap(
+            this.dummyPaintingData.getId(), // @todo: [EMERG] Not sure!
             this.dummyPaintingData.getResolution(),
             this.dummyPaintingData.getWidth(),
             this.dummyPaintingData.getHeight(),
@@ -188,6 +191,7 @@ public class PaintingMerchantPurchaseOffer extends PaintingMerchantAbstractOffer
 
     /**
      * N.B. Data sent with RGBA format and stored in ARGB
+     *
      * @param paintingItem
      * @return
      */
@@ -211,7 +215,7 @@ public class PaintingMerchantPurchaseOffer extends PaintingMerchantAbstractOffer
         }
 
         return ZetterCanvasTypes.DUMMY.get().createWrap(
-            resolution, paintingItem.sizeW * resolution.getNumeric(), paintingItem.sizeH * resolution.getNumeric(), canvasData
+            GalleryPaintingData.getDummyOfferCanvasCode(paintingItem.uuid), resolution, paintingItem.sizeW * resolution.getNumeric(), paintingItem.sizeH * resolution.getNumeric(), canvasData
         );
     }
 }

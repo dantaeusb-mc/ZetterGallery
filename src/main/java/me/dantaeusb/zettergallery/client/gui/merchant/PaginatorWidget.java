@@ -1,13 +1,13 @@
 package me.dantaeusb.zettergallery.client.gui.merchant;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
+import me.dantaeusb.zetter.client.gui.easel.AbstractPaintingWidget;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.narration.NarratedElementType;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.network.chat.Component;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 
 import javax.annotation.Nullable;
 
@@ -26,25 +26,25 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
     private static final int NEXT_OFFER_BUTTON_UPOS = 208;
     private static final int NEXT_OFFER_BUTTON_VPOS = 10;
 
-    private static final Component PREVIOUS_PAINTING = Component.translatable("container.zettergallery.merchant.paginator.previous");
-    private static final Component NEXT_PAINTING = Component.translatable("container.zettergallery.merchant.paginator.next");
+    private static final ITextComponent PREVIOUS_PAINTING = new TranslationTextComponent("container.zettergallery.merchant.paginator.previous");
+    private static final ITextComponent NEXT_PAINTING = new TranslationTextComponent("container.zettergallery.merchant.paginator.next");
 
 
     public PaginatorWidget(PaintingMerchantScreen parentScreen, int x, int y) {
-        super(parentScreen, x, y, WIDTH, HEIGHT, Component.translatable("container.zettergallery.merchant.paginator"));
+        super(parentScreen, x, y, WIDTH, HEIGHT, new TranslationTextComponent("container.zettergallery.merchant.paginator"));
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        RenderSystem.setShaderTexture(0, PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
+    public void render(MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+        this.parentScreen.getMinecraft().getTextureManager().bind(PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
 
         if (this.canSelect()) {
             // Left (down) arrow
             if (isPointInRegion(PREV_OFFER_BUTTON_XPOS, PREV_OFFER_BUTTON_YPOS, OFFER_BUTTON_WIDTH, OFFER_BUTTON_HEIGHT, mouseX, mouseY)) {
                 blit(
                         matrixStack,
-                        this.getX() + PREV_OFFER_BUTTON_XPOS,
-                        this.getY() + PREV_OFFER_BUTTON_YPOS,
+                        this.x + PREV_OFFER_BUTTON_XPOS,
+                        this.y + PREV_OFFER_BUTTON_YPOS,
                         PREV_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH * 2,
                         PREV_OFFER_BUTTON_VPOS,
                         OFFER_BUTTON_WIDTH,
@@ -55,8 +55,8 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
             } else {
                 blit(
                         matrixStack,
-                        this.getX() + PREV_OFFER_BUTTON_XPOS,
-                        this.getY() + PREV_OFFER_BUTTON_YPOS,
+                        this.x + PREV_OFFER_BUTTON_XPOS,
+                        this.y + PREV_OFFER_BUTTON_YPOS,
                         PREV_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH,
                         PREV_OFFER_BUTTON_VPOS,
                         OFFER_BUTTON_WIDTH,
@@ -70,8 +70,8 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
             if (isPointInRegion(NEXT_OFFER_BUTTON_XPOS, NEXT_OFFER_BUTTON_YPOS, OFFER_BUTTON_WIDTH, OFFER_BUTTON_HEIGHT, mouseX, mouseY)) {
                 blit(
                         matrixStack,
-                        this.getX() + NEXT_OFFER_BUTTON_XPOS,
-                        this.getY() + NEXT_OFFER_BUTTON_YPOS,
+                        this.x + NEXT_OFFER_BUTTON_XPOS,
+                        this.y + NEXT_OFFER_BUTTON_YPOS,
                         NEXT_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH * 2,
                         NEXT_OFFER_BUTTON_VPOS,
                         OFFER_BUTTON_WIDTH,
@@ -82,8 +82,8 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
             } else {
                 blit(
                         matrixStack,
-                        this.getX() + NEXT_OFFER_BUTTON_XPOS,
-                        this.getY() + NEXT_OFFER_BUTTON_YPOS,
+                        this.x + NEXT_OFFER_BUTTON_XPOS,
+                        this.y + NEXT_OFFER_BUTTON_YPOS,
                         NEXT_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH,
                         NEXT_OFFER_BUTTON_VPOS,
                         OFFER_BUTTON_WIDTH,
@@ -95,8 +95,8 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
         } else {
             blit(
                     matrixStack,
-                    this.getX() + PREV_OFFER_BUTTON_XPOS,
-                    this.getY() + PREV_OFFER_BUTTON_YPOS,
+                    this.x + PREV_OFFER_BUTTON_XPOS,
+                    this.y + PREV_OFFER_BUTTON_YPOS,
                     PREV_OFFER_BUTTON_UPOS,
                     PREV_OFFER_BUTTON_VPOS,
                     OFFER_BUTTON_WIDTH,
@@ -107,8 +107,8 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
 
             blit(
                     matrixStack,
-                    this.getX() + NEXT_OFFER_BUTTON_XPOS,
-                    this.getY() + NEXT_OFFER_BUTTON_YPOS,
+                    this.x + NEXT_OFFER_BUTTON_XPOS,
+                    this.y + NEXT_OFFER_BUTTON_YPOS,
                     NEXT_OFFER_BUTTON_UPOS,
                     NEXT_OFFER_BUTTON_VPOS,
                     OFFER_BUTTON_WIDTH,
@@ -147,7 +147,7 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
     }
 
     @Override
-    public @Nullable Component getTooltip(int mouseX, int mouseY) {
+    public @Nullable ITextComponent getTooltip(int mouseX, int mouseY) {
         if (!this.canSelect()) {
             return null;
         }
@@ -174,15 +174,10 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
      * @return
      */
     protected boolean isPointInRegion(int x, int y, int width, int height, double mouseX, double mouseY) {
-        int i = this.getX();
-        int j = this.getY();
+        int i = this.x;
+        int j = this.y;
         mouseX = mouseX - (double)i;
         mouseY = mouseY - (double)j;
         return mouseX >= (double)(x - 1) && mouseX < (double)(x + width + 1) && mouseY >= (double)(y - 1) && mouseY < (double)(y + height + 1);
-    }
-
-    @Override
-    protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
-        narrationElementOutput.add(NarratedElementType.TITLE, this.createNarrationMessage());
     }
 }

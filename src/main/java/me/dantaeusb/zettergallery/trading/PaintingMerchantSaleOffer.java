@@ -6,17 +6,18 @@ import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.trading.Merchant;
-import net.minecraft.world.level.Level;
+import net.minecraft.entity.merchant.IMerchant;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.world.World;
 
 import java.util.UUID;
 
 public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
-    public static final Component ANOTHER_PLAYERS_PAINTING_ERROR = Component.translatable("container.zettergallery.merchant.another_players_painting");
+    public static final ITextComponent ANOTHER_PLAYERS_PAINTING_ERROR = new TranslationTextComponent("container.zettergallery.merchant.another_players_painting");
 
     private final String realCanvasCode;
 
@@ -79,7 +80,7 @@ public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
      */
     public static PaintingMerchantSaleOffer createOfferFromPlayersPainting(String canvasCode, PaintingData paintingData, int price) {
         DummyCanvasData paintingWrap = ZetterCanvasTypes.DUMMY.get().createWrap(
-            paintingData.getResolution(), paintingData.getWidth(), paintingData.getHeight(),
+            canvasCode, paintingData.getResolution(), paintingData.getWidth(), paintingData.getHeight(),
             paintingData.getColorData()
         );
 
@@ -93,7 +94,7 @@ public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
         );
     }
 
-    public static PaintingMerchantSaleOffer createOfferWithoutPlayersPainting(String canvasCode, Player player, int price) {
+    public static PaintingMerchantSaleOffer createOfferWithoutPlayersPainting(String canvasCode, PlayerEntity player, int price) {
         return new PaintingMerchantSaleOffer(
             canvasCode,
             player.getUUID(),
@@ -102,14 +103,14 @@ public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
         );
     }
 
-    public void register(Level level) {
+    public void register(World level) {
         Helper.getLevelCanvasTracker(level).registerCanvasData(
             this.getDummyCanvasCode(),
             this.getDummyPaintingData()
         );
     }
 
-    public static void unregister(Level level) {
+    public static void unregister(World level) {
         Helper.getLevelCanvasTracker(level).unregisterCanvasData(
             PaintingMerchantSaleOffer.getStaticCanvasCode()
         );
@@ -120,7 +121,7 @@ public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
      * forbids to sell paintings from other players
      * @return
      */
-    public boolean validate(Merchant merchant) {
+    public boolean validate(IMerchant merchant) {
         if (!merchant.getTradingPlayer().getUUID().equals(this.paintingAuthorUuid)) {
             this.markError(new GalleryError(GalleryError.CLIENT_INVALID_OFFER, ANOTHER_PLAYERS_PAINTING_ERROR.getString()));
             return false;

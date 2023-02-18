@@ -1,22 +1,20 @@
 package me.dantaeusb.zettergallery.client.gui.merchant;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.matrix.MatrixStack;
 import me.dantaeusb.zetter.client.renderer.CanvasRenderer;
 import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import net.minecraft.client.gui.narration.NarratedElementType;
-import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.client.renderer.IRenderTypeBuffer;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
-    private static final Component LOADING_TEXT = Component.translatable("container.zettergallery.merchant.preview.loading");
+    private static final ITextComponent LOADING_TEXT = new TranslationTextComponent("container.zettergallery.merchant.preview.loading");
 
     static final int WIDTH = 64;
     static final int HEIGHT = 64;
@@ -24,11 +22,11 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
     private int tick = 0;
 
     public PaintingPreviewWidget(PaintingMerchantScreen parentScreen, int x, int y) {
-        super(parentScreen, x, y, WIDTH, HEIGHT, Component.translatable("container.zettergallery.merchant.preview"));
+        super(parentScreen, x, y, WIDTH, HEIGHT, new TranslationTextComponent("container.zettergallery.merchant.preview"));
     }
 
     @Override
-    public void render(@NotNull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void render(@Nonnull MatrixStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null || offer.isError()) {
@@ -60,13 +58,12 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
         }
 
         matrixStack.pushPose();
-        matrixStack.translate(this.getX() + offsetX, this.getY() + offsetY, 1.0F);
+        matrixStack.translate(this.x + offsetX, this.y + offsetY, 1.0F);
         matrixStack.scale(scale, scale, 1.0F);
 
-        MultiBufferSource.BufferSource renderBuffers = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
-
-        CanvasRenderer.getInstance().renderCanvas(matrixStack, renderBuffers, canvasCode, offerPaintingData, 0xF000F0);
-        renderBuffers.endBatch();
+        IRenderTypeBuffer.Impl renderTypeBufferImpl = IRenderTypeBuffer.immediate(Tessellator.getInstance().getBuilder());
+        CanvasRenderer.getInstance().renderCanvas(matrixStack, renderTypeBufferImpl, canvasCode, offerPaintingData, 0xF000F0);
+        renderTypeBufferImpl.endBatch();
 
         matrixStack.popPose();
     }
@@ -76,16 +73,16 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
     private static final int LOADING_UPOS = 208;
     private static final int LOADING_VPOS = 20;
 
-    private void renderLoading(PoseStack matrixStack)
+    private void renderLoading(MatrixStack matrixStack)
     {
-        RenderSystem.setShaderTexture(0, PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
+        this.parentScreen.getMinecraft().getTextureManager().bind(PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
 
         final int animation = this.tick % 40;
         int frame = animation / 10; // 0-3
 
         frame = frame > 2 ? 1 : frame; // 3rd frame is the same as 1st frame
 
-        blit(matrixStack, this.getX() + (this.width - LOADING_WIDTH) / 2, this.getY() + (this.height - LOADING_HEIGHT) / 2, LOADING_UPOS, LOADING_VPOS + LOADING_HEIGHT * frame, LOADING_WIDTH, LOADING_HEIGHT, 512, 256);
+        blit(matrixStack, this.x + (this.width - LOADING_WIDTH) / 2, this.y + (this.height - LOADING_HEIGHT) / 2, LOADING_UPOS, LOADING_VPOS + LOADING_HEIGHT * frame, LOADING_WIDTH, LOADING_HEIGHT, 512, 256);
     }
 
     public boolean isLoading() {
@@ -101,7 +98,7 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
     }
 
     @Override
-    public @Nullable Component getTooltip(int mouseX, int mouseY) {
+    public @Nullable ITextComponent getTooltip(int mouseX, int mouseY) {
         PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null) {
@@ -113,10 +110,5 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
         }
 
         return null;
-    }
-
-    @Override
-    protected void updateWidgetNarration(NarrationElementOutput narrationElementOutput) {
-        narrationElementOutput.add(NarratedElementType.TITLE, this.createNarrationMessage());
     }
 }

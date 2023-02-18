@@ -1,7 +1,7 @@
 package me.dantaeusb.zettergallery.network.packet;
 
 import me.dantaeusb.zettergallery.network.http.GalleryError;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.PacketBuffer;
 
 
 public abstract class SAbstractErrorPacket {
@@ -25,7 +25,7 @@ public abstract class SAbstractErrorPacket {
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(FriendlyByteBuf networkBuffer) {
+    public void writePacketData(PacketBuffer networkBuffer) {
         networkBuffer.writeInt(this.code);
         networkBuffer.writeUtf(this.message, 32767);
     }

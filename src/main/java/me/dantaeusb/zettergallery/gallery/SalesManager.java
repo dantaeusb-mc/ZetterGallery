@@ -7,8 +7,8 @@ import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
@@ -33,7 +33,7 @@ public class SalesManager {
     private final HashMap<Integer, PaintingsResponse.CycleInfo> cycles = new HashMap<>();
     private final HashMap<UUID, PlayerFeed> playerFeeds = new HashMap<>();
 
-    private final List<ServerPlayer> trackingPlayers = new ArrayList<>();
+    private final List<ServerPlayerEntity> trackingPlayers = new ArrayList<>();
 
     private Integer currentCycleIncrementId = null;
 
@@ -59,7 +59,7 @@ public class SalesManager {
         SalesManager.instance = null;
     }
 
-    public void registerTrackingPlayer(ServerPlayer player) {
+    public void registerTrackingPlayer(ServerPlayerEntity player) {
         if (this.trackingPlayers.contains(player)) {
             return;
         }
@@ -67,7 +67,7 @@ public class SalesManager {
         this.trackingPlayers.add(player);
     }
 
-    public void unregisterTrackingPlayer(ServerPlayer player) {
+    public void unregisterTrackingPlayer(ServerPlayerEntity player) {
         if (!this.trackingPlayers.contains(player)) {
             return;
         }
@@ -114,9 +114,9 @@ public class SalesManager {
             return;
         }
 
-        Iterator<ServerPlayer> trackingPlayerIterator = this.trackingPlayers.iterator();
+        Iterator<ServerPlayerEntity> trackingPlayerIterator = this.trackingPlayers.iterator();
         do {
-            ServerPlayer trackingPlayer = trackingPlayerIterator.next();
+            ServerPlayerEntity trackingPlayer = trackingPlayerIterator.next();
 
             if (!(trackingPlayer.containerMenu instanceof PaintingMerchantMenu paintingMerchantMenu)) {
                 ZetterGallery.LOG.warn("Player " + trackingPlayer.getName().getString() + " does not have Painting Merchant Menu opened, but not unregistered!");
@@ -163,7 +163,7 @@ public class SalesManager {
      * Feed
      */
 
-    public boolean canPlayerSell(Player player) {
+    public boolean canPlayerSell(PlayerEntity player) {
         // We do not care here if the feed is still relevant
         if (this.playerFeeds.containsKey(player.getUUID())) {
             PlayerFeed feed = this.playerFeeds.get(player.getUUID());
@@ -179,7 +179,7 @@ public class SalesManager {
      * @param player
      * @return
      */
-    public @Nullable PlayerFeed getPlayerFeed(Player player) {
+    public @Nullable PlayerFeed getPlayerFeed(PlayerEntity player) {
         if (this.playerFeeds.containsKey(player.getUUID())) {
             PlayerFeed feed = this.playerFeeds.get(player.getUUID());
 
@@ -214,7 +214,7 @@ public class SalesManager {
      * @param errorConsumer
      */
     public void acquireMerchantOffers(
-        ServerPlayer player, PaintingMerchantContainer paintingMerchantContainer,
+        ServerPlayerEntity player, PaintingMerchantContainer paintingMerchantContainer,
         BiConsumer<PaintingsResponse.CycleInfo, List<PaintingMerchantPurchaseOffer>> successConsumer,
         Consumer<GalleryError> errorConsumer
     ) {
@@ -289,7 +289,7 @@ public class SalesManager {
         return cycleInfo;
     }
 
-    private PlayerFeed createPlayerFeed(ServerPlayer player, PaintingsResponse response) {
+    private PlayerFeed createPlayerFeed(ServerPlayerEntity player, PaintingsResponse response) {
         PlayerFeed feed = PlayerFeed.createFeedFromSaleResponse(player, response);
         this.playerFeeds.put(player.getUUID(), feed);
 

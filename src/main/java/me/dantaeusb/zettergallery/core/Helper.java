@@ -1,7 +1,8 @@
 package me.dantaeusb.zettergallery.core;
 
+import me.dantaeusb.zettergallery.gallery.Gallery;
 import me.dantaeusb.zettergallery.gallery.GalleryCapability;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.World;
 
 public class Helper {
     private static Helper instance;
@@ -24,14 +25,14 @@ public class Helper {
         return Helper.instance;
     }
 
-    public static GalleryCapability getWorldGalleryCapability(Level world) {
-        GalleryCapability galleryCapability;
+    public static Gallery getWorldGalleryCapability(World world) {
+        Gallery galleryCapability;
 
         if (!world.isClientSide()) {
             // looking for a server canvas tracker in the overworld, since canvases are world-independent
-            galleryCapability = world.getServer().overworld().getCapability(ZetterGalleryCapabilities.GALLERY).orElse(null);
+            galleryCapability = world.getServer().overworld().getCapability(GalleryCapability.CAPABILITY_GALLERY).orElse(null);
         } else {
-            galleryCapability = world.getCapability(ZetterGalleryCapabilities.GALLERY).orElse(null);
+            galleryCapability = world.getCapability(GalleryCapability.CAPABILITY_GALLERY).orElse(null);
         }
 
         return galleryCapability;

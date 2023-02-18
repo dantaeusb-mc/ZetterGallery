@@ -4,7 +4,7 @@ import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.packet.CAuthorizationCheckPacket;
 import me.dantaeusb.zettergallery.network.packet.CFeedRefreshRequest;
 import me.dantaeusb.zettergallery.network.packet.CSelectOfferPacket;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.entity.player.ServerPlayerEntity;
 
 public class ServerHandler {
     /**
@@ -14,7 +14,7 @@ public class ServerHandler {
      * @param packetIn
      * @param sendingPlayer
      */
-    public static void processGalleryAuthenticationRequest(final CAuthorizationCheckPacket packetIn, ServerPlayer sendingPlayer) {
+    public static void processGalleryAuthenticationRequest(final CAuthorizationCheckPacket packetIn, ServerPlayerEntity sendingPlayer) {
         if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
             PaintingMerchantMenu menu = (PaintingMerchantMenu) sendingPlayer.containerMenu;
 
@@ -22,7 +22,7 @@ public class ServerHandler {
         }
     }
 
-    public static void processGallerySelectOffer(final CSelectOfferPacket packetIn, ServerPlayer sendingPlayer) {
+    public static void processGallerySelectOffer(final CSelectOfferPacket packetIn, ServerPlayerEntity sendingPlayer) {
         if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
             PaintingMerchantMenu paintingMerchantMenu = (PaintingMerchantMenu)sendingPlayer.containerMenu;
             paintingMerchantMenu.updateCurrentOfferIndex(packetIn.offerIndex);
@@ -34,7 +34,7 @@ public class ServerHandler {
      * @param packetIn
      * @param sendingPlayer
      */
-    public static void processGalleryFeedRefreshRequest(final CFeedRefreshRequest packetIn, ServerPlayer sendingPlayer) {
+    public static void processGalleryFeedRefreshRequest(final CFeedRefreshRequest packetIn, ServerPlayerEntity sendingPlayer) {
         if (sendingPlayer.containerMenu instanceof PaintingMerchantMenu) {
             PaintingMerchantMenu menu = (PaintingMerchantMenu) sendingPlayer.containerMenu;
 

@@ -3,11 +3,11 @@ package me.dantaeusb.zettergallery.network.packet;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.gallery.PlayerToken;
 import me.dantaeusb.zettergallery.network.ClientHandler;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.level.Level;
-import net.minecraftforge.common.util.LogicalSidedProvider;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.world.World;
 import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.fml.LogicalSidedProvider;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -27,7 +27,7 @@ public class SAuthenticationPlayerResponsePacket {
     /**
      * Reads the raw packet data from the data stream.
      */
-    public static SAuthenticationPlayerResponsePacket readPacketData(FriendlyByteBuf networkBuffer) {
+    public static SAuthenticationPlayerResponsePacket readPacketData(PacketBuffer networkBuffer) {
         try {
             UUID playerUuid = networkBuffer.readUUID();
             String playerNickname = networkBuffer.readUtf(32767);
@@ -42,7 +42,7 @@ public class SAuthenticationPlayerResponsePacket {
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(FriendlyByteBuf networkBuffer) {
+    public void writePacketData(PacketBuffer networkBuffer) {
         networkBuffer.writeUUID(this.playerInfo.uuid());
         networkBuffer.writeUtf(this.playerInfo.nickname(), 32767);
     }
@@ -52,7 +52,7 @@ public class SAuthenticationPlayerResponsePacket {
         LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
         ctx.setPacketHandled(true);
 
-        Optional<Level> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
+        Optional<World> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
         if (!clientWorld.isPresent()) {
             ZetterGallery.LOG.warn("SGalleryAuthorizationResponsePacket context could not provide a ClientWorld.");
             return;

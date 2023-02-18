@@ -1,18 +1,18 @@
 package me.dantaeusb.zettergallery.client.gui.overlay;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import me.dantaeusb.zetter.client.gui.overlay.PaintingInfoOverlay;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
-import net.minecraft.network.chat.Component;
-import net.minecraft.util.StringUtil;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import net.minecraft.client.gui.IngameGui;
+import net.minecraft.util.StringUtils;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 
 import java.security.InvalidParameterException;
 
-public class GalleryPaintingInfoOverlay extends PaintingInfoOverlay implements IGuiOverlay {
+public class GalleryPaintingInfoOverlay extends PaintingInfoOverlay {
     protected GalleryPaintingData paintingData;
 
     @Override
@@ -30,7 +30,7 @@ public class GalleryPaintingInfoOverlay extends PaintingInfoOverlay implements I
     }
 
     @Override
-    public void render(ForgeGui gui, PoseStack poseStack, float partialTick, int screenWidth, int screenHeight) {
+    public void render(IngameGui gui, MatrixStack poseStack, float partialTick, int screenWidth, int screenHeight) {
         if (this.paintingData == null) {
             return;
         }
@@ -40,20 +40,20 @@ public class GalleryPaintingInfoOverlay extends PaintingInfoOverlay implements I
             return;
         }
 
-        Component title;
+        ITextComponent title;
 
         String paintingName = this.paintingData.getPaintingName();
         String authorName = this.paintingData.getAuthorName();
 
-        if (StringUtil.isNullOrEmpty(paintingName)) {
-            paintingName = Component.translatable("item.zetter.painting.unnamed").getString();
+        if (StringUtils.isNullOrEmpty(paintingName)) {
+            paintingName = new TranslationTextComponent("item.zetter.painting.unnamed").getString();
         }
 
-        if (StringUtil.isNullOrEmpty(authorName)) {
-            authorName = Component.translatable("item.zetter.painting.unknown").getString();
+        if (StringUtils.isNullOrEmpty(authorName)) {
+            authorName = new TranslationTextComponent("item.zetter.painting.unknown").getString();
         }
 
-        title = Component.translatable("item.zetter.customPaintingByAuthor", paintingName, authorName);
+        title = new TranslationTextComponent("item.zetter.customPaintingByAuthor", paintingName, authorName);
 
         float ticksLeft = (float)this.overlayMessageTime - partialTick;
         int msLeft = (int)(ticksLeft * 255.0F / 20.0F);

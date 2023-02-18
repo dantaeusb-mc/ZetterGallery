@@ -3,8 +3,8 @@ package me.dantaeusb.zettergallery.network;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.packet.*;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.World;
 
 public class ClientHandler {
     /**
@@ -13,8 +13,8 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processGalleryPlayerNotAuthorized(final SAuthorizationCodeResponsePacket packetIn, Level world) {
-        Player player = Minecraft.getInstance().player;
+    public static void processGalleryPlayerNotAuthorized(final SAuthorizationCodeResponsePacket packetIn, World world) {
+        PlayerEntity player = Minecraft.getInstance().player;
         assert player != null;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
@@ -28,8 +28,8 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processGalleryPlayerAuthorized(final SAuthenticationPlayerResponsePacket packetIn, Level world) {
-        Player player = Minecraft.getInstance().player;
+    public static void processGalleryPlayerAuthorized(final SAuthenticationPlayerResponsePacket packetIn, World world) {
+        PlayerEntity player = Minecraft.getInstance().player;
         assert player != null;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
@@ -42,8 +42,8 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processPaintingMerchantInfo(final SMerchantInfoPacket packetIn, Level world) {
-        Player player = Minecraft.getInstance().player;
+    public static void processPaintingMerchantInfo(final SMerchantInfoPacket packetIn, World world) {
+        PlayerEntity player = Minecraft.getInstance().player;
         assert player != null;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
@@ -57,8 +57,8 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processPaintingMerchantOffers(final SOffersPacket packetIn, Level world) {
-        Player player = Minecraft.getInstance().player;
+    public static void processPaintingMerchantOffers(final SOffersPacket packetIn, World world) {
+        PlayerEntity player = Minecraft.getInstance().player;
         assert player != null;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
@@ -73,8 +73,8 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processPaintingMerchantOffersError(final SOffersErrorPacket packetIn, Level world) {
-        Player player = Minecraft.getInstance().player;
+    public static void processPaintingMerchantOffersError(final SOffersErrorPacket packetIn, World world) {
+        PlayerEntity player = Minecraft.getInstance().player;
         assert player != null;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
@@ -87,8 +87,8 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processPaintingMerchantAuthError(final SAuthErrorPacket packetIn, Level world) {
-        Player player = Minecraft.getInstance().player;
+    public static void processPaintingMerchantAuthError(final SAuthErrorPacket packetIn, World world) {
+        PlayerEntity player = Minecraft.getInstance().player;
         assert player != null;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {
@@ -101,8 +101,8 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processPaintingOfferState(final SOfferStatePacket packetIn, Level world) {
-        Player player = Minecraft.getInstance().player;
+    public static void processPaintingOfferState(final SOfferStatePacket packetIn, World world) {
+        PlayerEntity player = Minecraft.getInstance().player;
         assert player != null;
 
         if (player.containerMenu instanceof PaintingMerchantMenu) {

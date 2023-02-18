@@ -1,12 +1,13 @@
 package me.dantaeusb.zettergallery.container;
 
+import com.google.common.collect.Lists;
 import me.dantaeusb.zetter.Zetter;
 import me.dantaeusb.zetter.capability.canvastracker.CanvasTracker;
 import me.dantaeusb.zetter.client.renderer.CanvasRenderer;
 import me.dantaeusb.zetter.core.Helper;
+import me.dantaeusb.zetter.core.ItemStackHandlerListener;
 import me.dantaeusb.zetter.core.ZetterCanvasTypes;
 import me.dantaeusb.zetter.core.ZetterItems;
-import com.google.common.collect.Lists;
 import me.dantaeusb.zetter.item.PaintingItem;
 import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
@@ -18,30 +19,32 @@ import me.dantaeusb.zettergallery.gallery.SalesManager;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
-import me.dantaeusb.zettergallery.network.packet.*;
+import me.dantaeusb.zettergallery.network.packet.CSelectOfferPacket;
+import me.dantaeusb.zettergallery.network.packet.SOfferStatePacket;
+import me.dantaeusb.zettergallery.network.packet.SOffersPacket;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
-import net.minecraft.core.NonNullList;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.Container;
-import net.minecraft.world.ContainerHelper;
-import net.minecraft.world.ContainerListener;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.trading.Merchant;
-import net.minecraft.world.item.trading.MerchantOffer;
-import net.minecraft.world.level.Level;
-import net.minecraftforge.network.PacketDistributor;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.merchant.IMerchant;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.ItemStackHelper;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.item.MerchantOffer;
+import net.minecraft.util.NonNullList;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.world.World;
+import net.minecraftforge.fml.network.PacketDistributor;
+import net.minecraftforge.items.ItemStackHandler;
 
 import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.List;
 
-public class PaintingMerchantContainer implements Container {
+public class PaintingMerchantContainer extends ItemStackHandler implements IInventory {
     public static final int STORAGE_SIZE = 2;
 
     public static final int INPUT_SLOT = 0;
@@ -49,12 +52,12 @@ public class PaintingMerchantContainer implements Container {
 
     private final NonNullList<ItemStack> itemStacks = NonNullList.withSize(STORAGE_SIZE, ItemStack.EMPTY);
 
-    private final Player player;
-    private final Merchant merchant;
+    private final PlayerEntity player;
+    private final IMerchant merchant;
     private final PaintingMerchantMenu menu;
 
     @Nullable
-    private List<ContainerListener> listeners;
+    private List<ItemStackHandlerListener> listeners;
     private PaintingMerchantOffer currentOffer;
 
     // Waiting for the token check/update by default
@@ -76,7 +79,7 @@ public class PaintingMerchantContainer implements Container {
     @Nullable
     private List<PaintingMerchantPurchaseOffer> purchaseOffers;
 
-    public PaintingMerchantContainer(Player player, Merchant merchant, PaintingMerchantMenu menu) {
+    public PaintingMerchantContainer(PlayerEntity player, IMerchant merchant, PaintingMerchantMenu menu) {
         this.player = player;
         this.merchant = merchant;
 
@@ -199,9 +202,9 @@ public class PaintingMerchantContainer implements Container {
                     if (paintingData != null) {
                         saleOffer = PaintingMerchantSaleOffer.createOfferFromPlayersPainting(canvasCode, paintingData, 4);
 
-                        Level level = this.merchant.getTradingPlayer().getLevel();
+                        World level = this.merchant.getTradingPlayer().level;
                         if (level.isClientSide()) {
-                            saleOffer.register(this.merchant.getTradingPlayer().getLevel());
+                            saleOffer.register(this.merchant.getTradingPlayer().level);
                         }
                     } else {
                         saleOffer = PaintingMerchantSaleOffer.createOfferWithoutPlayersPainting(canvasCode, this.merchant.getTradingPlayer(), 4);
@@ -212,21 +215,21 @@ public class PaintingMerchantContainer implements Container {
 
                     if (saleOffer.validate(this.merchant)) {
                         // Ask Gallery if we can sell this painting
-                        if (!this.merchant.isClientSide()) {
+                        if (!this.merchant.getLevel().isClientSide()) {
                             ConnectionManager.getInstance().validateSale(
-                                (ServerPlayer) this.merchant.getTradingPlayer(),
+                                (ServerPlayerEntity) this.merchant.getTradingPlayer(),
                                 saleOffer,
                                 () -> {
                                     saleOffer.ready();
 
                                     SOfferStatePacket offerStatePacket = new SOfferStatePacket(saleOffer.getDummyCanvasCode(), PaintingMerchantPurchaseOffer.State.READY, "Ready");
-                                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.merchant.getTradingPlayer()), offerStatePacket);
+                                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity) this.merchant.getTradingPlayer()), offerStatePacket);
                                 },
                                 (error) -> {
                                     saleOffer.markError(error);
 
                                     SOfferStatePacket offerStatePacket = new SOfferStatePacket(saleOffer.getDummyCanvasCode(), PaintingMerchantPurchaseOffer.State.ERROR, error.getClientMessage());
-                                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.merchant.getTradingPlayer()), offerStatePacket);
+                                    ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity) this.merchant.getTradingPlayer()), offerStatePacket);
                                 }
                             );
                         }
@@ -251,8 +254,9 @@ public class PaintingMerchantContainer implements Container {
             }
 
             if (this.listeners != null) {
-                for(ContainerListener containerlistener : this.listeners) {
-                    containerlistener.containerChanged(this);
+                for(ItemStackHandlerListener containerListener : this.listeners) {
+                    containerListener.containerChanged(this, INPUT_SLOT);
+                    containerListener.containerChanged(this, OUTPUT_SLOT);
                 }
             }
         }
@@ -266,9 +270,9 @@ public class PaintingMerchantContainer implements Container {
      * Server-only, asks sales manager to load offers for that player/merchant pair
      */
     public void requestFeed() {
-        SalesManager.getInstance().registerTrackingPlayer((ServerPlayer) this.player);
+        SalesManager.getInstance().registerTrackingPlayer((ServerPlayerEntity) this.player);
         SalesManager.getInstance().acquireMerchantOffers(
-                (ServerPlayer) this.player,
+                (ServerPlayerEntity) this.player,
                 this,
                 this::handleFeed,
                 this::handleError
@@ -292,16 +296,16 @@ public class PaintingMerchantContainer implements Container {
         this.updateCurrentOffer();
         this.registerOffersCanvases();
 
-        if (!this.player.getLevel().isClientSide()) {
+        if (!this.player.level.isClientSide()) {
             SOffersPacket salesPacket = new SOffersPacket(cycleInfo, this.getPurchaseOffers());
-            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), salesPacket);
+            ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayerEntity) this.player), salesPacket);
         }
     }
 
     public void registerOffersCanvases() {
-        if (this.merchant.isClientSide() && this.getPurchaseOffers() != null) {
+        if (this.merchant.getLevel().isClientSide() && this.getPurchaseOffers() != null) {
             // Maybe delegate that to some kind of ClientSalesManager?
-            CanvasTracker tracker = Helper.getLevelCanvasTracker(this.merchant.getTradingPlayer().getLevel());
+            CanvasTracker tracker = Helper.getLevelCanvasTracker(this.merchant.getTradingPlayer().level);
 
             for (PaintingMerchantPurchaseOffer offer : this.getPurchaseOffers()) {
                 DummyCanvasData paintingData = offer.getDummyPaintingData();
@@ -311,8 +315,8 @@ public class PaintingMerchantContainer implements Container {
     }
 
     public void unregisterOffersCanvases() {
-        if (this.merchant.isClientSide()) {
-            Level level = this.merchant.getTradingPlayer().getLevel();;
+        if (this.merchant.getLevel().isClientSide()) {
+            World level = this.merchant.getTradingPlayer().level;;
 
             if (this.getPurchaseOffers() != null) {
                 CanvasTracker tracker = Helper.getLevelCanvasTracker(level);
@@ -345,9 +349,9 @@ public class PaintingMerchantContainer implements Container {
                 return;
             }
 
-            if (!this.merchant.getTradingPlayer().getLevel().isClientSide()) {
+            if (!this.merchant.getTradingPlayer().level.isClientSide()) {
                 ConnectionManager.getInstance().registerSale(
-                    (ServerPlayer) this.player,
+                    (ServerPlayerEntity) this.player,
                     saleOffer,
                     this::finalizeCheckout,
                     offer::markError
@@ -356,9 +360,9 @@ public class PaintingMerchantContainer implements Container {
 
             this.itemStacks.set(INPUT_SLOT, ItemStack.EMPTY);
         } else if (offer instanceof PaintingMerchantPurchaseOffer purchaseOffer) {
-            if (!this.merchant.getTradingPlayer().getLevel().isClientSide()) {
+            if (!this.merchant.getTradingPlayer().level.isClientSide()) {
                 ConnectionManager.getInstance().registerPurchase(
-                    (ServerPlayer) this.player,
+                    (ServerPlayerEntity) this.player,
                     purchaseOffer.getPaintingUuid(),
                     purchaseOffer.getPrice(),
                     purchaseOffer.getCycleIncrementId(),
@@ -368,7 +372,7 @@ public class PaintingMerchantContainer implements Container {
             }
 
             this.itemStacks.get(INPUT_SLOT).shrink(offer.getPrice());
-            purchaseOffer.writeOfferResultData(this.merchant.getTradingPlayer().getLevel(), purchaseStack);
+            purchaseOffer.writeOfferResultData(this.merchant.getTradingPlayer().level, purchaseStack);
         }
 
         // Reset item if we were selling item
@@ -392,10 +396,10 @@ public class PaintingMerchantContainer implements Container {
     }
 
     public void removed() {
-        if (this.merchant.getTradingPlayer().getLevel().isClientSide()) {
+        if (this.merchant.getTradingPlayer().level.isClientSide()) {
             this.unregisterOffersCanvases();
         } else {
-            SalesManager.getInstance().unregisterTrackingPlayer((ServerPlayer) this.player);
+            SalesManager.getInstance().unregisterTrackingPlayer((ServerPlayerEntity) this.player);
         }
     }
 
@@ -478,7 +482,7 @@ public class PaintingMerchantContainer implements Container {
      * @param paintingData
      */
     public void updateSaleOfferPaintingData(String canvasCode, PaintingData paintingData) {
-        if (!this.merchant.getTradingPlayer().getLevel().isClientSide()) {
+        if (!this.merchant.getTradingPlayer().level.isClientSide()) {
             throw new IllegalStateException("Should not update offer painting data on server");
         }
 
@@ -492,18 +496,24 @@ public class PaintingMerchantContainer implements Container {
         }
 
         DummyCanvasData paintingWrap = ZetterCanvasTypes.DUMMY.get().createWrap(
-            paintingData.getResolution(), paintingData.getWidth(), paintingData.getHeight(),
+            canvasCode, paintingData.getResolution(), paintingData.getWidth(), paintingData.getHeight(),
             paintingData.getColorData()
         );
 
         saleOffer.updatePaintingData(paintingData.getPaintingName(), paintingWrap, paintingData.getAuthorUuid(), paintingData.getAuthorName());
-        saleOffer.register(this.merchant.getTradingPlayer().getLevel());
+        saleOffer.register(this.merchant.getTradingPlayer().level);
     }
 
+    /**
+     * I'm heavily confused by this, but it's copt of
+     * MerchantContainer#playTradeSound.
+     * It tries to play local sound (only on ClientLevel)
+     * after a check that it's not client level?
+     */
     private void playTradeSound() {
-        if (!this.merchant.isClientSide()) {
+        if (!this.merchant.getLevel().isClientSide()) {
             Entity entity = (Entity) this.merchant;
-            entity.getLevel().playLocalSound(entity.getX(), entity.getY(), entity.getZ(), this.merchant.getNotifyTradeSound(), SoundSource.NEUTRAL, 1.0F, 1.0F, false);
+            entity.level.playLocalSound(entity.getX(), entity.getY(), entity.getZ(), this.merchant.getNotifyTradeSound(), SoundCategory.NEUTRAL, 1.0F, 1.0F, false);
         }
     }
 
@@ -560,7 +570,7 @@ public class PaintingMerchantContainer implements Container {
      * Basic things
      */
 
-    public void addListener(ContainerListener listener) {
+    public void addListener(ItemStackHandlerListener listener) {
         if (this.listeners == null) {
             this.listeners = Lists.newArrayList();
         }
@@ -568,7 +578,7 @@ public class PaintingMerchantContainer implements Container {
         this.listeners.add(listener);
     }
 
-    public void removeListener(ContainerListener listener) {
+    public void removeListener(ItemStackHandlerListener listener) {
         if (this.listeners != null) {
             this.listeners.remove(listener);
         }
@@ -590,7 +600,7 @@ public class PaintingMerchantContainer implements Container {
         return this.getItem(OUTPUT_SLOT);
     }
 
-    public boolean stillValid(Player player) {
+    public boolean stillValid(PlayerEntity player) {
         return this.merchant.getTradingPlayer() == player;
     }
 
@@ -604,7 +614,7 @@ public class PaintingMerchantContainer implements Container {
     }
 
     @Override
-    public void startOpen(Player player) {
+    public void startOpen(PlayerEntity player) {
 
     }
 
@@ -634,12 +644,31 @@ public class PaintingMerchantContainer implements Container {
 
     @Override
     public ItemStack removeItem(int index, int count) {
-        return ContainerHelper.removeItem(this.itemStacks, index, count);
+        ItemStack stackAtSlot = this.itemStacks.get(index);
+        if (index == OUTPUT_SLOT && !stackAtSlot.isEmpty()) {
+            return ItemStackHelper.removeItem(this.itemStacks, index, stackAtSlot.getCount());
+        } else {
+            ItemStack removedStack = ItemStackHelper.removeItem(this.itemStacks, index, count);
+            if (!removedStack.isEmpty()) {
+                this.setChanged();
+            }
+
+            return removedStack;
+        }
+    }
+
+    protected void onContentsChanged(int slot)
+    {
+        if (this.listeners != null) {
+            for(ItemStackHandlerListener listener : this.listeners) {
+                listener.containerChanged(this, slot);
+            }
+        }
     }
 
     @Override
     public ItemStack removeItemNoUpdate(int index) {
-        return ContainerHelper.takeItem(this.itemStacks, index);
+        return ItemStackHelper.takeItem(this.itemStacks, index);
     }
 
     @Override

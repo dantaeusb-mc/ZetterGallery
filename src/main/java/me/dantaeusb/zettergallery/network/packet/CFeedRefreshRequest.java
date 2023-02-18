@@ -2,9 +2,9 @@ package me.dantaeusb.zettergallery.network.packet;
 
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.network.ServerHandler;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.network.PacketBuffer;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
@@ -20,7 +20,7 @@ public class CFeedRefreshRequest {
      * Reads the raw packet data from the data stream.
      * Seems like buf is always at least 256 bytes, so we have to process written buffer size
      */
-    public static CFeedRefreshRequest readPacketData(FriendlyByteBuf buf) {
+    public static CFeedRefreshRequest readPacketData(PacketBuffer buf) {
         CFeedRefreshRequest packet = new CFeedRefreshRequest();
 
         return packet;
@@ -29,7 +29,7 @@ public class CFeedRefreshRequest {
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(FriendlyByteBuf buf) {
+    public void writePacketData(PacketBuffer buf) {
 
     }
 
@@ -37,7 +37,7 @@ public class CFeedRefreshRequest {
         NetworkEvent.Context ctx = ctxSupplier.get();
         ctx.setPacketHandled(true);
 
-        final ServerPlayer sendingPlayer = ctx.getSender();
+        final ServerPlayerEntity sendingPlayer = ctx.getSender();
         if (sendingPlayer == null) {
             ZetterGallery.LOG.warn("EntityPlayerMP was null when CGalleryFeedRefreshRequest was received");
         }

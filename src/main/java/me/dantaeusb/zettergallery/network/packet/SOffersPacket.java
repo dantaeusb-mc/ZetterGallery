@@ -6,12 +6,13 @@ import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.network.ClientHandler;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
+import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.level.Level;
-import net.minecraftforge.common.util.LogicalSidedProvider;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.world.World;
 import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.fml.LogicalSidedProvider;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -42,7 +43,7 @@ public class SOffersPacket {
     /**
      * Reads the raw packet data from the data stream.
      */
-    public static SOffersPacket readPacketData(FriendlyByteBuf networkBuffer) {
+    public static SOffersPacket readPacketData(PacketBuffer networkBuffer) {
         try {
             final int cycleIncrementId = networkBuffer.readInt();
             final Date cycleStartsAt = networkBuffer.readDate();
@@ -70,7 +71,10 @@ public class SOffersPacket {
                 final int price = networkBuffer.readInt();
                 final String feedName = networkBuffer.readUtf(64);
 
-                DummyCanvasData paintingData = ZetterCanvasTypes.DUMMY.get().createWrap(resolution, sizeW * resolution.getNumeric(), sizeH * resolution.getNumeric(), color);
+                DummyCanvasData paintingData = ZetterCanvasTypes.DUMMY.get().createWrap(
+                    GalleryPaintingData.getDummyOfferCanvasCode(paintingGalleryUuid),
+                    resolution, sizeW * resolution.getNumeric(), sizeH * resolution.getNumeric(), color
+                );
 
                 PaintingMerchantPurchaseOffer offer = PaintingMerchantPurchaseOffer.createOfferFromNetwork(
                     paintingData, paintingGalleryUuid, paintingTitle,
@@ -93,7 +97,7 @@ public class SOffersPacket {
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(FriendlyByteBuf networkBuffer) {
+    public void writePacketData(PacketBuffer networkBuffer) {
         networkBuffer.writeInt(this.cycleInfo.incrementId);
         networkBuffer.writeDate(this.cycleInfo.startsAt);
         networkBuffer.writeDate(this.cycleInfo.endsAt);
@@ -126,7 +130,7 @@ public class SOffersPacket {
         LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
         ctx.setPacketHandled(true);
 
-        Optional<Level> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
+        Optional<World> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
         if (!clientWorld.isPresent()) {
             ZetterGallery.LOG.warn("SGalleryOffersPacket context could not provide a ClientWorld.");
             return;

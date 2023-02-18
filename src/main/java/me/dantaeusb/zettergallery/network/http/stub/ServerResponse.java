@@ -1,9 +1,7 @@
 package me.dantaeusb.zettergallery.network.http.stub;
 
-import me.dantaeusb.zettergallery.gallery.GalleryServerCapability;
+import me.dantaeusb.zettergallery.gallery.GalleryServer;
 
-import javax.annotation.Nullable;
-import java.util.Date;
 import java.util.UUID;
 
 public class ServerResponse {
@@ -11,5 +9,5 @@ public class ServerResponse {
     public String ip;
     public String title;
     public String motd;
-    public GalleryServerCapability.ClientInfo client;
+    public GalleryServer.ClientInfo client;
 }

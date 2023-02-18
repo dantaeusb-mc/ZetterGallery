@@ -9,9 +9,9 @@ import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.core.ZetterGalleryCanvasTypes;
 import me.dantaeusb.zettergallery.core.ZetterGalleryOverlays;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.world.server.ServerWorld;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -56,7 +56,9 @@ public class GalleryPaintingData extends PaintingData {
         return ZetterGallery.MOD_ID + "_offer_sale";
     }
 
-    protected GalleryPaintingData() {}
+    protected GalleryPaintingData(String canvasCode) {
+        super(canvasCode);
+    }
 
     public void setMetaProperties(UUID galleryPaintingUuid, UUID authorUuid, String authorName, String name) {
         this.galleryPaintingUuid = galleryPaintingUuid;
@@ -78,7 +80,7 @@ public class GalleryPaintingData extends PaintingData {
     }
 
     @Override
-    public void correctData(ServerLevel level) {
+    public void correctData(ServerWorld level) {
         if (this.authorUuid == null) {
             this.authorUuid = new UUID(0L, 0L);
         }
@@ -88,7 +90,8 @@ public class GalleryPaintingData extends PaintingData {
         return this.galleryPaintingUuid;
     }
 
-    public CompoundTag save(CompoundTag compoundTag) {
+    @Override
+    public CompoundNBT save(CompoundNBT compoundTag) {
         super.save(compoundTag);
 
         compoundTag.putUUID(NBT_TAG_GALLERY_UUID, this.galleryPaintingUuid);
@@ -96,9 +99,41 @@ public class GalleryPaintingData extends PaintingData {
         return compoundTag;
     }
 
+    @Override
+    public void load(CompoundNBT compoundTag) {
+        this.width = compoundTag.getInt(NBT_TAG_WIDTH);
+        this.height = compoundTag.getInt(NBT_TAG_HEIGHT);
+
+        if (compoundTag.contains(NBT_TAG_RESOLUTION)) {
+            int resolutionOrdinal = compoundTag.getInt(NBT_TAG_RESOLUTION);
+            this.resolution = Resolution.values()[resolutionOrdinal];
+        } else {
+            this.resolution = Helper.getResolution();
+        }
+
+        this.updateColorData(compoundTag.getByteArray(NBT_TAG_COLOR));
+
+        if (compoundTag.contains(NBT_TAG_AUTHOR_UUID)) {
+            this.authorUuid = compoundTag.getUUID(NBT_TAG_AUTHOR_UUID);
+        } else {
+            this.authorUuid = null;
+        }
+
+        this.authorName = compoundTag.getString(NBT_TAG_AUTHOR_NAME);
+        this.name = compoundTag.getString(NBT_TAG_NAME);
+        this.banned = compoundTag.getBoolean(NBT_TAG_BANNED);
+        this.galleryPaintingUuid = compoundTag.getUUID(NBT_TAG_GALLERY_UUID);
+    }
+
     private static class GalleryPaintingDataBuilder implements CanvasDataBuilder<GalleryPaintingData> {
-        public GalleryPaintingData createFresh(AbstractCanvasData.Resolution resolution, int width, int height) {
-            GalleryPaintingData newPainting = new GalleryPaintingData();
+        @Override
+        public GalleryPaintingData supply(String canvasCode) {
+            return new GalleryPaintingData(canvasCode);
+        }
+
+        @Override
+        public GalleryPaintingData createFresh(String canvasCode, AbstractCanvasData.Resolution resolution, int width, int height) {
+            GalleryPaintingData newPainting = new GalleryPaintingData(canvasCode);
             byte[] color = new byte[width * height * 4];
             ByteBuffer defaultColorBuffer = ByteBuffer.wrap(color);
 
@@ -110,42 +145,10 @@ public class GalleryPaintingData extends PaintingData {
             return newPainting;
         }
 
-        public GalleryPaintingData createWrap(AbstractCanvasData.Resolution resolution, int width, int height, byte[] color) {
-            GalleryPaintingData newPainting = new GalleryPaintingData();
+        @Override
+        public GalleryPaintingData createWrap(String canvasCode, AbstractCanvasData.Resolution resolution, int width, int height, byte[] color) {
+            GalleryPaintingData newPainting = new GalleryPaintingData(canvasCode);
             newPainting.wrapData(resolution, width, height, color);
-            return newPainting;
-        }
-
-        /*
-         * Serialization
-         */
-
-        public GalleryPaintingData load(CompoundTag compoundTag) {
-            final GalleryPaintingData newPainting = new GalleryPaintingData();
-
-            newPainting.width = compoundTag.getInt(NBT_TAG_WIDTH);
-            newPainting.height = compoundTag.getInt(NBT_TAG_HEIGHT);
-
-            if (compoundTag.contains(NBT_TAG_RESOLUTION)) {
-                int resolutionOrdinal = compoundTag.getInt(NBT_TAG_RESOLUTION);
-                newPainting.resolution = Resolution.values()[resolutionOrdinal];
-            } else {
-                newPainting.resolution = Helper.getResolution();
-            }
-
-            newPainting.updateColorData(compoundTag.getByteArray(NBT_TAG_COLOR));
-
-            if (compoundTag.contains(NBT_TAG_AUTHOR_UUID)) {
-                newPainting.authorUuid = compoundTag.getUUID(NBT_TAG_AUTHOR_UUID);
-            } else {
-                newPainting.authorUuid = null;
-            }
-
-            newPainting.authorName = compoundTag.getString(NBT_TAG_AUTHOR_NAME);
-            newPainting.name = compoundTag.getString(NBT_TAG_NAME);
-            newPainting.banned = compoundTag.getBoolean(NBT_TAG_BANNED);
-            newPainting.galleryPaintingUuid = compoundTag.getUUID(NBT_TAG_GALLERY_UUID);
-
             return newPainting;
         }
 
@@ -153,8 +156,10 @@ public class GalleryPaintingData extends PaintingData {
          * Networking
          */
 
-        public GalleryPaintingData readPacketData(FriendlyByteBuf networkBuffer) {
-            final GalleryPaintingData newPainting = new GalleryPaintingData();
+        @Override
+        public GalleryPaintingData readPacketData(PacketBuffer networkBuffer) {
+            String canvasCode = networkBuffer.readUtf(Helper.CANVAS_CODE_MAX_LENGTH);
+            final GalleryPaintingData newPainting = new GalleryPaintingData(canvasCode);
 
             final byte resolutionOrdinal = networkBuffer.readByte();
             AbstractCanvasData.Resolution resolution = AbstractCanvasData.Resolution.values()[resolutionOrdinal];
@@ -189,7 +194,9 @@ public class GalleryPaintingData extends PaintingData {
             return newPainting;
         }
 
-        public void writePacketData(GalleryPaintingData canvasData, FriendlyByteBuf networkBuffer) {
+        @Override
+        public void writePacketData(String canvasCode, GalleryPaintingData canvasData, PacketBuffer networkBuffer) {
+            networkBuffer.writeUtf(canvasCode, Helper.CANVAS_CODE_MAX_LENGTH);
             networkBuffer.writeByte(canvasData.resolution.ordinal());
             networkBuffer.writeInt(canvasData.width);
             networkBuffer.writeInt(canvasData.height);

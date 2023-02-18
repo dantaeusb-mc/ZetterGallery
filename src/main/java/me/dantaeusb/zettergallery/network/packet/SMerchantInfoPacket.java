@@ -2,11 +2,11 @@ package me.dantaeusb.zettergallery.network.packet;
 
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.network.ClientHandler;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.level.Level;
-import net.minecraftforge.common.util.LogicalSidedProvider;
+import net.minecraft.network.PacketBuffer;
+import net.minecraft.world.World;
 import net.minecraftforge.fml.LogicalSide;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.fml.LogicalSidedProvider;
+import net.minecraftforge.fml.network.NetworkEvent;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -27,7 +27,7 @@ public class SMerchantInfoPacket {
     /**
      * Reads the raw packet data from the data stream.
      */
-    public static SMerchantInfoPacket readPacketData(FriendlyByteBuf networkBuffer) {
+    public static SMerchantInfoPacket readPacketData(PacketBuffer networkBuffer) {
         try {
             UUID merchantId = networkBuffer.readUUID();
             int merchantLevel = networkBuffer.readInt();
@@ -42,7 +42,7 @@ public class SMerchantInfoPacket {
     /**
      * Writes the raw packet data to the data stream.
      */
-    public void writePacketData(FriendlyByteBuf networkBuffer) {
+    public void writePacketData(PacketBuffer networkBuffer) {
         networkBuffer.writeUUID(this.merchantId);
         networkBuffer.writeInt(this.merchantLevel);
     }
@@ -52,7 +52,7 @@ public class SMerchantInfoPacket {
         LogicalSide sideReceived = ctx.getDirection().getReceptionSide();
         ctx.setPacketHandled(true);
 
-        Optional<Level> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
+        Optional<World> clientWorld = LogicalSidedProvider.CLIENTWORLD.get(sideReceived);
         if (!clientWorld.isPresent()) {
             ZetterGallery.LOG.warn("SGalleryMerchantInfoPacket context could not provide a ClientWorld.");
             return;

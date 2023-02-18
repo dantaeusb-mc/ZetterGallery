@@ -1,30 +1,36 @@
 package me.dantaeusb.zettergallery.gallery;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
-import net.minecraft.world.level.Level;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.INBT;
+import net.minecraft.util.Direction;
+import net.minecraft.world.World;
+import net.minecraftforge.common.capabilities.Capability;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class GalleryServerCapability implements GalleryCapability {
+public class GalleryServer implements Gallery {
     private static final String NBT_TAG_PAINTINGS_TRACKER = "PaintingsTracker";
     private static final String NBT_TAG_CLIENT_ID = "ClientID";
     private static final String NBT_TAG_CLIENT_NAME = "ClientName";
     private static final String NBT_TAG_CLIENT_SECRET = "ClientSecret";
 
-    private Level overworld;
+    private World overworld;
 
     @Nullable
     private ClientInfo clientInfo;
 
-    public GalleryServerCapability(Level overworld) {
-        this.overworld = overworld;
+    public GalleryServer() {
+
     }
 
-    public Level getWorld() {
+    public void setWorld(World world) {
+        this.overworld = world;
+    }
+
+    public World getWorld() {
         return this.overworld;
     }
 
@@ -44,8 +50,8 @@ public class GalleryServerCapability implements GalleryCapability {
      * Saving data
      */
 
-    public Tag serializeNBT() {
-        CompoundTag compound = new CompoundTag();
+    public INBT serializeNBT() {
+        CompoundNBT compound = new CompoundNBT();
 
         //compound.putByteArray(NBT_TAG_PAINTINGS_METADATA, this.paintingsMetadata.toByteArray());
 
@@ -56,9 +62,9 @@ public class GalleryServerCapability implements GalleryCapability {
         return compound;
     }
 
-    public void deserializeNBT(Tag tag) {
-        if (tag.getType() == CompoundTag.TYPE) {
-            CompoundTag compound = (CompoundTag) tag;
+    public void deserializeNBT(INBT tag) {
+        if (tag.getType() == CompoundNBT.TYPE) {
+            CompoundNBT compound = (CompoundNBT) tag;
 
             if (compound.contains(NBT_TAG_CLIENT_ID) && compound.contains(NBT_TAG_CLIENT_SECRET)) {
                 this.clientInfo = ClientInfo.deserialize(compound);
@@ -77,13 +83,13 @@ public class GalleryServerCapability implements GalleryCapability {
             this.secret = secret;
         }
 
-        public void serialize(CompoundTag compound) {
+        public void serialize(CompoundNBT compound) {
             compound.putString(NBT_TAG_CLIENT_ID, this.id);
             compound.putString(NBT_TAG_CLIENT_NAME, this.name);
             compound.putString(NBT_TAG_CLIENT_SECRET, this.secret);
         }
 
-        public static ClientInfo deserialize(CompoundTag compound) {
+        public static ClientInfo deserialize(CompoundNBT compound) {
             final String clientId = compound.getString(NBT_TAG_CLIENT_ID);
             final String clientName = compound.getString(NBT_TAG_CLIENT_NAME);
             final String clientSecret = compound.getString(NBT_TAG_CLIENT_SECRET);
@@ -101,8 +107,21 @@ public class GalleryServerCapability implements GalleryCapability {
             this.connectedEntities.add(entityId);
         }
 
-        public void serialize(CompoundTag compoundTag) {
+        public void serialize(CompoundNBT compoundTag) {
             //compoundTag.putLong(this.updatedAt);
+        }
+    }
+
+    // Convert to/from NBT
+    static class GalleryStorage implements Capability.IStorage<GalleryServer> {
+        @Override
+        public INBT writeNBT(Capability<GalleryServer> capability, GalleryServer instance, @Nullable Direction side) {
+            return instance.serializeNBT();
+        }
+
+        @Override
+        public void readNBT(Capability<GalleryServer> capability, GalleryServer instance, Direction side, @Nullable INBT nbt) {
+            instance.deserializeNBT(nbt);
         }
     }
 }

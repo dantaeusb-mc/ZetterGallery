@@ -9,12 +9,12 @@ import me.dantaeusb.zettergallery.network.http.stub.AuthTokenResponse;
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
 import me.dantaeusb.zettergallery.util.EventConsumer;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.World;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
@@ -29,7 +29,7 @@ public class ConnectionManager implements AutoCloseable {
     private final GalleryConnection connection;
     private final PlayerTokenStorage playerTokenStorage = PlayerTokenStorage.getInstance();
 
-    private Level overworld;
+    private World overworld;
     private ServerInfo serverInfo;
 
     private Token serverToken;
@@ -41,7 +41,7 @@ public class ConnectionManager implements AutoCloseable {
 
     private long errorTimestamp;
 
-    private ConnectionManager(Level overworld) {
+    private ConnectionManager(World overworld) {
         this.overworld = overworld;
         this.connection = new GalleryConnection();
 
@@ -56,7 +56,7 @@ public class ConnectionManager implements AutoCloseable {
         return instance;
     }
 
-    public static void initialize(Level overworld) {
+    public static void initialize(World overworld) {
         ConnectionManager.instance = new ConnectionManager(overworld);
     }
 
@@ -113,8 +113,8 @@ public class ConnectionManager implements AutoCloseable {
      * @param tokenConsumer
      * @param errorConsumer
      */
-    private void registerServerPlayer(ServerPlayer player, Consumer<PlayerToken> tokenConsumer, Consumer<GalleryError> errorConsumer) {
-        GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
+    private void registerServerPlayer(ServerPlayerEntity player, Consumer<PlayerToken> tokenConsumer, Consumer<GalleryError> errorConsumer) {
+        GalleryServer galleryServerCapability = (GalleryServer) Helper.getWorldGalleryCapability(this.overworld);
 
         this.connection.registerPlayer(
             this.serverToken.token,
@@ -146,7 +146,7 @@ public class ConnectionManager implements AutoCloseable {
      * @param authorizationCodeConsumer
      * @param errorConsumer
      */
-    private void requestAuthorizationCode(ServerPlayer player, Consumer<AuthorizationCode> authorizationCodeConsumer, Consumer<GalleryError> errorConsumer) {
+    private void requestAuthorizationCode(ServerPlayerEntity player, Consumer<AuthorizationCode> authorizationCodeConsumer, Consumer<GalleryError> errorConsumer) {
         this.connection.requestServerPlayerAuthorizationCode(
             this.serverToken.token,
             (authorizationCode) -> {
@@ -172,7 +172,7 @@ public class ConnectionManager implements AutoCloseable {
      *
      * @param player
      */
-    public void authenticateServerPlayer(ServerPlayer player, Consumer<PlayerToken> successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void authenticateServerPlayer(ServerPlayerEntity player, Consumer<PlayerToken> successConsumer, Consumer<GalleryError> errorConsumer) {
         // Check that server is registered, try again when registered or handle error if cannot be registered
         if (!this.authenticateServerClient(
             (token) -> {
@@ -204,7 +204,7 @@ public class ConnectionManager implements AutoCloseable {
                 successConsumer.accept(playerToken);
                 // @todo: [HIGH] Check it's not expired!
             } else if (playerToken.authorizationCode != null) {
-                GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
+                GalleryServer galleryServerCapability = (GalleryServer) Helper.getWorldGalleryCapability(this.overworld);
 
                 this.connection.requestServerPlayerToken(
                     galleryServerCapability.getClientInfo(),
@@ -265,7 +265,7 @@ public class ConnectionManager implements AutoCloseable {
      * Paintings
      */
 
-    public void registerImpression(ServerPlayer player, UUID paintingUuid, int cycleId, EventConsumer successConsumer, EventConsumer errorConsumer) {
+    public void registerImpression(ServerPlayerEntity player, UUID paintingUuid, int cycleId, EventConsumer successConsumer, EventConsumer errorConsumer) {
         ConnectionManager.getInstance().getConnection().registerImpression(
             this.playerTokenStorage.getPlayerTokenString(player),
             paintingUuid,
@@ -280,7 +280,7 @@ public class ConnectionManager implements AutoCloseable {
         );
     }
 
-    public void registerPurchase(ServerPlayer player, UUID paintingUuid, int price, int cycleId, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void registerPurchase(ServerPlayerEntity player, UUID paintingUuid, int price, int cycleId, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
         ConnectionManager.getInstance().getConnection().registerPurchase(
             this.playerTokenStorage.getPlayerTokenString(player),
             paintingUuid,
@@ -293,7 +293,7 @@ public class ConnectionManager implements AutoCloseable {
         );
     }
 
-    public void validateSale(ServerPlayer player, PaintingMerchantSaleOffer offer, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void validateSale(ServerPlayerEntity player, PaintingMerchantSaleOffer offer, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
         if (!SalesManager.getInstance().canPlayerSell(player)) {
             errorConsumer.accept(new GalleryError(GalleryError.SERVER_SALE_DISALLOWED, "Sale is not allowed on this server"));
             return;
@@ -313,7 +313,7 @@ public class ConnectionManager implements AutoCloseable {
         );
     }
 
-    public void registerSale(ServerPlayer player, PaintingMerchantSaleOffer offer, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void registerSale(ServerPlayerEntity player, PaintingMerchantSaleOffer offer, EventConsumer successConsumer, Consumer<GalleryError> errorConsumer) {
         if (!SalesManager.getInstance().canPlayerSell(player)) {
             errorConsumer.accept(new GalleryError(GalleryError.SERVER_SALE_DISALLOWED, "Sale is not allowed on this server"));
             return;
@@ -340,7 +340,7 @@ public class ConnectionManager implements AutoCloseable {
      */
 
     public void requestFeed(
-        ServerPlayer player,
+        ServerPlayerEntity player,
         Consumer<PaintingsResponse> successConsumer,
         Consumer<GalleryError> errorConsumer
     ) {
@@ -370,7 +370,7 @@ public class ConnectionManager implements AutoCloseable {
     private boolean authenticateServerClient(Consumer<Token> retryConsumer, @Nullable Consumer<GalleryError> errorConsumer) {
         if (this.status == ConnectionStatus.READY && this.serverToken.valid()) {
             if (this.serverToken.needRefresh()) {
-                GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
+                GalleryServer galleryServerCapability = (GalleryServer) Helper.getWorldGalleryCapability(this.overworld);
 
                 if (galleryServerCapability.getClientInfo() != null) {
                     this.refreshServerToken(
@@ -405,7 +405,7 @@ public class ConnectionManager implements AutoCloseable {
             return false;
         }
 
-        GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
+        GalleryServer galleryServerCapability = (GalleryServer) Helper.getWorldGalleryCapability(this.overworld);
         if (galleryServerCapability.getClientInfo() != null) {
             this.getServerToken(
                 galleryServerCapability.getClientInfo(),
@@ -437,7 +437,7 @@ public class ConnectionManager implements AutoCloseable {
      * to get access token
      */
     private void createServerClient(EventConsumer successConsumer, @Nullable Consumer<GalleryError> errorConsumer) {
-        GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
+        GalleryServer galleryServerCapability = (GalleryServer) Helper.getWorldGalleryCapability(this.overworld);
 
         this.connection.createServerClient(
             this.serverInfo,
@@ -481,7 +481,7 @@ public class ConnectionManager implements AutoCloseable {
      * @param retryConsumer
      * @param errorConsumer
      */
-    private void getServerToken(GalleryServerCapability.ClientInfo clientInfo, Consumer<Token> retryConsumer, @Nullable Consumer<GalleryError> errorConsumer) {
+    private void getServerToken(GalleryServer.ClientInfo clientInfo, Consumer<Token> retryConsumer, @Nullable Consumer<GalleryError> errorConsumer) {
         this.connection.requestToken(
             clientInfo,
             authTokenResponse -> {
@@ -565,7 +565,7 @@ public class ConnectionManager implements AutoCloseable {
                 this.refreshToken = null;
             }
 
-            GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
+            GalleryServer galleryServerCapability = (GalleryServer) Helper.getWorldGalleryCapability(this.overworld);
             galleryServerCapability.removeClientInfo();
         }
 

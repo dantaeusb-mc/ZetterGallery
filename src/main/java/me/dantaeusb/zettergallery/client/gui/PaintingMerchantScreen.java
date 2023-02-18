@@ -1,31 +1,33 @@
 package me.dantaeusb.zettergallery.client.gui;
 
 import com.google.common.collect.Lists;
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
 import me.dantaeusb.zetter.core.tools.Color;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.merchant.*;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.core.ClientHelper;
+import me.dantaeusb.zettergallery.core.Helper;
 import me.dantaeusb.zettergallery.core.ZetterGalleryNetwork;
 import me.dantaeusb.zettergallery.gallery.AuthorizationCode;
 import me.dantaeusb.zettergallery.gallery.PlayerToken;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
-import me.dantaeusb.zettergallery.core.Helper;
 import me.dantaeusb.zettergallery.menu.paintingmerchant.MerchantAuthorizationController;
 import me.dantaeusb.zettergallery.network.packet.CFeedRefreshRequest;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FormattedCharSequence;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.npc.VillagerData;
-import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.entity.merchant.villager.VillagerData;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.util.IReorderingProcessor;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -35,10 +37,10 @@ import java.net.URISyntaxException;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
-public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerchantMenu> {
+public class PaintingMerchantScreen extends ContainerScreen<PaintingMerchantMenu> {
     public static final ResourceLocation GUI_TEXTURE_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade.png");
 
-    private static final Component LEVEL_SEPARATOR = Component.literal(" - ");
+    private static final ITextComponent LEVEL_SEPARATOR = new StringTextComponent(" - ");
 
     private AuthWidget authWidget;
     private PaintingPreviewWidget previewWidget;
@@ -62,7 +64,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
      */
     private boolean waitingForAuth = false;
 
-    public PaintingMerchantScreen(PaintingMerchantMenu merchantContainer, Inventory playerInventory, Component title) {
+    public PaintingMerchantScreen(PaintingMerchantMenu merchantContainer, PlayerInventory playerInventory, ITextComponent title) {
         super(merchantContainer, playerInventory, title);
 
         this.imageHeight = 236;
@@ -89,11 +91,11 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         super.init();
 
         this.inventoryLabelX = 107;
+        this.rebuildWidgets();
     }
 
-    @Override
     protected void rebuildWidgets() {
-        super.rebuildWidgets();
+        this.clearWidgets();
 
         this.authWidget = new AuthWidget(this, this.getGuiLeft() + AUTH_POSITION_X, this.getGuiTop() + AUTH_POSITION_Y);
         this.previewWidget = new PaintingPreviewWidget(this, this.getGuiLeft() + PREVIEW_POSITION_X, this.getGuiTop() + PREVIEW_POSITION_Y);
@@ -108,9 +110,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         this.addPaintingMerchantWidget(this.refreshWidget);
     }
 
-    @Override
     protected void clearWidgets() {
-        super.clearWidgets();
         this.paintingMerchantWidgets.clear();
     }
 
@@ -125,8 +125,8 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     }
 
     @Override
-    public void containerTick() {
-        super.containerTick();
+    public void tick() {
+        super.tick();
 
         this.tick++;
 
@@ -149,7 +149,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         this.infoWidget.tick();
     }
 
-    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
+    public void render(MatrixStack poseStack, int mouseX, int mouseY, float partialTicks) {
         this.renderBackground(poseStack);
 
         super.render(poseStack, mouseX, mouseY, partialTicks);
@@ -160,24 +160,23 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     }
 
     @Override
-    protected void renderTooltip(PoseStack matrixStack, int x, int y) {
+    protected void renderTooltip(MatrixStack matrixStack, int x, int y) {
         super.renderTooltip(matrixStack, x, y);
 
         for (AbstractPaintingMerchantWidget widget : this.paintingMerchantWidgets) {
             if (widget.isMouseOver(x, y)) {
-                Component tooltip = widget.getTooltip(x, y);
+                ITextComponent tooltip = widget.getTooltip(x, y);
 
                 if (tooltip != null) {
-                    List<FormattedCharSequence> tooltipLines = this.font.split(tooltip, 120);
+                    List<IReorderingProcessor> tooltipLines = this.font.split(tooltip, 120);
                     this.renderTooltip(matrixStack, tooltipLines, x, y);
                 }
             }
         }
     }
 
-    private void renderProgressBar(PoseStack poseStack) {
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderTexture(0, GUI_TEXTURE_RESOURCE);
+    private void renderProgressBar(MatrixStack poseStack) {
+        this.getMinecraft().getTextureManager().bind(GUI_TEXTURE_RESOURCE);
 
         final float BAR_U = 0.0F;
         final float BAR_V = 246.0F;
@@ -209,7 +208,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
             if (merchantXp >= k && VillagerData.canLevelUp(merchantLevel)) {
                 int l = 100;
                 float f = 100.0F / (float)(VillagerData.getMaxXpPerLevel(merchantLevel) - k);
-                int i1 = Math.min(Mth.floor(f * (float)(merchantXp - k)), l);
+                int i1 = Math.min(MathHelper.floor(f * (float)(merchantXp - k)), l);
 
                 blit(
                         poseStack,
@@ -235,12 +234,12 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     }
 
     @Override
-    protected void renderLabels(PoseStack poseStack, int x, int y) {
+    protected void renderLabels(MatrixStack poseStack, int x, int y) {
         int merchantLevel = this.menu.getMerchantLevel();
 
         // Draw level
         if (merchantLevel > 0 && merchantLevel <= 5) {
-            Component levelText = this.title.copy().append(LEVEL_SEPARATOR).append(Component.translatable("merchant.level." + merchantLevel));
+            ITextComponent levelText = this.title.copy().append(LEVEL_SEPARATOR).append(new TranslationTextComponent("merchant.level." + merchantLevel));
             int textWidth = this.font.width(levelText);
             int textPos = this.imageWidth / 2 - textWidth / 2;
             this.font.draw(poseStack, levelText, (float)textPos, 6.0F, Color.darkGray.getRGB());
@@ -254,7 +253,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     private final static int COUNT_X = 44;
     private final static int COUNT_Y = 97;
 
-    private void renderOffersCount(PoseStack matrixStack, int mouseX, int mouseY) {
+    private void renderOffersCount(MatrixStack matrixStack, int mouseX, int mouseY) {
         if (!this.menu.hasOffers()) {
             return;
         }
@@ -262,7 +261,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         PaintingMerchantOffer offer = this.getCurrentOffer();
 
         if (offer instanceof PaintingMerchantSaleOffer) {
-            drawCenteredString(matrixStack, this.font, Component.translatable("container.zettergallery.merchant.sell"), COUNT_X, COUNT_Y, Color.white.getRGB());
+            drawCenteredString(matrixStack, this.font, new TranslationTextComponent("container.zettergallery.merchant.sell"), COUNT_X, COUNT_Y, Color.white.getRGB());
         } else {
             int currentOffer = this.getCurrentOfferIndex() + 1;
             int offersCount = this.getOffersCount();
@@ -272,10 +271,10 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         }
     }
 
-    protected void renderBg(PoseStack poseStack, float partialTicks, int mouseX, int mouseY) {
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShaderTexture(0, GUI_TEXTURE_RESOURCE);
+    protected void renderBg(MatrixStack poseStack, float partialTicks, int mouseX, int mouseY) {
+        RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+
+        this.getMinecraft().getTextureManager().bind(GUI_TEXTURE_RESOURCE);
 
         blit(poseStack, this.leftPos, this.topPos, this.getBlitOffset(), 0.0F, 0.0F, this.imageWidth, this.imageHeight, 512, 256);
 

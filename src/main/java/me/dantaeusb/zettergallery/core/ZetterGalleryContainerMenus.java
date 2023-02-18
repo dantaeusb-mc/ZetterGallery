@@ -2,17 +2,17 @@ package me.dantaeusb.zettergallery.core;
 
 import me.dantaeusb.zetter.Zetter;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
-import net.minecraft.world.inventory.MenuType;
-import net.minecraftforge.common.extensions.IForgeMenuType;
+import net.minecraft.inventory.container.ContainerType;
+import net.minecraftforge.common.extensions.IForgeContainerType;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 
 public class ZetterGalleryContainerMenus {
-    private static final DeferredRegister<MenuType<?>> CONTAINERS = DeferredRegister.create(ForgeRegistries.MENU_TYPES, Zetter.MOD_ID);
+    private static final DeferredRegister<ContainerType<?>> CONTAINERS = DeferredRegister.create(ForgeRegistries.CONTAINERS, Zetter.MOD_ID);
 
-    public static RegistryObject<MenuType<PaintingMerchantMenu>> PAINTING_MERCHANT = CONTAINERS.register("painting_merchant_container", () -> IForgeMenuType.create(PaintingMerchantMenu::createMenuClientSide));
+    public static RegistryObject<ContainerType<PaintingMerchantMenu>> PAINTING_MERCHANT = CONTAINERS.register("painting_merchant_container", () -> IForgeContainerType.create(PaintingMerchantMenu::createMenuClientSide));
 
     public static void init(IEventBus bus) {
         CONTAINERS.register(bus);

@@ -1,15 +1,14 @@
 package me.dantaeusb.zettergallery.core;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import me.dantaeusb.zetter.core.ZetterItems;
 import me.dantaeusb.zettergallery.ZetterGallery;
-import net.minecraft.world.entity.npc.VillagerTrades;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.trading.MerchantOffer;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import net.minecraft.entity.merchant.villager.VillagerTrades;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.item.MerchantOffer;
 import net.minecraftforge.event.village.VillagerTradesEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.List;
@@ -30,7 +29,7 @@ public class ZetterGalleryVillagerTrades {
 
     @SubscribeEvent
     public static void registerTrades(VillagerTradesEvent event) {
-        Int2ObjectMap<List<VillagerTrades.ItemListing>> trades = event.getTrades();
+        Int2ObjectMap<List<VillagerTrades.ITrade>> trades = event.getTrades();
 
         if (event.getType() == ZetterGalleryVillagers.PAINTING_MERCHANT.get()) {
             trades.get(1).add(

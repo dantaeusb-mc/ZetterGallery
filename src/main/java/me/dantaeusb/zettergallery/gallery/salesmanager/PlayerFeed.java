@@ -2,25 +2,25 @@ package me.dantaeusb.zettergallery.gallery.salesmanager;
 
 import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.entity.player.ServerPlayerEntity;
 
 import java.util.List;
 import java.util.Vector;
 
 public class PlayerFeed {
     private final int cycleIncrementId;
-    private final ServerPlayer player;
+    private final ServerPlayerEntity player;
     private final List<PaintingMerchantPurchaseOffer> offers;
     private final boolean saleAllowed;
 
-    public PlayerFeed(ServerPlayer player, int cycleIncrementId, boolean saleAllowed, List<PaintingMerchantPurchaseOffer> offers) {
+    public PlayerFeed(ServerPlayerEntity player, int cycleIncrementId, boolean saleAllowed, List<PaintingMerchantPurchaseOffer> offers) {
         this.player = player;
         this.cycleIncrementId = cycleIncrementId;
         this.saleAllowed = saleAllowed;
         this.offers = offers;
     }
 
-    public static PlayerFeed createFeedFromSaleResponse(ServerPlayer player, PaintingsResponse response) {
+    public static PlayerFeed createFeedFromSaleResponse(ServerPlayerEntity player, PaintingsResponse response) {
         final List<PaintingMerchantPurchaseOffer> offers = new Vector<>();
 
         for (String feedName : response.feeds.keySet()) {
@@ -47,7 +47,7 @@ public class PlayerFeed {
         return this.offers.size();
     }
 
-    public ServerPlayer getPlayer() {
+    public ServerPlayerEntity getPlayer() {
         return this.player;
     }
 

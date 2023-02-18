@@ -1,9 +1,8 @@
 package me.dantaeusb.zettergallery.gallery;
 
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.entity.player.ServerPlayerEntity;
 
 import javax.annotation.Nullable;
-import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -31,19 +30,19 @@ public class PlayerTokenStorage {
         this.playerTokenMap.clear();
     }
 
-    public void setPlayerToken(ServerPlayer playerEntity, PlayerToken token) {
+    public void setPlayerToken(ServerPlayerEntity playerEntity, PlayerToken token) {
         this.playerTokenMap.put(playerEntity.getUUID(), token);
     }
 
-    public boolean hasPlayerToken(ServerPlayer playerEntity) {
+    public boolean hasPlayerToken(ServerPlayerEntity playerEntity) {
         return this.playerTokenMap.containsKey(playerEntity.getUUID());
     }
 
-    public void removePlayerToken(ServerPlayer playerEntity) {
+    public void removePlayerToken(ServerPlayerEntity playerEntity) {
         this.playerTokenMap.remove(playerEntity.getUUID());
     }
 
-    public @Nullable PlayerToken getPlayerToken(ServerPlayer playerEntity) {
+    public @Nullable PlayerToken getPlayerToken(ServerPlayerEntity playerEntity) {
         UUID playerId = playerEntity.getUUID();
 
         if (!this.playerTokenMap.containsKey(playerId)) {
@@ -53,7 +52,7 @@ public class PlayerTokenStorage {
         return this.playerTokenMap.get(playerId);
     }
 
-    public @Nullable String getPlayerTokenString(ServerPlayer playerEntity) {
+    public @Nullable String getPlayerTokenString(ServerPlayerEntity playerEntity) {
         UUID playerId = playerEntity.getUUID();
 
         if (!this.playerTokenMap.containsKey(playerId)) {

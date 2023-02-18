@@ -1,5 +1,6 @@
 package me.dantaeusb.zettergallery.menu;
 
+import me.dantaeusb.zetter.core.ItemStackHandlerListener;
 import me.dantaeusb.zetter.core.ZetterItems;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
@@ -9,22 +10,22 @@ import me.dantaeusb.zettergallery.menu.paintingmerchant.MerchantAuthorizationCon
 import me.dantaeusb.zettergallery.network.http.GalleryError;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Container;
-import net.minecraft.world.ContainerListener;
-import net.minecraft.world.entity.npc.ClientSideMerchant;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.trading.Merchant;
+import net.minecraft.entity.NPCMerchant;
+import net.minecraft.entity.merchant.IMerchant;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.container.Container;
+import net.minecraft.inventory.container.Slot;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraftforge.items.ItemStackHandler;
 
 import javax.annotation.Nullable;
 import java.util.UUID;
 
-public class PaintingMerchantMenu extends AbstractContainerMenu implements ContainerListener {
+public class PaintingMerchantMenu extends Container implements ItemStackHandlerListener {
     private static final int HOTBAR_SLOT_COUNT = 9;
 
     private static final int PLAYER_INVENTORY_ROW_COUNT = 3;
@@ -33,8 +34,8 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     public static final int PLAYER_INVENTORY_XPOS = 24;
     public static final int PLAYER_INVENTORY_YPOS = 154;
 
-    private final Player player;
-    private final Merchant merchant;
+    private final PlayerEntity player;
+    private final IMerchant merchant;
 
     private final MerchantAuthorizationController authorizationController;
     private final PaintingMerchantContainer container;
@@ -42,7 +43,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     private UUID merchantId;
     private int merchantLevel;
 
-    private PaintingMerchantMenu(int windowID, Inventory invPlayer, Merchant merchant) {
+    private PaintingMerchantMenu(int windowID, PlayerInventory invPlayer, IMerchant merchant) {
         super(ZetterGalleryContainerMenus.PAINTING_MERCHANT.get(), windowID);
 
         this.player = invPlayer.player;
@@ -86,21 +87,21 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         // Instead, we hook for PlayerContainerEvent.Open event in ZetterGalleryGameEvents.
     }
 
-    public static PaintingMerchantMenu createMenuServerSide(int windowID, Inventory playerInventory, Merchant merchant) {
+    public static PaintingMerchantMenu createMenuServerSide(int windowID, PlayerInventory playerInventory, IMerchant merchant) {
         return new PaintingMerchantMenu(windowID, playerInventory, merchant);
     }
 
-    public static PaintingMerchantMenu createMenuClientSide(int windowID, Inventory playerInventory, net.minecraft.network.FriendlyByteBuf networkBuffer) {
-        Merchant merchant = new ClientSideMerchant(playerInventory.player);
+    public static PaintingMerchantMenu createMenuClientSide(int windowID, PlayerInventory playerInventory, net.minecraft.network.PacketBuffer networkBuffer) {
+        IMerchant merchant = new NPCMerchant(playerInventory.player);
 
         return new PaintingMerchantMenu(windowID, playerInventory, merchant);
     }
 
-    public Player getPlayer() {
+    public PlayerEntity getPlayer() {
         return this.player;
     }
 
-    public Merchant getMerchant() {
+    public IMerchant getMerchant() {
         return this.merchant;
     }
 
@@ -129,18 +130,18 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     }
 
     @Override
-    public void containerChanged(Container container) {
+    public void containerChanged(ItemStackHandler container, int slot) {
 
     }
 
-    public void purchase(Player player, ItemStack stack) {
+    public void purchase(PlayerEntity player, ItemStack stack) {
         this.container.checkout(stack);
     }
 
     /**
      * Determines whether supplied player can use this container
      */
-    public boolean stillValid(Player player) {
+    public boolean stillValid(PlayerEntity player) {
         //return this.merchant.getCustomer() == player;
         return this.container.stillValid(player);
     }
@@ -151,7 +152,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
      * @return
      */
     @Override
-    public ItemStack quickMoveStack(Player playerIn, int sourceSlotIndex) {
+    public ItemStack quickMoveStack(PlayerEntity playerIn, int sourceSlotIndex) {
         ItemStack outStack = ItemStack.EMPTY;
         Slot sourceSlot = this.slots.get(sourceSlotIndex);
 
@@ -214,11 +215,11 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     public void updateCurrentOfferIndex(int index) {
         this.container.setSelectedPurchaseOfferIndex(index);
 
-        if (!this.merchant.isClientSide()) {
+        if (!this.merchant.getLevel().isClientSide()) {
             PaintingMerchantPurchaseOffer currentPurchaseOffer = this.container.getCurrentPurchaseOffer();
             assert currentPurchaseOffer != null;
 
-            ConnectionManager.getInstance().registerImpression((ServerPlayer) this.player, currentPurchaseOffer.getPaintingUuid(),
+            ConnectionManager.getInstance().registerImpression((ServerPlayerEntity) this.player, currentPurchaseOffer.getPaintingUuid(),
                 currentPurchaseOffer.getCycleIncrementId(), () -> {
                 }, () -> {
                     ZetterGallery.LOG.error("Unable to register impression, maybe outdated mod version?");
@@ -265,11 +266,11 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     /**
      * Called when the container is closed.
      */
-    public void removed(Player player) {
+    public void removed(PlayerEntity player) {
         super.removed(player);
 
-        if (!this.merchant.isClientSide()) {
-            if (!player.isAlive() || player instanceof ServerPlayer && ((ServerPlayer) player).hasDisconnected()) {
+        if (!this.merchant.getLevel().isClientSide()) {
+            if (!player.isAlive() || player instanceof ServerPlayerEntity && ((ServerPlayerEntity) player).hasDisconnected()) {
                 ItemStack itemstack = this.container.removeItemNoUpdate(PaintingMerchantContainer.INPUT_SLOT);
                 if (!itemstack.isEmpty()) {
                     player.drop(itemstack, false);
@@ -280,7 +281,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
                     player.drop(itemstack, false);
                 }
             } else {
-                player.getInventory().placeItemBackInInventory(this.container.removeItemNoUpdate(0));
+                player.inventory.placeItemBackInInventory(this.getMerchant().getLevel(), this.container.removeItemNoUpdate(0));
             }
         }
 
@@ -293,7 +294,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     }
 
     public class SlotInput extends Slot {
-        public SlotInput(Container inventoryIn, int index, int xPosition, int yPosition) {
+        public SlotInput(IInventory inventoryIn, int index, int xPosition, int yPosition) {
             super(inventoryIn, index, xPosition, yPosition);
         }
 
@@ -319,13 +320,13 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
         }
 
         @Override
-        public boolean mayPickup(Player player) {
+        public boolean mayPickup(PlayerEntity player) {
             return PaintingMerchantMenu.this.container.canTakeItem(PaintingMerchantContainer.INPUT_SLOT);
         }
     }
 
     public class SlotOutput extends Slot {
-        public SlotOutput(Container inventoryIn, int index, int xPosition, int yPosition) {
+        public SlotOutput(IInventory inventoryIn, int index, int xPosition, int yPosition) {
             super(inventoryIn, index, xPosition, yPosition);
         }
 
@@ -340,9 +341,10 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
          * @param player
          * @param stack
          */
-        public void onTake(Player player, ItemStack stack) {
+        public ItemStack onTake(PlayerEntity player, ItemStack stack) {
             super.onTake(player, stack);
             PaintingMerchantMenu.this.purchase(player, stack);
+            return stack;
         }
     }
 }

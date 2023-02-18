@@ -2,7 +2,7 @@ package me.dantaeusb.zettergallery.trading;
 
 import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.item.ItemStack;
 
 import java.util.UUID;
 

@@ -1,22 +1,26 @@
 package me.dantaeusb.zettergallery.network.http;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import me.dantaeusb.zetter.storage.AbstractCanvasData;
-import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
-import com.google.gson.Gson;
 import me.dantaeusb.zettergallery.core.Helper;
-import me.dantaeusb.zettergallery.gallery.*;
+import me.dantaeusb.zettergallery.gallery.AuthorizationCode;
+import me.dantaeusb.zettergallery.gallery.GalleryServer;
+import me.dantaeusb.zettergallery.gallery.ServerInfo;
+import me.dantaeusb.zettergallery.gallery.Token;
 import me.dantaeusb.zettergallery.network.http.stub.*;
-import net.minecraft.util.thread.BlockableEventLoop;
-import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.common.util.LogicalSidedProvider;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.concurrent.ThreadTaskExecutor;
 import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.fml.LogicalSidedProvider;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.*;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -56,7 +60,7 @@ public class GalleryConnection implements AutoCloseable {
             /**
              * @link {#NetworkEvent.enqueueWork}
              */
-            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+            ThreadTaskExecutor<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
                 final ServerRegisterRequest request = new ServerRegisterRequest(serverInfo.singleplayer, serverInfo.motd, serverInfo.gameVersion, serverInfo.galleryVersion);
@@ -84,12 +88,12 @@ public class GalleryConnection implements AutoCloseable {
      * @param successConsumer
      * @param errorConsumer
      */
-    public void requestToken(GalleryServerCapability.ClientInfo clientInfo, Consumer<AuthTokenResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void requestToken(GalleryServer.ClientInfo clientInfo, Consumer<AuthTokenResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
              */
-            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+            ThreadTaskExecutor<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
                 final HashMap<String, String> query = new HashMap<>();
@@ -127,7 +131,7 @@ public class GalleryConnection implements AutoCloseable {
             /**
              * @link {#NetworkEvent.enqueueWork}
              */
-            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+            ThreadTaskExecutor<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
                 final HashMap<String, String> query = new HashMap<>();
@@ -164,7 +168,7 @@ public class GalleryConnection implements AutoCloseable {
             /**
              * @link {#NetworkEvent.enqueueWork}
              */
-            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+            ThreadTaskExecutor<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
                 URL authUri = GalleryConnection.getUri(REVOKE_ENDPOINT);
@@ -190,12 +194,12 @@ public class GalleryConnection implements AutoCloseable {
      * authorize server to perform tasks on player's
      * behalf
      */
-    public void registerPlayer(String serverToken, Player serverPlayer, Consumer<ServerPlayerResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void registerPlayer(String serverToken, PlayerEntity serverPlayer, Consumer<ServerPlayerResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
              */
-            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+            ThreadTaskExecutor<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
                 final ServerPlayerRegisterRequest request = new ServerPlayerRegisterRequest(serverPlayer.getUUID(), serverPlayer.getName().getString());
@@ -225,12 +229,12 @@ public class GalleryConnection implements AutoCloseable {
      * @param successConsumer
      * @param errorConsumer
      */
-    public void requestServerPlayerToken(GalleryServerCapability.ClientInfo clientInfo, String currentToken, String authorizationCode, Consumer<AuthTokenResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
+    public void requestServerPlayerToken(GalleryServer.ClientInfo clientInfo, String currentToken, String authorizationCode, Consumer<AuthTokenResponse> successConsumer, Consumer<GalleryError> errorConsumer) {
         this.poolExecutor.execute(() -> {
             /**
              * @link {#NetworkEvent.enqueueWork}
              */
-            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+            ThreadTaskExecutor<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
                 final HashMap<String, String> query = new HashMap<>();
@@ -269,7 +273,7 @@ public class GalleryConnection implements AutoCloseable {
             /**
              * @link {#NetworkEvent.enqueueWork}
              */
-            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+            ThreadTaskExecutor<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
                 URL authUri = GalleryConnection.getUri(SERVERS_PLAYERS_AUTHORIZATION_CODE_ENDPOINT);
@@ -300,7 +304,7 @@ public class GalleryConnection implements AutoCloseable {
             /**
              * @link {#NetworkEvent.enqueueWork}
              */
-            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+            ThreadTaskExecutor<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
                 final URL checkUri = GalleryConnection.getUri(CHECK_ENDPOINT);
@@ -330,7 +334,7 @@ public class GalleryConnection implements AutoCloseable {
             /**
              * @link {#NetworkEvent.enqueueWork}
              */
-            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+            ThreadTaskExecutor<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
                 final URL checkUri = GalleryConnection.getUri(REVOKE_ENDPOINT);
@@ -358,7 +362,7 @@ public class GalleryConnection implements AutoCloseable {
             /**
              * @link {#NetworkEvent.enqueueWork}
              */
-            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+            ThreadTaskExecutor<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
                 final URL saleUri = GalleryConnection.getUri(PAINTINGS_FEED_ENDPOINT);
@@ -386,7 +390,7 @@ public class GalleryConnection implements AutoCloseable {
             /**
              * @link {#NetworkEvent.enqueueWork}
              */
-            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+            ThreadTaskExecutor<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
                 final ImpressionRequest request = new ImpressionRequest(cycleId);
@@ -418,7 +422,7 @@ public class GalleryConnection implements AutoCloseable {
             /**
              * @link {#NetworkEvent.enqueueWork}
              */
-            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+            ThreadTaskExecutor<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
                 final PurchaseRequest request = new PurchaseRequest(price, cycleId);
@@ -450,7 +454,7 @@ public class GalleryConnection implements AutoCloseable {
             /**
              * @link {#NetworkEvent.enqueueWork}
              */
-            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+            ThreadTaskExecutor<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
                 final SaleRequest request = new SaleRequest(paintingName, paintingData);
@@ -487,7 +491,7 @@ public class GalleryConnection implements AutoCloseable {
             /**
              * @link {#NetworkEvent.enqueueWork}
              */
-            BlockableEventLoop<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
+            ThreadTaskExecutor<?> executor = LogicalSidedProvider.WORKQUEUE.get(LogicalSide.SERVER);
 
             try {
                 final SaleRequest request = new SaleRequest(paintingName, paintingData);

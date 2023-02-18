@@ -1,10 +1,10 @@
 package me.dantaeusb.zettergallery.gallery;
 
 import me.dantaeusb.zettergallery.core.ZetterGalleryCapabilities;
-import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
-import net.minecraft.world.level.Level;
+import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.INBT;
+import net.minecraft.util.Direction;
+import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilitySerializable;
 import net.minecraftforge.common.util.LazyOptional;
@@ -12,17 +12,18 @@ import net.minecraftforge.common.util.LazyOptional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class GalleryCapabilityProvider implements ICapabilitySerializable<CompoundTag> {
-    private final GalleryCapability galleryCapability;
+public class GalleryCapabilityProvider implements ICapabilitySerializable<CompoundNBT> {
+    private final Gallery galleryCapability;
 
     private final String TAG_NAME_GALLERY_CAPABILITY = "ZetterGallery";
 
-    public GalleryCapabilityProvider(Level world) {
+    public GalleryCapabilityProvider(World world) {
         if (world.isClientSide()) {
             throw new IllegalArgumentException("Gallery capability exists only in server's overworld");
         }
 
-        this.galleryCapability = new GalleryServerCapability(world);
+        this.galleryCapability = new GalleryServer();
+        this.galleryCapability.setWorld(world);
     }
 
     /**
@@ -37,7 +38,7 @@ public class GalleryCapabilityProvider implements ICapabilitySerializable<Compou
     @Nonnull
     @Override
     public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> capability, @Nullable Direction facing) {
-        if (ZetterGalleryCapabilities.GALLERY == capability) {
+        if (GalleryCapability.CAPABILITY_GALLERY == capability) {
             return (LazyOptional<T>)LazyOptional.of(()-> this.galleryCapability);
         }
 
@@ -48,14 +49,14 @@ public class GalleryCapabilityProvider implements ICapabilitySerializable<Compou
      * Write all the capability state information to NBT
      * We need to save data only for Server Implementation of the capability
      */
-    public CompoundTag serializeNBT() {
-        CompoundTag compoundTag = new CompoundTag();
+    public CompoundNBT serializeNBT() {
+        CompoundNBT compoundTag = new CompoundNBT();
 
         if (this.galleryCapability.getWorld() == null || this.galleryCapability.getWorld().isClientSide()) {
             return compoundTag;
         }
 
-        Tag canvasTrackerTag = ((GalleryServerCapability) this.galleryCapability).serializeNBT();
+        INBT canvasTrackerTag = ((GalleryServer) this.galleryCapability).serializeNBT();
         compoundTag.put(TAG_NAME_GALLERY_CAPABILITY, canvasTrackerTag);
 
         return compoundTag;
@@ -65,12 +66,12 @@ public class GalleryCapabilityProvider implements ICapabilitySerializable<Compou
      * Read the capability state information out of NBT
      * We need to get the data only for Server Implementation of the capability
      */
-    public void deserializeNBT(CompoundTag compoundTag) {
+    public void deserializeNBT(CompoundNBT compoundTag) {
         if (this.galleryCapability.getWorld() == null || this.galleryCapability.getWorld().isClientSide()) {
             return;
         }
 
-        Tag galleryTag = compoundTag.get(TAG_NAME_GALLERY_CAPABILITY);
-        ((GalleryServerCapability) this.galleryCapability).deserializeNBT(galleryTag);
+        INBT galleryTag = compoundTag.get(TAG_NAME_GALLERY_CAPABILITY);
+        ((GalleryServer) this.galleryCapability).deserializeNBT(galleryTag);
     }
 }
