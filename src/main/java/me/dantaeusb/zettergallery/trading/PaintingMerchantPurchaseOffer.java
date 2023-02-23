@@ -169,7 +169,7 @@ public class PaintingMerchantPurchaseOffer extends PaintingMerchantAbstractOffer
         }
 
         GalleryPaintingData galleryPaintingData = ZetterGalleryCanvasTypes.GALLERY_PAINTING.get().createWrap(
-            this.dummyPaintingData.getId(), // @todo: [EMERG] Not sure!
+            this.realCanvasCode,
             this.dummyPaintingData.getResolution(),
             this.dummyPaintingData.getWidth(),
             this.dummyPaintingData.getHeight(),

@@ -211,16 +211,16 @@ public class PaintingMerchantScreen extends ContainerScreen<PaintingMerchantMenu
                 int i1 = Math.min(MathHelper.floor(f * (float)(merchantXp - k)), l);
 
                 blit(
-                        poseStack,
-                        xPos,
-                        yPos,
-                        this.getBlitOffset(),
-                        BAR_U,
-                        BAR_V + BAR_HEIGHT,
-                        i1 + 1, // WIDTH
-                        BAR_HEIGHT,
-                        512,
-                        256
+                    poseStack,
+                    xPos,
+                    yPos,
+                    this.getBlitOffset(),
+                    BAR_U,
+                    BAR_V + BAR_HEIGHT,
+                    i1 + 1, // WIDTH
+                    BAR_HEIGHT,
+                    256,
+                    512
                 );
 
                 /*int futureTraderXp = this.menu.getFutureTraderXp();
@@ -276,7 +276,7 @@ public class PaintingMerchantScreen extends ContainerScreen<PaintingMerchantMenu
 
         this.getMinecraft().getTextureManager().bind(GUI_TEXTURE_RESOURCE);
 
-        blit(poseStack, this.leftPos, this.topPos, this.getBlitOffset(), 0.0F, 0.0F, this.imageWidth, this.imageHeight, 512, 256);
+        blit(poseStack, this.leftPos, this.topPos, this.getBlitOffset(), 0.0F, 0.0F, this.imageWidth, this.imageHeight, 256, 512);
 
         // Suggest paintings or emeralds for sale
         final int SELL_SLOT_X = 119;
