@@ -44,7 +44,7 @@ description='''
 [[dependencies.zettergallery]]
     modId="forge"
     mandatory=true
-    versionRange="[36.2.34,)"
+    versionRange="[36.2.0,)"
     ordering="NONE"
     side="BOTH"
 
