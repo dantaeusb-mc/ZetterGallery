@@ -1,6 +1,6 @@
 package me.dantaeusb.zettergallery.gallery.salesmanager;
 
-import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
+import me.dantaeusb.zettergallery.network.http.dto.PaintingsResponse;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
 import net.minecraft.server.level.ServerPlayer;
 

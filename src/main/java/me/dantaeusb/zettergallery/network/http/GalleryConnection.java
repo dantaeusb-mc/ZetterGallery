@@ -2,12 +2,11 @@ package me.dantaeusb.zettergallery.network.http;
 
 import com.google.gson.JsonSyntaxException;
 import me.dantaeusb.zetter.storage.AbstractCanvasData;
-import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import com.google.gson.Gson;
 import me.dantaeusb.zettergallery.core.Helper;
 import me.dantaeusb.zettergallery.gallery.*;
-import me.dantaeusb.zettergallery.network.http.stub.*;
+import me.dantaeusb.zettergallery.network.http.dto.*;
 import net.minecraft.util.thread.BlockableEventLoop;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.common.util.LogicalSidedProvider;

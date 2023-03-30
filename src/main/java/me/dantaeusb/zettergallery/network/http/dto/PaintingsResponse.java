@@ -1,4 +1,4 @@
-package me.dantaeusb.zettergallery.network.http.stub;
+package me.dantaeusb.zettergallery.network.http.dto;
 
 import com.google.gson.*;
 import com.google.gson.annotations.JsonAdapter;

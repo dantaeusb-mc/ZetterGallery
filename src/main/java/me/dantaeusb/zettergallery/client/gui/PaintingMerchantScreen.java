@@ -184,7 +184,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         final int BAR_WIDTH = 102;
         final int BAR_HEIGHT = 5;
 
-        final int xPos = this.leftPos + (this.imageWidth / 2) - 50;
+        final int xPos = this.leftPos + 6;
         final int yPos = this.topPos + 16;
 
         int merchantLevel = this.menu.getMerchantLevel();
@@ -241,9 +241,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         // Draw level
         if (merchantLevel > 0 && merchantLevel <= 5) {
             Component levelText = this.title.copy().append(LEVEL_SEPARATOR).append(Component.translatable("merchant.level." + merchantLevel));
-            int textWidth = this.font.width(levelText);
-            int textPos = this.imageWidth / 2 - textWidth / 2;
-            this.font.draw(poseStack, levelText, (float)textPos, 6.0F, Color.darkGray.getRGB());
+            this.font.draw(poseStack, levelText, 6.0F, 6.0F, Color.darkGray.getRGB());
         } else {
             this.font.draw(poseStack, this.title, (float)(this.imageWidth / 2 - this.font.width(this.title) / 2), 6.0F, Color.darkGray.getRGB());
         }

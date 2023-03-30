@@ -18,6 +18,8 @@ public class ZetterGalleryVillagerTrades {
     public static final int BUY_OFFER_ID = 0;
     public static final int SELL_OFFER_ID = 1;
 
+    public static final int OFFERS_LEVEL = 1;
+
     public enum WhichTrades {
         NONE,
         PCB_BLUEPRINT,
@@ -36,7 +38,6 @@ public class ZetterGalleryVillagerTrades {
             trades.get(1).add(
                 (entity, random) -> new MerchantOffer(
                         new ItemStack(Items.EMERALD, 4),
-                        ItemStack.EMPTY,
                         new ItemStack(ZetterItems.PAINTING.get(), 1),
                         4,
                         2,
@@ -46,7 +47,6 @@ public class ZetterGalleryVillagerTrades {
             trades.get(1).add(
                 (entity, random) -> new MerchantOffer(
                         new ItemStack(ZetterItems.PAINTING.get(), 1),
-                        ItemStack.EMPTY,
                         new ItemStack(Items.EMERALD, 4),
                         16,
                         2,

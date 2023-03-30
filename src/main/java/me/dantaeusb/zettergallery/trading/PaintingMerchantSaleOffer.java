@@ -2,6 +2,7 @@ package me.dantaeusb.zettergallery.trading;
 
 import me.dantaeusb.zetter.core.Helper;
 import me.dantaeusb.zetter.core.ZetterCanvasTypes;
+import me.dantaeusb.zetter.item.PaintingItem;
 import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
@@ -17,11 +18,14 @@ import java.util.UUID;
 
 public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
     public static final Component ANOTHER_PLAYERS_PAINTING_ERROR = Component.translatable("container.zettergallery.merchant.another_players_painting");
+    public static final Component NOT_ORIGINAL_PAINTING_ERROR = Component.translatable("container.zettergallery.merchant.not_original_painting");
 
     private final String realCanvasCode;
+    private final int generation;
 
     private DummyCanvasData paintingDummyData;
     private String paintingName;
+
     private UUID paintingAuthorUuid;
     private String paintingAuthorName;
 
@@ -38,7 +42,7 @@ public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
      */
     private PaintingMerchantSaleOffer(
         String canvasCode, DummyCanvasData paintingData, String paintingTitle,
-        UUID paintingAuthorUuid, String paintingAuthorName, int price
+        UUID paintingAuthorUuid, String paintingAuthorName, int generation, int price
     ) {
         super(price, State.WAITING);
 
@@ -49,6 +53,7 @@ public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
         this.paintingName = paintingTitle;
         this.paintingAuthorUuid = paintingAuthorUuid;
         this.paintingAuthorName = paintingAuthorName;
+        this.generation = generation;
     }
 
     /**
@@ -61,7 +66,7 @@ public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
      * @param price
      */
     private PaintingMerchantSaleOffer(
-        String canvasCode, UUID paintingAuthorUuid, String paintingAuthorName, int price
+        String canvasCode, UUID paintingAuthorUuid, String paintingAuthorName, int generation, int price
     ) {
         super(price, State.WAITING);
 
@@ -69,6 +74,7 @@ public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
 
         this.paintingAuthorUuid = paintingAuthorUuid;
         this.paintingAuthorName = paintingAuthorName;
+        this.generation = generation;
     }
 
     /**
@@ -77,7 +83,7 @@ public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
      * @param price
      * @return
      */
-    public static PaintingMerchantSaleOffer createOfferFromPlayersPainting(String canvasCode, PaintingData paintingData, int price) {
+    public static PaintingMerchantSaleOffer createOfferFromPlayersPainting(String canvasCode, PaintingData paintingData, int generation, int price) {
         DummyCanvasData paintingWrap = ZetterCanvasTypes.DUMMY.get().createWrap(
             paintingData.getResolution(), paintingData.getWidth(), paintingData.getHeight(),
             paintingData.getColorData()
@@ -89,15 +95,17 @@ public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
             paintingData.getPaintingName(),
             paintingData.getAuthorUuid(),
             paintingData.getAuthorName(),
+            generation,
             price
         );
     }
 
-    public static PaintingMerchantSaleOffer createOfferWithoutPlayersPainting(String canvasCode, Player player, int price) {
+    public static PaintingMerchantSaleOffer createOfferWithoutPlayersPainting(String canvasCode, Player player, int generation, int price) {
         return new PaintingMerchantSaleOffer(
             canvasCode,
             player.getUUID(),
             player.getName().getString(),
+            generation,
             price
         );
     }
@@ -118,11 +126,17 @@ public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
     /**
      * Locally validates the painting: i.e.
      * forbids to sell paintings from other players
+     * or copy of other paintings
      * @return
      */
     public boolean validate(Merchant merchant) {
         if (!merchant.getTradingPlayer().getUUID().equals(this.paintingAuthorUuid)) {
             this.markError(new GalleryError(GalleryError.CLIENT_INVALID_OFFER, ANOTHER_PLAYERS_PAINTING_ERROR.getString()));
+            return false;
+        }
+
+        if (this.generation != PaintingItem.GENERATION_ORIGINAL) {
+            this.markError(new GalleryError(GalleryError.CLIENT_INVALID_OFFER, NOT_ORIGINAL_PAINTING_ERROR.getString()));
             return false;
         }
 

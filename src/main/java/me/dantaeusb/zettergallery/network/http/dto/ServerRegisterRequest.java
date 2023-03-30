@@ -1,4 +1,4 @@
-package me.dantaeusb.zettergallery.network.http.stub;
+package me.dantaeusb.zettergallery.network.http.dto;
 
 import java.util.List;
 

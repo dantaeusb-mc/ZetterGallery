@@ -20,6 +20,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.Merchant;
+import net.minecraft.world.item.trading.MerchantOffers;
 
 import javax.annotation.Nullable;
 import java.util.UUID;
@@ -114,6 +115,14 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
 
     public void setMerchantLevel(int level) {
         this.merchantLevel = level;
+    }
+
+    public void setXp(int pXp) {
+        this.merchant.overrideXp(pXp);
+    }
+
+    public void setOffers(MerchantOffers pOffers) {
+        this.merchant.overrideOffers(pOffers);
     }
 
     public int getMerchantLevel() {
