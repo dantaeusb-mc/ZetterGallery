@@ -16,7 +16,7 @@ public class GalleryPaintingInfoOverlay extends PaintingInfoOverlay {
     protected GalleryPaintingData paintingData;
 
     @Override
-    public void setPainting(PaintingData galleryPaintingData) {
+    public void setCanvasData(PaintingData galleryPaintingData) {
         if (!(galleryPaintingData instanceof GalleryPaintingData)) {
             throw new InvalidParameterException("This overlay should be used exclusively for Gallery Paintings");
         }

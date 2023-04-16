@@ -4,7 +4,6 @@ import me.dantaeusb.zetter.core.ZetterRegistries;
 import me.dantaeusb.zetter.storage.CanvasDataType;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
-import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.registries.DeferredRegister;

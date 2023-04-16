@@ -1,7 +1,11 @@
 package me.dantaeusb.zettergallery.core;
 
+import me.dantaeusb.zetter.client.gui.overlay.PaintingInfoOverlay;
+import me.dantaeusb.zetter.core.ZetterOverlays;
+import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.overlay.GalleryPaintingInfoOverlay;
+import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -10,12 +14,8 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = ZetterGallery.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ZetterGalleryOverlays {
-    public static GalleryPaintingInfoOverlay GALLERY_PAINTING_INFO = new GalleryPaintingInfoOverlay();
-
-    @SubscribeEvent
-    public static void onRenderOverlays(RenderGameOverlayEvent.Post event) {
-        if(event.getType().equals(RenderGameOverlayEvent.ElementType.ALL)) {
-            GALLERY_PAINTING_INFO.render(Minecraft.getInstance().gui, event.getMatrixStack(), event.getPartialTicks(), event.getWindow().getGuiScaledWidth(), event.getWindow().getGuiScaledHeight());
-        }
+    public static void register() {
+        GalleryPaintingInfoOverlay overlay = new GalleryPaintingInfoOverlay();
+        ZetterOverlays.OVERLAYS.put(GalleryPaintingData.OVERLAY_KEY, overlay);
     }
 }
