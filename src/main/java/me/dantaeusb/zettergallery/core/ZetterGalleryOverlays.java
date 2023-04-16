@@ -1,5 +1,7 @@
 package me.dantaeusb.zettergallery.core;
 
+import me.dantaeusb.zetter.core.ZetterOverlays;
+import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.client.gui.overlay.GalleryPaintingInfoOverlay;
 import net.minecraftforge.api.distmarker.Dist;
@@ -10,10 +12,10 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = ZetterGallery.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ZetterGalleryOverlays {
-    public static GalleryPaintingInfoOverlay GALLERY_PAINTING_INFO = new GalleryPaintingInfoOverlay();
-
     @SubscribeEvent
     public static void onRegisterOverlays(RegisterGuiOverlaysEvent event) {
-        event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "painting_info", GALLERY_PAINTING_INFO);
+        GalleryPaintingInfoOverlay overlay = new GalleryPaintingInfoOverlay();
+        ZetterOverlays.OVERLAYS.put(PaintingData.OVERLAY_KEY, overlay);
+        event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), overlay.getId(), overlay);
     }
 }

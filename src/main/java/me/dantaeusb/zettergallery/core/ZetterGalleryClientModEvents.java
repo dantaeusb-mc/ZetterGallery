@@ -1,11 +1,16 @@
 package me.dantaeusb.zettergallery.core;
 
+import me.dantaeusb.zetter.client.gui.overlay.CanvasOverlay;
+import me.dantaeusb.zetter.client.gui.overlay.PaintingInfoOverlay;
 import me.dantaeusb.zetter.core.ZetterCanvasTypes;
+import me.dantaeusb.zetter.core.ZetterOverlays;
+import me.dantaeusb.zetter.event.CanvasOverlayViewEvent;
 import me.dantaeusb.zetter.event.CanvasRegisterEvent;
-import me.dantaeusb.zetter.event.PaintingInfoOverlayEvent;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
+import me.dantaeusb.zettergallery.client.gui.overlay.GalleryPaintingInfoOverlay;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
+import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -35,9 +40,14 @@ public class ZetterGalleryClientModEvents {
             }
         }
     }
-
     @SubscribeEvent
-    public static void overlayViewEvent(PaintingInfoOverlayEvent event) {
-        ZetterGalleryOverlays.GALLERY_PAINTING_INFO.hide();
+    public static void overlayViewEvent(CanvasOverlayViewEvent<?> event) {
+        if (event.canvasData instanceof GalleryPaintingData && ZetterOverlays.OVERLAYS.containsKey(GalleryPaintingData.OVERLAY_KEY)) {
+            CanvasOverlay<?> overlay = ZetterOverlays.OVERLAYS.get(GalleryPaintingData.OVERLAY_KEY);
+
+            if (overlay instanceof GalleryPaintingInfoOverlay) {
+                ((GalleryPaintingInfoOverlay) overlay).setCanvasData((GalleryPaintingData) event.canvasData);
+            }
+        }
     }
 }
