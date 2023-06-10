@@ -1,21 +1,18 @@
 modLoader="javafml"
 
-loaderVersion="[43,)"
+loaderVersion="${loader_version_range}"
 
-license="Mozilla Public License 2.0"
+license="${mod_license}"
 
 issueTrackerURL="https://github.com/dantaeusb-mc/ZetterGallery/issues"
 
 [[mods]]
 
-modId="zettergallery"
-
-version="${file.jarVersion}"
-
-displayName="Zetter Gallery"
-
-displayURL="https://www.curseforge.com/minecraft/mc-mods/zettergallery"
-
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+displayURL="https://modrinth.com/mod/zetter-painting-mod"
+updateJSONURL="https://api.modrinth.com/updates/ZmLgjf6f/forge_updates.json"
 logoFile="zetter-gallery.png"
 
 credits='''
@@ -36,28 +33,25 @@ Vazkii and Quark team for opening their source code as I often used it as a refe
 '''
 
 authors="Dmitry Burlakov <dantaeusb@live.com>"
+description='''${mod_description}'''
 
-description='''
-
-'''
-
-[[dependencies.zettergallery]]
+[[dependencies.${mod_id}]]
     modId="forge"
     mandatory=true
-    versionRange="[44,)"
+    versionRange="${forge_version_range}"
     ordering="NONE"
     side="BOTH"
 
-[[dependencies.zettergallery]]
+[[dependencies.${mod_id}]]
     modId="zetter"
     mandatory=true
-    versionRange="[0.19.2,)"
+    versionRange="${zetter_version_range}"
     ordering="NONE"
     side="BOTH"
 
-[[dependencies.zettergallery]]
+[[dependencies.${mod_id}]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.19.3]"
+    versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
