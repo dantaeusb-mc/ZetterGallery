@@ -125,7 +125,7 @@ public class MerchantAuthorizationController {
         this.authorizationCode = null;
         this.playerInfo = authorizedAs;
 
-        if (!this.player.getLevel().isClientSide()) {
+        if (!this.player.isLocalPlayer()) {
             SAuthenticationPlayerResponsePacket authorizationPacket = new SAuthenticationPlayerResponsePacket(authorizedAs);
             ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), authorizationPacket);
         }
@@ -142,7 +142,7 @@ public class MerchantAuthorizationController {
 
         this.authorizationCode = authorizationCodeInfo;
 
-        if (!this.player.getLevel().isClientSide()) {
+        if (!this.player.isLocalPlayer()) {
             SAuthorizationCodeResponsePacket authorizationRequestPacket = new SAuthorizationCodeResponsePacket(authorizationCodeInfo);
             ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), authorizationRequestPacket);
         }
@@ -160,7 +160,7 @@ public class MerchantAuthorizationController {
         this.state = this.state.retry();
         this.assertTargetState(PlayerAuthorizationState.SERVER_AUTHENTICATION);
 
-        if (this.player.getLevel().isClientSide()) {
+        if (this.player.isLocalPlayer()) {
             CAuthorizationCheckPacket authenticationCheckPacket = new CAuthorizationCheckPacket();
             ZetterGalleryNetwork.simpleChannel.sendToServer(authenticationCheckPacket);
         } else {
@@ -179,7 +179,7 @@ public class MerchantAuthorizationController {
             this.menu.getContainer().handleError(this.error);
         }
 
-        if (!this.player.getLevel().isClientSide()) {
+        if (!this.player.isLocalPlayer()) {
             // Send message to server, code in else section will be called
             SAuthErrorPacket selectOfferPacket = new SAuthErrorPacket(this.error);
             ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), selectOfferPacket);

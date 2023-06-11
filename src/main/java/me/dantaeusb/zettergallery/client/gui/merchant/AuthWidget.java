@@ -8,6 +8,7 @@ import me.dantaeusb.zettergallery.core.ClientHelper;
 import me.dantaeusb.zettergallery.menu.paintingmerchant.MerchantAuthorizationController;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.entity.ItemRenderer;
@@ -50,31 +51,35 @@ public class AuthWidget extends AbstractPaintingMerchantWidget {
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        RenderSystem.setShaderTexture(0, PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
-
+    public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         switch (this.parentScreen.getPlayerAuthorizationState()) {
             case SERVER_AUTHENTICATION:
-                blit(
-                        matrixStack,
-                        this.getX(),
-                        this.getY(),
-                        AUTH_UPOS,
-                        AUTH_VPOS + HEIGHT * 2,
-                        WIDTH,
-                        HEIGHT,
-                        512,
-                        256
+                guiGraphics.blit(
+                    PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+                    this.getX(),
+                    this.getY(),
+                    AUTH_UPOS,
+                    AUTH_VPOS + HEIGHT * 2,
+                    WIDTH,
+                    HEIGHT,
+                    512,
+                    256
                 );
 
-                this.renderLoading(matrixStack);
-                this.font.draw(matrixStack, AUTHENTICATING_TEXT, this.getX() + 32.0F, this.getY() + 8.0F, Color.white.getRGB());
+                this.renderLoading(guiGraphics);
+                guiGraphics.drawString(
+                    this.parentScreen.getFont(),
+                    AUTHENTICATING_TEXT,
+                    this.getX() + 32,
+                    this.getY() + 8,
+                    Color.white.getRGB()
+                );
 
                 break;
             case CLIENT_AUTHORIZATION:
                 if (!ClientHelper.openUriAllowed()) {
-                    blit(
-                        matrixStack,
+                    guiGraphics.blit(
+                        PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
                         this.getX(),
                         this.getY(),
                         AUTH_UPOS,
@@ -85,72 +90,73 @@ public class AuthWidget extends AbstractPaintingMerchantWidget {
                         256
                     );
 
-                    drawCenteredString(matrixStack, this.font, DISABLED_TEXT, this.getX() + this.width / 2, this.getY() + 10, Color.white.getRGB());
+                    guiGraphics.drawCenteredString(this.font, DISABLED_TEXT, this.getX() + this.width / 2, this.getY() + 10, Color.white.getRGB());
 
                     break;
                 }
 
                 if (!isPointInRegion(0, 0, WIDTH, HEIGHT, mouseX, mouseY)) {
-                    blit(
-                            matrixStack,
-                            this.getX(),
-                            this.getY(),
-                            AUTH_UPOS,
-                            AUTH_VPOS,
-                            WIDTH,
-                            HEIGHT,
-                            512,
-                            256
+                    guiGraphics.blit(
+                        PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+                        this.getX(),
+                        this.getY(),
+                        AUTH_UPOS,
+                        AUTH_VPOS,
+                        WIDTH,
+                        HEIGHT,
+                        512,
+                        256
                     );
                 } else {
-                    blit(
-                            matrixStack,
-                            this.getX(),
-                            this.getY(),
-                            AUTH_UPOS,
-                            AUTH_VPOS + HEIGHT,
-                            WIDTH,
-                            HEIGHT,
-                            512,
-                            256
+                    guiGraphics.blit(
+                        PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+                        this.getX(),
+                        this.getY(),
+                        AUTH_UPOS,
+                        AUTH_VPOS + HEIGHT,
+                        WIDTH,
+                        HEIGHT,
+                        512,
+                        256
                     );
                 }
 
                 // stack, font, x, y, color
-                drawCenteredString(matrixStack, this.font, LOGIN_TEXT, this.getX() + this.width / 2, this.getY() + 10, Color.white.getRGB());
+                guiGraphics.drawCenteredString(this.font, LOGIN_TEXT, this.getX() + this.width / 2, this.getY() + 10, Color.white.getRGB());
                 break;
             case LOGGED_IN:
-                blit(
-                        matrixStack,
-                        this.getX(),
-                        this.getY(),
-                        AUTH_UPOS,
-                        AUTH_VPOS + HEIGHT * 2,
-                        WIDTH,
-                        HEIGHT,
-                        512,
-                        256
+                guiGraphics.blit(
+                    PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+                    this.getX(),
+                    this.getY(),
+                    AUTH_UPOS,
+                    AUTH_VPOS + HEIGHT * 2,
+                    WIDTH,
+                    HEIGHT,
+                    512,
+                    256
                 );
 
                 // @todo: draw player-client info
-                this.font.draw(matrixStack, this.parentScreen.getAuthorizedPlayerNickname(), this.getX() + 26.0F, this.getY() + 9.0F, Color.white.getRGB());
+                guiGraphics.drawCenteredString(this.font, this.parentScreen.getAuthorizedPlayerNickname(), this.getX() + 26, this.getY() + 9, Color.white.getRGB());
                 break;
             case ERROR:
-                blit(
-                        matrixStack,
-                        this.getX(),
-                        this.getY(),
-                        AUTH_UPOS,
-                        AUTH_VPOS + HEIGHT * 2,
-                        WIDTH,
-                        HEIGHT,
-                        512,
-                        256
+                guiGraphics.blit(
+                    PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+                    this.getX(),
+                    this.getX(),
+                    this.getY(),
+                    AUTH_UPOS,
+                    AUTH_VPOS + HEIGHT * 2,
+                    WIDTH,
+                    HEIGHT,
+                    512,
+                    256
                 );
 
                 final Component errorMessage = this.parentScreen.getMenu().getAuthController().hasError() ?
-                        Component.nullToEmpty(this.parentScreen.getMenu().getAuthController().getError().getMessage()) :
-                        UNKNOWN_ERROR_TEXT;
+                    Component.nullToEmpty(this.parentScreen.getMenu().getAuthController().getError().getMessage()) :
+                    UNKNOWN_ERROR_TEXT;
 
                 List<FormattedCharSequence> lines = this.font.split(errorMessage, 92);
                 int i = 0;
@@ -162,13 +168,12 @@ public class AuthWidget extends AbstractPaintingMerchantWidget {
 
                 for (FormattedCharSequence line : lines) {
                     // stack, font, x, y, color
-                    drawCenteredString(
-                            matrixStack,
-                            this.font,
-                            line,
-                            this.getX() + this.width / 2,
-                            this.getY() + yPos + (i++ * 10),
-                            Color.white.getRGB()
+                    guiGraphics.drawCenteredString(
+                        this.font,
+                        line,
+                        this.getX() + this.width / 2,
+                        this.getY() + yPos + (i++ * 10),
+                        Color.white.getRGB()
                     );
 
                     if (i == 2) {
@@ -207,14 +212,23 @@ public class AuthWidget extends AbstractPaintingMerchantWidget {
     private static final int LOADING_UPOS = 208;
     private static final int LOADING_VPOS = 20;
 
-    private void renderLoading(PoseStack matrixStack)
-    {
+    private void renderLoading(GuiGraphics guiGraphics) {
         final int animation = this.tick % 40;
         int frame = animation / 10; // 0-3
 
         frame = frame > 2 ? 1 : frame; // 3rd frame is the same as 1st frame
 
-        blit(matrixStack, this.getX() + LOADING_XPOS, this.getY() + LOADING_YPOS, LOADING_UPOS, LOADING_VPOS + LOADING_HEIGHT * frame, LOADING_WIDTH, LOADING_HEIGHT, 512, 256);
+        guiGraphics.blit(
+            PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+            this.getX() + LOADING_XPOS,
+            this.getY() + LOADING_YPOS,
+            LOADING_UPOS,
+            LOADING_VPOS + LOADING_HEIGHT * frame,
+            LOADING_WIDTH,
+            LOADING_HEIGHT,
+            512,
+            256
+        );
     }
 
     @Override
@@ -241,9 +255,9 @@ public class AuthWidget extends AbstractPaintingMerchantWidget {
     protected boolean isPointInRegion(int x, int y, int width, int height, double mouseX, double mouseY) {
         int i = this.getX();
         int j = this.getY();
-        mouseX = mouseX - (double)i;
-        mouseY = mouseY - (double)j;
-        return mouseX >= (double)(x - 1) && mouseX < (double)(x + width + 1) && mouseY >= (double)(y - 1) && mouseY < (double)(y + height + 1);
+        mouseX = mouseX - (double) i;
+        mouseY = mouseY - (double) j;
+        return mouseX >= (double) (x - 1) && mouseX < (double) (x + width + 1) && mouseY >= (double) (y - 1) && mouseY < (double) (y + height + 1);
     }
 
     @Override

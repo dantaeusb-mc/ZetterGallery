@@ -18,6 +18,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
@@ -28,6 +30,7 @@ import net.minecraft.world.entity.npc.VillagerData;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.net.URI;
@@ -36,7 +39,7 @@ import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerchantMenu> {
-    public static final ResourceLocation GUI_TEXTURE_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade.png");
+    public static final ResourceLocation PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE = new ResourceLocation(ZetterGallery.MOD_ID, "textures/gui/painting_trade.png");
 
     private static final Component LEVEL_SEPARATOR = Component.literal(" - ");
 
@@ -88,13 +91,6 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     protected void init() {
         super.init();
 
-        this.inventoryLabelX = 107;
-    }
-
-    @Override
-    protected void rebuildWidgets() {
-        super.rebuildWidgets();
-
         this.authWidget = new AuthWidget(this, this.getGuiLeft() + AUTH_POSITION_X, this.getGuiTop() + AUTH_POSITION_Y);
         this.previewWidget = new PaintingPreviewWidget(this, this.getGuiLeft() + PREVIEW_POSITION_X, this.getGuiTop() + PREVIEW_POSITION_Y);
         this.paginatorWidget = new PaginatorWidget(this, this.getGuiLeft() + PAGINATOR_POSITION_X, this.getGuiTop() + PAGINATOR_POSITION_Y);
@@ -106,6 +102,8 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         this.addPaintingMerchantWidget(this.paginatorWidget);
         this.addPaintingMerchantWidget(this.infoWidget);
         this.addPaintingMerchantWidget(this.refreshWidget);
+
+        this.inventoryLabelX = 107;
     }
 
     @Override
@@ -149,36 +147,29 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         this.infoWidget.tick();
     }
 
-    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(poseStack);
+    @Override
+    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        this.renderBackground(guiGraphics);
 
-        super.render(poseStack, mouseX, mouseY, partialTicks);
+        super.render(guiGraphics, mouseX, mouseY, partialTicks);
 
-        this.renderProgressBar(poseStack);
+        this.renderProgressBar(guiGraphics);
 
-        this.renderTooltip(poseStack, mouseX, mouseY);
+        this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
     @Override
-    protected void renderTooltip(PoseStack matrixStack, int x, int y) {
-        super.renderTooltip(matrixStack, x, y);
+    protected void renderTooltip(@NotNull GuiGraphics guiGraphics, int x, int y) {
+        super.renderTooltip(guiGraphics, x, y);
 
         for (AbstractPaintingMerchantWidget widget : this.paintingMerchantWidgets) {
             if (widget.isMouseOver(x, y)) {
-                Component tooltip = widget.getTooltip(x, y);
-
-                if (tooltip != null) {
-                    List<FormattedCharSequence> tooltipLines = this.font.split(tooltip, 120);
-                    this.renderTooltip(matrixStack, tooltipLines, x, y);
-                }
+                widget.renderTooltip(guiGraphics, x, y);
             }
         }
     }
 
-    private void renderProgressBar(PoseStack poseStack) {
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderTexture(0, GUI_TEXTURE_RESOURCE);
-
+    private void renderProgressBar(GuiGraphics guiGraphics) {
         final float BAR_U = 0.0F;
         final float BAR_V = 246.0F;
         final int BAR_WIDTH = 102;
@@ -191,37 +182,35 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         int merchantXp = this.menu.getMerchant().getVillagerXp();
 
         if (merchantLevel < 5) {
-            blit(
-                    poseStack,
-                    xPos,
-                    yPos,
-                    this.getBlitOffset(), // hmmmm
-                    BAR_U,
-                    BAR_V,
-                    BAR_WIDTH,
-                    BAR_HEIGHT,
-                    512,
-                    256
+            guiGraphics.blit(
+                PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+                xPos,
+                yPos,
+                BAR_U,
+                BAR_V,
+                BAR_WIDTH,
+                BAR_HEIGHT,
+                512,
+                256
             );
 
             int k = VillagerData.getMinXpPerLevel(merchantLevel);
 
             if (merchantXp >= k && VillagerData.canLevelUp(merchantLevel)) {
                 int l = 100;
-                float f = 100.0F / (float)(VillagerData.getMaxXpPerLevel(merchantLevel) - k);
-                int i1 = Math.min(Mth.floor(f * (float)(merchantXp - k)), l);
+                float f = 100.0F / (float) (VillagerData.getMaxXpPerLevel(merchantLevel) - k);
+                int i1 = Math.min(Mth.floor(f * (float) (merchantXp - k)), l);
 
-                blit(
-                        poseStack,
-                        xPos,
-                        yPos,
-                        this.getBlitOffset(),
-                        BAR_U,
-                        BAR_V + BAR_HEIGHT,
-                        i1 + 1, // WIDTH
-                        BAR_HEIGHT,
-                        512,
-                        256
+                guiGraphics.blit(
+                    PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+                    xPos,
+                    yPos,
+                    BAR_U,
+                    BAR_V + BAR_HEIGHT,
+                    i1 + 1, // WIDTH
+                    BAR_HEIGHT,
+                    512,
+                    256
                 );
 
                 /*int futureTraderXp = this.menu.getFutureTraderXp();
@@ -235,7 +224,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     }
 
     @Override
-    protected void renderLabels(PoseStack poseStack, int x, int y) {
+    protected void renderLabels(GuiGraphics guiGraphics, int x, int y) {
         int merchantLevel = this.menu.getMerchantLevel();
 
         // Draw level
@@ -243,18 +232,18 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
             Component levelText = this.title.copy().append(LEVEL_SEPARATOR).append(Component.translatable("merchant.level." + merchantLevel));
             int textWidth = this.font.width(levelText);
             int textPos = this.imageWidth / 2 - textWidth / 2;
-            this.font.draw(poseStack, levelText, (float)textPos, 6.0F, Color.darkGray.getRGB());
+            guiGraphics.drawString(this.getFont(), levelText, textPos, 6, Color.darkGray.getRGB(), false);
         } else {
-            this.font.draw(poseStack, this.title, (float)(this.imageWidth / 2 - this.font.width(this.title) / 2), 6.0F, Color.darkGray.getRGB());
+            guiGraphics.drawString(this.getFont(), this.title, this.imageWidth / 2 - this.font.width(this.title) / 2, 6, Color.darkGray.getRGB(), false);
         }
 
-        this.renderOffersCount(poseStack, x, y);
+        this.renderOffersCount(guiGraphics, x, y);
     }
 
     private final static int COUNT_X = 44;
     private final static int COUNT_Y = 97;
 
-    private void renderOffersCount(PoseStack matrixStack, int mouseX, int mouseY) {
+    private void renderOffersCount(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         if (!this.menu.hasOffers()) {
             return;
         }
@@ -262,22 +251,29 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         PaintingMerchantOffer offer = this.getCurrentOffer();
 
         if (offer instanceof PaintingMerchantSaleOffer) {
-            drawCenteredString(matrixStack, this.font, Component.translatable("container.zettergallery.merchant.sell"), COUNT_X, COUNT_Y, Color.white.getRGB());
+            guiGraphics.drawCenteredString(this.getFont(), Component.translatable("container.zettergallery.merchant.sell"), COUNT_X, COUNT_Y, Color.white.getRGB());
         } else {
             int currentOffer = this.getCurrentOfferIndex() + 1;
             int offersCount = this.getOffersCount();
 
             // @todo: [MED] Remove shadow
-            drawCenteredString(matrixStack, this.font, currentOffer + "/" + offersCount, COUNT_X, COUNT_Y, Color.white.getRGB());
+            guiGraphics.drawCenteredString(this.getFont(), currentOffer + "/" + offersCount, COUNT_X, COUNT_Y, Color.white.getRGB());
         }
     }
 
-    protected void renderBg(PoseStack poseStack, float partialTicks, int mouseX, int mouseY) {
+    protected void renderBg(GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.setShaderTexture(0, GUI_TEXTURE_RESOURCE);
+        RenderSystem.setShaderTexture(0, PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE);
 
-        blit(poseStack, this.leftPos, this.topPos, this.getBlitOffset(), 0.0F, 0.0F, this.imageWidth, this.imageHeight, 512, 256);
+        guiGraphics.blit(
+            PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+            this.leftPos,
+            this.topPos,
+            0.0F, 0.0F,
+            this.imageWidth, this.imageHeight,
+            512, 256
+        );
 
         // Suggest paintings or emeralds for sale
         final int SELL_SLOT_X = 119;
@@ -293,14 +289,14 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
             sellSlotVOffset = SELL_SLOT_HEIGHT;
         }
 
-        blit(poseStack, this.leftPos + SELL_SLOT_X, this.topPos + SELL_SLOT_Y, SELL_SLOT_U, SELL_SLOT_V + sellSlotVOffset, SELL_SLOT_WIDTH, SELL_SLOT_HEIGHT);
+        guiGraphics.blit(PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE, this.leftPos + SELL_SLOT_X, this.topPos + SELL_SLOT_Y, SELL_SLOT_U, SELL_SLOT_V + sellSlotVOffset, SELL_SLOT_WIDTH, SELL_SLOT_HEIGHT);
 
         // Widgets
-        this.authWidget.render(poseStack, mouseX, mouseY, partialTicks);
-        this.previewWidget.render(poseStack, mouseX, mouseY, partialTicks);
-        this.paginatorWidget.render(poseStack, mouseX, mouseY, partialTicks);
-        this.infoWidget.render(poseStack, mouseX, mouseY, partialTicks);
-        this.refreshWidget.render(poseStack, mouseX, mouseY, partialTicks);
+        this.authWidget.render(guiGraphics, mouseX, mouseY, partialTicks);
+        this.previewWidget.render(guiGraphics, mouseX, mouseY, partialTicks);
+        this.paginatorWidget.render(guiGraphics, mouseX, mouseY, partialTicks);
+        this.infoWidget.render(guiGraphics, mouseX, mouseY, partialTicks);
+        this.refreshWidget.render(guiGraphics, mouseX, mouseY, partialTicks);
     }
 
     public void onClose() {
@@ -341,6 +337,14 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
 
     public boolean saleAllowed() {
         return false;
+    }
+
+    /**
+     * Expose some methods for widgets
+     */
+
+    public Font getFont() {
+        return this.font;
     }
 
     /**

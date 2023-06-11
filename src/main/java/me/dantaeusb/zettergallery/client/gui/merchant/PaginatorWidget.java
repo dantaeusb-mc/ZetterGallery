@@ -5,9 +5,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
@@ -35,86 +37,86 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        RenderSystem.setShaderTexture(0, PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
+    public void renderWidget(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        RenderSystem.setShaderTexture(0, PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE);
 
         if (this.canSelect()) {
             // Left (down) arrow
             if (isPointInRegion(PREV_OFFER_BUTTON_XPOS, PREV_OFFER_BUTTON_YPOS, OFFER_BUTTON_WIDTH, OFFER_BUTTON_HEIGHT, mouseX, mouseY)) {
-                blit(
-                        matrixStack,
-                        this.getX() + PREV_OFFER_BUTTON_XPOS,
-                        this.getY() + PREV_OFFER_BUTTON_YPOS,
-                        PREV_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH * 2,
-                        PREV_OFFER_BUTTON_VPOS,
-                        OFFER_BUTTON_WIDTH,
-                        OFFER_BUTTON_HEIGHT,
-                        512,
-                        256
-                );
-            } else {
-                blit(
-                        matrixStack,
-                        this.getX() + PREV_OFFER_BUTTON_XPOS,
-                        this.getY() + PREV_OFFER_BUTTON_YPOS,
-                        PREV_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH,
-                        PREV_OFFER_BUTTON_VPOS,
-                        OFFER_BUTTON_WIDTH,
-                        OFFER_BUTTON_HEIGHT,
-                        512,
-                        256
-                );
-            }
-
-            // Right (up) arrow
-            if (isPointInRegion(NEXT_OFFER_BUTTON_XPOS, NEXT_OFFER_BUTTON_YPOS, OFFER_BUTTON_WIDTH, OFFER_BUTTON_HEIGHT, mouseX, mouseY)) {
-                blit(
-                        matrixStack,
-                        this.getX() + NEXT_OFFER_BUTTON_XPOS,
-                        this.getY() + NEXT_OFFER_BUTTON_YPOS,
-                        NEXT_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH * 2,
-                        NEXT_OFFER_BUTTON_VPOS,
-                        OFFER_BUTTON_WIDTH,
-                        OFFER_BUTTON_HEIGHT,
-                        512,
-                        256
-                );
-            } else {
-                blit(
-                        matrixStack,
-                        this.getX() + NEXT_OFFER_BUTTON_XPOS,
-                        this.getY() + NEXT_OFFER_BUTTON_YPOS,
-                        NEXT_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH,
-                        NEXT_OFFER_BUTTON_VPOS,
-                        OFFER_BUTTON_WIDTH,
-                        OFFER_BUTTON_HEIGHT,
-                        512,
-                        256
-                );
-            }
-        } else {
-            blit(
-                    matrixStack,
+                guiGraphics.blit(
+                    PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
                     this.getX() + PREV_OFFER_BUTTON_XPOS,
                     this.getY() + PREV_OFFER_BUTTON_YPOS,
-                    PREV_OFFER_BUTTON_UPOS,
+                    PREV_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH * 2,
                     PREV_OFFER_BUTTON_VPOS,
                     OFFER_BUTTON_WIDTH,
                     OFFER_BUTTON_HEIGHT,
                     512,
                     256
-            );
+                );
+            } else {
+                guiGraphics.blit(
+                    PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+                    this.getX() + PREV_OFFER_BUTTON_XPOS,
+                    this.getY() + PREV_OFFER_BUTTON_YPOS,
+                    PREV_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH,
+                    PREV_OFFER_BUTTON_VPOS,
+                    OFFER_BUTTON_WIDTH,
+                    OFFER_BUTTON_HEIGHT,
+                    512,
+                    256
+                );
+            }
 
-            blit(
-                    matrixStack,
+            // Right (up) arrow
+            if (isPointInRegion(NEXT_OFFER_BUTTON_XPOS, NEXT_OFFER_BUTTON_YPOS, OFFER_BUTTON_WIDTH, OFFER_BUTTON_HEIGHT, mouseX, mouseY)) {
+                guiGraphics.blit(
+                    PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
                     this.getX() + NEXT_OFFER_BUTTON_XPOS,
                     this.getY() + NEXT_OFFER_BUTTON_YPOS,
-                    NEXT_OFFER_BUTTON_UPOS,
+                    NEXT_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH * 2,
                     NEXT_OFFER_BUTTON_VPOS,
                     OFFER_BUTTON_WIDTH,
                     OFFER_BUTTON_HEIGHT,
                     512,
                     256
+                );
+            } else {
+                guiGraphics.blit(
+                    PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+                    this.getX() + NEXT_OFFER_BUTTON_XPOS,
+                    this.getY() + NEXT_OFFER_BUTTON_YPOS,
+                    NEXT_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH,
+                    NEXT_OFFER_BUTTON_VPOS,
+                    OFFER_BUTTON_WIDTH,
+                    OFFER_BUTTON_HEIGHT,
+                    512,
+                    256
+                );
+            }
+        } else {
+            guiGraphics.blit(
+                PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+                this.getX() + PREV_OFFER_BUTTON_XPOS,
+                this.getY() + PREV_OFFER_BUTTON_YPOS,
+                PREV_OFFER_BUTTON_UPOS,
+                PREV_OFFER_BUTTON_VPOS,
+                OFFER_BUTTON_WIDTH,
+                OFFER_BUTTON_HEIGHT,
+                512,
+                256
+            );
+
+            guiGraphics.blit(
+                PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+                this.getX() + NEXT_OFFER_BUTTON_XPOS,
+                this.getY() + NEXT_OFFER_BUTTON_YPOS,
+                NEXT_OFFER_BUTTON_UPOS,
+                NEXT_OFFER_BUTTON_VPOS,
+                OFFER_BUTTON_WIDTH,
+                OFFER_BUTTON_HEIGHT,
+                512,
+                256
             );
         }
     }
@@ -164,7 +166,6 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
     }
 
     /**
-     * @see net.minecraft.client.gui.screen.inventory.ContainerScreen#isPointInRegion(int, int, int, int, double, double)
      * @param x
      * @param y
      * @param width
@@ -172,13 +173,14 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
      * @param mouseX
      * @param mouseY
      * @return
+     * @see net.minecraft.client.gui.screen.inventory.ContainerScreen#isPointInRegion(int, int, int, int, double, double)
      */
     protected boolean isPointInRegion(int x, int y, int width, int height, double mouseX, double mouseY) {
         int i = this.getX();
         int j = this.getY();
-        mouseX = mouseX - (double)i;
-        mouseY = mouseY - (double)j;
-        return mouseX >= (double)(x - 1) && mouseX < (double)(x + width + 1) && mouseY >= (double)(y - 1) && mouseY < (double)(y + height + 1);
+        mouseX = mouseX - (double) i;
+        mouseY = mouseY - (double) j;
+        return mouseX >= (double) (x - 1) && mouseX < (double) (x + width + 1) && mouseY >= (double) (y - 1) && mouseY < (double) (y + height + 1);
     }
 
     @Override

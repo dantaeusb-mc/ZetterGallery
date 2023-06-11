@@ -289,7 +289,7 @@ public class PaintingMerchantMenu extends AbstractContainerMenu implements Conta
     }
 
     private boolean areItemStacksEqual(ItemStack stack1, ItemStack stack2) {
-        return stack1.getItem() == stack2.getItem() && ItemStack.isSame(stack1, stack2);
+        return stack1.getItem() == stack2.getItem() && ItemStack.isSameItem(stack1, stack2);
     }
 
     public class SlotInput extends Slot {

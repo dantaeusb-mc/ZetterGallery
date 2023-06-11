@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import me.dantaeusb.zetter.client.gui.overlay.PaintingInfoOverlay;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringUtil;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
@@ -16,7 +17,7 @@ public class GalleryPaintingInfoOverlay extends PaintingInfoOverlay implements I
     protected GalleryPaintingData paintingData;
 
     @Override
-    public void setPainting(PaintingData galleryPaintingData) {
+    public void setCanvasData(PaintingData galleryPaintingData) {
         if (!(galleryPaintingData instanceof GalleryPaintingData)) {
             throw new InvalidParameterException("This overlay should be used exclusively for Gallery Paintings");
         }
@@ -30,7 +31,7 @@ public class GalleryPaintingInfoOverlay extends PaintingInfoOverlay implements I
     }
 
     @Override
-    public void render(ForgeGui gui, PoseStack poseStack, float partialTick, int screenWidth, int screenHeight) {
+    public void render(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         if (this.paintingData == null) {
             return;
         }
@@ -62,6 +63,8 @@ public class GalleryPaintingInfoOverlay extends PaintingInfoOverlay implements I
         }
 
         if (msLeft > 8) {
+            PoseStack poseStack = guiGraphics.pose();
+
             poseStack.pushPose();
             poseStack.translate(screenWidth / 2, screenHeight - 68, 0.0D);
             RenderSystem.enableBlend();
@@ -71,8 +74,8 @@ public class GalleryPaintingInfoOverlay extends PaintingInfoOverlay implements I
             int transparencyMask = msLeft << 24 & 0xFF000000;
 
             int titleLength = gui.getFont().width(title);
-            this.drawBackdrop(poseStack, gui.getFont(), -4, titleLength, 0xFFFFFF | transparencyMask);
-            gui.getFont().drawShadow(poseStack, title, (float)(-titleLength / 2), -4.0F, textColor | transparencyMask);
+            this.drawBackdrop(guiGraphics, -4, titleLength, 0xFFFFFF | transparencyMask);
+            guiGraphics.drawString(gui.getFont(), title, -titleLength / 2, -4, textColor | transparencyMask);
             RenderSystem.disableBlend();
 
             poseStack.popPose();

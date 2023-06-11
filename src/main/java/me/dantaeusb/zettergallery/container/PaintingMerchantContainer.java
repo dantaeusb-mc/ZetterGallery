@@ -193,15 +193,15 @@ public class PaintingMerchantContainer implements Container {
                         return;
                     }
 
-                    PaintingData paintingData = Helper.getLevelCanvasTracker(this.merchant.getTradingPlayer().level).getCanvasData(canvasCode);
+                    PaintingData paintingData = Helper.getLevelCanvasTracker(this.merchant.getTradingPlayer().level()).getCanvasData(canvasCode);
 
                     PaintingMerchantSaleOffer saleOffer;
                     if (paintingData != null) {
                         saleOffer = PaintingMerchantSaleOffer.createOfferFromPlayersPainting(canvasCode, paintingData, 4);
 
-                        Level level = this.merchant.getTradingPlayer().getLevel();
+                        Level level = this.merchant.getTradingPlayer().level();
                         if (level.isClientSide()) {
-                            saleOffer.register(this.merchant.getTradingPlayer().getLevel());
+                            saleOffer.register(this.merchant.getTradingPlayer().level());
                         }
                     } else {
                         saleOffer = PaintingMerchantSaleOffer.createOfferWithoutPlayersPainting(canvasCode, this.merchant.getTradingPlayer(), 4);
@@ -292,7 +292,7 @@ public class PaintingMerchantContainer implements Container {
         this.updateCurrentOffer();
         this.registerOffersCanvases();
 
-        if (!this.player.getLevel().isClientSide()) {
+        if (!this.player.isLocalPlayer()) {
             SOffersPacket salesPacket = new SOffersPacket(cycleInfo, this.getPurchaseOffers());
             ZetterGalleryNetwork.simpleChannel.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player), salesPacket);
         }
@@ -301,7 +301,7 @@ public class PaintingMerchantContainer implements Container {
     public void registerOffersCanvases() {
         if (this.merchant.isClientSide() && this.getPurchaseOffers() != null) {
             // Maybe delegate that to some kind of ClientSalesManager?
-            CanvasTracker tracker = Helper.getLevelCanvasTracker(this.merchant.getTradingPlayer().getLevel());
+            CanvasTracker tracker = Helper.getLevelCanvasTracker(this.merchant.getTradingPlayer().level());
 
             for (PaintingMerchantPurchaseOffer offer : this.getPurchaseOffers()) {
                 DummyCanvasData paintingData = offer.getDummyPaintingData();
@@ -312,7 +312,7 @@ public class PaintingMerchantContainer implements Container {
 
     public void unregisterOffersCanvases() {
         if (this.merchant.isClientSide()) {
-            Level level = this.merchant.getTradingPlayer().getLevel();;
+            Level level = this.merchant.getTradingPlayer().level();;
 
             if (this.getPurchaseOffers() != null) {
                 CanvasTracker tracker = Helper.getLevelCanvasTracker(level);
@@ -345,7 +345,7 @@ public class PaintingMerchantContainer implements Container {
                 return;
             }
 
-            if (!this.merchant.getTradingPlayer().getLevel().isClientSide()) {
+            if (!this.merchant.getTradingPlayer().isLocalPlayer()) {
                 ConnectionManager.getInstance().registerSale(
                     (ServerPlayer) this.player,
                     saleOffer,
@@ -356,7 +356,7 @@ public class PaintingMerchantContainer implements Container {
 
             this.itemStacks.set(INPUT_SLOT, ItemStack.EMPTY);
         } else if (offer instanceof PaintingMerchantPurchaseOffer purchaseOffer) {
-            if (!this.merchant.getTradingPlayer().getLevel().isClientSide()) {
+            if (!this.merchant.getTradingPlayer().isLocalPlayer()) {
                 ConnectionManager.getInstance().registerPurchase(
                     (ServerPlayer) this.player,
                     purchaseOffer.getPaintingUuid(),
@@ -368,7 +368,7 @@ public class PaintingMerchantContainer implements Container {
             }
 
             this.itemStacks.get(INPUT_SLOT).shrink(offer.getPrice());
-            purchaseOffer.writeOfferResultData(this.merchant.getTradingPlayer().getLevel(), purchaseStack);
+            purchaseOffer.writeOfferResultData(this.merchant.getTradingPlayer().level(), purchaseStack);
         }
 
         // Reset item if we were selling item
@@ -392,7 +392,7 @@ public class PaintingMerchantContainer implements Container {
     }
 
     public void removed() {
-        if (this.merchant.getTradingPlayer().getLevel().isClientSide()) {
+        if (this.merchant.getTradingPlayer().isLocalPlayer()) {
             this.unregisterOffersCanvases();
         } else {
             SalesManager.getInstance().unregisterTrackingPlayer((ServerPlayer) this.player);
@@ -478,7 +478,7 @@ public class PaintingMerchantContainer implements Container {
      * @param paintingData
      */
     public void updateSaleOfferPaintingData(String canvasCode, PaintingData paintingData) {
-        if (!this.merchant.getTradingPlayer().getLevel().isClientSide()) {
+        if (!this.merchant.getTradingPlayer().level().isClientSide()) {
             throw new IllegalStateException("Should not update offer painting data on server");
         }
 
@@ -497,13 +497,13 @@ public class PaintingMerchantContainer implements Container {
         );
 
         saleOffer.updatePaintingData(paintingData.getPaintingName(), paintingWrap, paintingData.getAuthorUuid(), paintingData.getAuthorName());
-        saleOffer.register(this.merchant.getTradingPlayer().getLevel());
+        saleOffer.register(this.merchant.getTradingPlayer().level());
     }
 
     private void playTradeSound() {
         if (!this.merchant.isClientSide()) {
             Entity entity = (Entity) this.merchant;
-            entity.getLevel().playLocalSound(entity.getX(), entity.getY(), entity.getZ(), this.merchant.getNotifyTradeSound(), SoundSource.NEUTRAL, 1.0F, 1.0F, false);
+            entity.level().playLocalSound(entity.getX(), entity.getY(), entity.getZ(), this.merchant.getNotifyTradeSound(), SoundSource.NEUTRAL, 1.0F, 1.0F, false);
         }
     }
 
@@ -550,7 +550,7 @@ public class PaintingMerchantContainer implements Container {
         // Depending on the slots
         this.setChanged();
 
-        if (this.merchant.getTradingPlayer().level.isClientSide()) {
+        if (this.merchant.getTradingPlayer().isLocalPlayer()) {
             CSelectOfferPacket selectOfferPacket = new CSelectOfferPacket(index);
             ZetterGalleryNetwork.simpleChannel.sendToServer(selectOfferPacket);
         }

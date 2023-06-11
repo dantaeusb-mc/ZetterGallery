@@ -7,6 +7,7 @@ import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -28,7 +29,7 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
     }
 
     @Override
-    public void render(@NotNull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null || offer.isError()) {
@@ -36,7 +37,7 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
         }
 
         if (this.isLoading()) {
-            this.renderLoading(matrixStack);
+            this.renderLoading(guiGraphics);
             return;
         }
 
@@ -59,16 +60,18 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
             offsetX += Math.round((64.0F - scaledWidth) / 2.0F);
         }
 
-        matrixStack.pushPose();
-        matrixStack.translate(this.getX() + offsetX, this.getY() + offsetY, 1.0F);
-        matrixStack.scale(scale, scale, 1.0F);
+        PoseStack poseStack = guiGraphics.pose();
+
+        poseStack.pushPose();
+        poseStack.translate(this.getX() + offsetX, this.getY() + offsetY, 1.0F);
+        poseStack.scale(scale, scale, 1.0F);
 
         MultiBufferSource.BufferSource renderBuffers = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
 
-        CanvasRenderer.getInstance().renderCanvas(matrixStack, renderBuffers, canvasCode, offerPaintingData, 0xF000F0);
+        CanvasRenderer.getInstance().renderCanvas(poseStack, renderBuffers, canvasCode, offerPaintingData, 0xF000F0);
         renderBuffers.endBatch();
 
-        matrixStack.popPose();
+        poseStack.popPose();
     }
 
     private static final int LOADING_WIDTH = 16;
@@ -76,16 +79,23 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
     private static final int LOADING_UPOS = 208;
     private static final int LOADING_VPOS = 20;
 
-    private void renderLoading(PoseStack matrixStack)
+    private void renderLoading(GuiGraphics guiGraphics)
     {
-        RenderSystem.setShaderTexture(0, PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
+        RenderSystem.setShaderTexture(0, PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE);
 
         final int animation = this.tick % 40;
         int frame = animation / 10; // 0-3
 
         frame = frame > 2 ? 1 : frame; // 3rd frame is the same as 1st frame
 
-        blit(matrixStack, this.getX() + (this.width - LOADING_WIDTH) / 2, this.getY() + (this.height - LOADING_HEIGHT) / 2, LOADING_UPOS, LOADING_VPOS + LOADING_HEIGHT * frame, LOADING_WIDTH, LOADING_HEIGHT, 512, 256);
+        guiGraphics.blit(
+            PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+            this.getX() + (this.width - LOADING_WIDTH) / 2,
+            this.getY() + (this.height - LOADING_HEIGHT) / 2,
+            LOADING_UPOS, LOADING_VPOS + LOADING_HEIGHT * frame,
+            LOADING_WIDTH, LOADING_HEIGHT,
+            512, 256
+        );
     }
 
     public boolean isLoading() {

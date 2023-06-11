@@ -8,17 +8,19 @@ import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -47,15 +49,13 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
-        RenderSystem.setShaderTexture(0, PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
-
+    public void renderWidget(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         if (this.parentScreen.getOffersState().equals(PaintingMerchantContainer.OffersState.LOADING)) {
-            this.renderLoadingLogo(matrixStack);
+            this.renderLoadingLogo(guiGraphics);
         } else if (this.parentScreen.getOffersState().equals(PaintingMerchantContainer.OffersState.ERROR)) {
-            this.renderErrorMessage(matrixStack,this.parentScreen.getMenu().getAuthController().getError().getMessage());
+            this.renderErrorMessage(guiGraphics, this.parentScreen.getMenu().getAuthController().getError().getMessage());
         } else {
-            this.renderPaintingInfo(matrixStack);
+            this.renderPaintingInfo(guiGraphics);
         }
     }
 
@@ -73,40 +73,40 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
     private static final int LOGO_LOADER_XPOS = (WIDTH - LOGO_LOADER_WIDTH) / 2;
     private static final int LOGO_LOADER_YPOS = (HEIGHT - (LOGO_LOADER_HEIGHT + 16)) / 2;
 
-    private void renderLoadingLogo(PoseStack matrixStack) {
+    private void renderLoadingLogo(GuiGraphics guiGraphics) {
         final int animation = this.tick % (LOGO_LOADER_HEIGHT * 10);
         int frame = animation / 10; // 0-19
 
         // draw loader
-        blit(
-                matrixStack,
-                this.getX() + LOGO_LOADER_XPOS,
-                this.getY() + LOGO_LOADER_YPOS,
-                LOGO_LOADER_UPOS,
-                LOGO_LOADER_VPOS + frame,
-                LOGO_LOADER_WIDTH,
-                LOGO_LOADER_HEIGHT,
-                512,
-                256
+        guiGraphics.blit(
+            PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+            this.getX() + LOGO_LOADER_XPOS,
+            this.getY() + LOGO_LOADER_YPOS,
+            LOGO_LOADER_UPOS,
+            LOGO_LOADER_VPOS + frame,
+            LOGO_LOADER_WIDTH,
+            LOGO_LOADER_HEIGHT,
+            512,
+            256
         );
 
         // draw logo
-        blit(
-                matrixStack,
-                this.getX() + LOGO_XPOS,
-                this.getY() + LOGO_YPOS,
-                LOGO_UPOS,
-                LOGO_VPOS,
-                LOGO_WIDTH,
-                LOGO_HEIGHT,
-                512,
-                256
+        guiGraphics.blit(
+            PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
+            this.getX() + LOGO_XPOS,
+            this.getY() + LOGO_YPOS,
+            LOGO_UPOS,
+            LOGO_VPOS,
+            LOGO_WIDTH,
+            LOGO_HEIGHT,
+            512,
+            256
         );
 
-        drawCenteredString(matrixStack, this.font, FETCHING_OFFERS, this.getX() + LOGO_XPOS + (LOGO_WIDTH / 2), this.getY() + LOGO_YPOS + LOGO_HEIGHT + 7, Color.white.getRGB());
+        guiGraphics.drawCenteredString(this.parentScreen.getFont(), FETCHING_OFFERS, this.getX() + LOGO_XPOS + (LOGO_WIDTH / 2), this.getY() + LOGO_YPOS + LOGO_HEIGHT + 7, Color.white.getRGB());
     }
 
-    private void renderPaintingInfo(PoseStack matrixStack) {
+    private void renderPaintingInfo(GuiGraphics guiGraphics) {
         PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null) {
@@ -116,7 +116,7 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
 
         if (this.isLoading()) {
             // Preview widget will have loader
-            drawCenteredString(matrixStack, this.font, LOADING_PAINTING, this.getX() + this.width / 2, this.getY() + this.height / 2 - 4, Color.white.getRGB());
+            guiGraphics.drawCenteredString(this.parentScreen.getFont(), LOADING_PAINTING, this.getX() + this.width / 2, this.getY() + this.height / 2 - 4, Color.white.getRGB());
             return;
         }
 
@@ -126,7 +126,7 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
                 errorMessage = UNKNOWN_OFFER_ERROR.getString();
             }
 
-            this.renderErrorMessage(matrixStack, errorMessage);
+            this.renderErrorMessage(guiGraphics, errorMessage);
             return;
         }
 
@@ -136,8 +136,12 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
         final int priceWidth = this.font.width(priceString);
 
         ItemStack emeraldStack = new ItemStack(Items.EMERALD);
-        this.itemRenderer.renderGuiItem(emeraldStack, this.getX() + this.width - 23, this.getY() + 63);
-        this.font.draw(matrixStack, priceString, this.getX() + this.width - 24 - priceWidth, this.getY() + 67, Color.white.getRGB());
+        guiGraphics.renderFakeItem(
+            emeraldStack,
+            this.getX() + this.width - 23,
+            this.getY() + 63
+        );
+        guiGraphics.drawString(this.parentScreen.getFont(), priceString, this.getX() + this.width - 24 - priceWidth, this.getY() + 67, Color.white.getRGB(), false);
 
         // Duplicate from PaintingItem#setPaintingData
         int widthBlocks = offerPaintingData.getWidth() / offerPaintingData.getResolution().getNumeric();
@@ -146,11 +150,11 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
         // Account for RTL?
         Component blockSize = (Component.translatable("item.zetter.painting.size", Integer.toString(widthBlocks), Integer.toString(heightBlocks)));
 
-        List<FormattedCharSequence> multilinePaintingTitle =  this.font.split(FormattedText.of(offer.getPaintingName()), 80);
-        List<FormattedCharSequence> multilineNickname =  this.font.split(FormattedText.of(offer.getAuthorName()), 80);
+        List<FormattedCharSequence> multilinePaintingTitle = this.font.split(FormattedText.of(offer.getPaintingName()), 80);
+        List<FormattedCharSequence> multilineNickname = this.font.split(FormattedText.of(offer.getAuthorName()), 80);
 
         // To avoid texture swapping, first draw icons, then text
-        RenderSystem.setShaderTexture(0, PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
+        RenderSystem.setShaderTexture(0, PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE);
 
         // Feed icon
         if (offer instanceof PaintingMerchantPurchaseOffer purchaseOffer) {
@@ -172,8 +176,8 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
                         break;
                 }
 
-                blit(
-                    matrixStack,
+                guiGraphics.blit(
+                    PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
                     this.getX() + WIDTH - 16 - 5,
                     this.getY() + 5,
                     304 + feedIconU,
@@ -190,8 +194,8 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
         final int TEXT_OFFSET = ICON_OFFSET + 8 + 5;
 
         // Name
-        blit(
-            matrixStack,
+        guiGraphics.blit(
+            PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
             this.getX() + ICON_OFFSET,
             this.getY() + 4,
             265,
@@ -204,8 +208,8 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
 
         // Author
         // @todo: real icon from base64
-        blit(
-            matrixStack,
+        guiGraphics.blit(
+            PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
             this.getX() + ICON_OFFSET,
             this.getY() + 4 + 11 * multilinePaintingTitle.size(),
             265,
@@ -217,8 +221,8 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
         );
 
         // Size
-        blit(
-            matrixStack,
+        guiGraphics.blit(
+            PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
             this.getX() + ICON_OFFSET,
             this.getY() + 4 + 11 * multilinePaintingTitle.size() + 11 * multilineNickname.size(),
             273 + (widthBlocks - 1) * 8,
@@ -230,23 +234,23 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
         );
 
         int titleNameLines = 0;
-        for (FormattedCharSequence paintingTitleNameLine: multilinePaintingTitle) {
-            this.font.draw(matrixStack, paintingTitleNameLine, this.getX() + TEXT_OFFSET, this.getY() + 5 + 11 * titleNameLines++, Color.white.getRGB());
+        for (FormattedCharSequence paintingTitleNameLine : multilinePaintingTitle) {
+            guiGraphics.drawString(this.parentScreen.getFont(), paintingTitleNameLine, this.getX() + TEXT_OFFSET, this.getY() + 5 + 11 * titleNameLines++, Color.white.getRGB(), false);
         }
 
         int nicknameLines = 0;
-        for (FormattedCharSequence nicknameLine: multilineNickname) {
-            this.font.draw(matrixStack, nicknameLine, this.getX() + TEXT_OFFSET, this.getY() + 5 + 11 * titleNameLines + 11 * nicknameLines++, Color.white.getRGB());
+        for (FormattedCharSequence nicknameLine : multilineNickname) {
+            guiGraphics.drawString(this.parentScreen.getFont(), nicknameLine, this.getX() + TEXT_OFFSET, this.getY() + 5 + 11 * titleNameLines + 11 * nicknameLines++, Color.white.getRGB(), false);
         }
 
-        this.font.draw(matrixStack, blockSize.getString(), this.getX() + TEXT_OFFSET, this.getY() + 5 + 11 * titleNameLines + 11 * nicknameLines, Color.white.getRGB());
+        guiGraphics.drawString(this.parentScreen.getFont(), blockSize.getString(), this.getX() + TEXT_OFFSET, this.getY() + 5 + 11 * titleNameLines + 11 * nicknameLines, Color.white.getRGB(), false);
     }
 
-    private void renderErrorMessage(PoseStack matrixStack, String errorMessage) {
-        List<FormattedCharSequence> multilineErrorMessage =  this.font.split(FormattedText.of(errorMessage), 186);
+    private void renderErrorMessage(GuiGraphics guiGraphics, String errorMessage) {
+        List<FormattedCharSequence> multilineErrorMessage = this.font.split(FormattedText.of(errorMessage), 186);
         int errorLines = 0;
-        for (FormattedCharSequence errorLine: multilineErrorMessage) {
-            drawCenteredString(matrixStack, this.font, errorLine, this.getX() + this.width / 2, this.getY() + 20 + 11 * errorLines++, Color.white.getRGB());
+        for (FormattedCharSequence errorLine : multilineErrorMessage) {
+            guiGraphics.drawCenteredString(this.parentScreen.getFont(), errorLine, this.getX() + this.width / 2, this.getY() + 20 + 11 * errorLines++, Color.white.getRGB());
         }
     }
 
@@ -261,6 +265,7 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
     /**
      * Show some kind of indicator, but generally item in output slot will
      * be enough of an indicator
+     *
      * @return
      */
     public boolean canProceed() {
@@ -297,9 +302,9 @@ public class OfferInfoWidget extends AbstractPaintingMerchantWidget {
     protected boolean isPointInRegion(int x, int y, int width, int height, double mouseX, double mouseY) {
         int i = this.getX();
         int j = this.getY();
-        mouseX = mouseX - (double)i;
-        mouseY = mouseY - (double)j;
-        return mouseX >= (double)(x - 1) && mouseX < (double)(x + width + 1) && mouseY >= (double)(y - 1) && mouseY < (double)(y + height + 1);
+        mouseX = mouseX - (double) i;
+        mouseY = mouseY - (double) j;
+        return mouseX >= (double) (x - 1) && mouseX < (double) (x + width + 1) && mouseY >= (double) (y - 1) && mouseY < (double) (y + height + 1);
     }
 
     @Override

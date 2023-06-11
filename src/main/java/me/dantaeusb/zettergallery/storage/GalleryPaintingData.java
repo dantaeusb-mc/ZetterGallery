@@ -11,6 +11,7 @@ import me.dantaeusb.zettergallery.core.ZetterGalleryCanvasTypes;
 import me.dantaeusb.zettergallery.core.ZetterGalleryOverlays;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 
 import java.nio.ByteBuffer;
@@ -68,8 +69,8 @@ public class GalleryPaintingData extends PaintingData {
     }
 
     @Override
-    public PaintingInfoOverlay getOverlay() {
-        return ZetterGalleryOverlays.GALLERY_PAINTING_INFO;
+    public ResourceLocation getOverlay() {
+        return OVERLAY_KEY;
     }
 
     @Override

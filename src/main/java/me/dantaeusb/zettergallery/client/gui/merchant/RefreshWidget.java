@@ -6,9 +6,11 @@ import me.dantaeusb.zetter.core.tools.Color;
 import me.dantaeusb.zettergallery.client.gui.PaintingMerchantScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
@@ -36,18 +38,18 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         if (this.isLoading()) {
             return;
         }
 
-        RenderSystem.setShaderTexture(0, PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
+        RenderSystem.setShaderTexture(0, PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE);
 
         if (this.canUpdate()) {
             // Left (down) arrow
             if (isPointInRegion(REFRESH_BUTTON_XPOS, REFRESH_BUTTON_YPOS, REFRESH_BUTTON_WIDTH, REFRESH_BUTTON_HEIGHT, mouseX, mouseY)) {
-                blit(
-                    matrixStack,
+                guiGraphics.blit(
+                    PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
                     this.getX() + REFRESH_BUTTON_XPOS,
                     this.getY() + REFRESH_BUTTON_YPOS,
                     REFRESH_BUTTON_UPOS + REFRESH_BUTTON_WIDTH * 2,
@@ -58,8 +60,8 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
                     256
                 );
             } else {
-                blit(
-                    matrixStack,
+                guiGraphics.blit(
+                    PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
                     this.getX() + REFRESH_BUTTON_XPOS,
                     this.getY() + REFRESH_BUTTON_YPOS,
                     REFRESH_BUTTON_UPOS + REFRESH_BUTTON_WIDTH,
@@ -71,8 +73,8 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
                 );
             }
         } else {
-            blit(
-                matrixStack,
+            guiGraphics.blit(
+                PaintingMerchantScreen.PAINTING_MERCHANT_GUI_TEXTURE_RESOURCE,
                 this.getX() + REFRESH_BUTTON_XPOS,
                 this.getY() + REFRESH_BUTTON_YPOS,
                 REFRESH_BUTTON_UPOS,
@@ -86,7 +88,7 @@ public class RefreshWidget extends AbstractPaintingMerchantWidget {
 
         final String timeToUpdate = this.getUpdateTimeout();
         final int timerWidth = this.font.width(timeToUpdate);
-        this.font.draw(matrixStack, timeToUpdate, this.getX() + WIDTH - REFRESH_BUTTON_WIDTH - timerWidth - 2, this.getY() + 5, Color.gray.getRGB());
+        guiGraphics.drawString(this.parentScreen.getFont(), timeToUpdate, this.getX() + WIDTH - REFRESH_BUTTON_WIDTH - timerWidth - 2, this.getY() + 5, Color.gray.getRGB(), false);
     }
 
     public String getUpdateTimeout() {
