@@ -11,8 +11,8 @@ issueTrackerURL="https://github.com/dantaeusb-mc/ZetterGallery/issues"
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
-displayURL="https://modrinth.com/mod/zetter-painting-mod"
-updateJSONURL="https://api.modrinth.com/updates/ZmLgjf6f/forge_updates.json"
+displayURL="https://modrinth.com/mod/zetter-gallery-share-paintings"
+updateJSONURL="https://api.modrinth.com/updates/oeZg3RVU/forge_updates.json"
 logoFile="zetter-gallery.png"
 
 credits='''
