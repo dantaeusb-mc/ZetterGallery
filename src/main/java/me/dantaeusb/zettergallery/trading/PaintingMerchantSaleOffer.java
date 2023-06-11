@@ -135,11 +135,6 @@ public class PaintingMerchantSaleOffer extends PaintingMerchantAbstractOffer {
             return false;
         }
 
-        if (this.generation != PaintingItem.GENERATION_ORIGINAL) {
-            this.markError(new GalleryError(GalleryError.CLIENT_INVALID_OFFER, NOT_ORIGINAL_PAINTING_ERROR.getString()));
-            return false;
-        }
-
         return true;
     }
 
