@@ -5,7 +5,7 @@ import me.dantaeusb.zettergallery.container.PaintingMerchantContainer;
 import me.dantaeusb.zettergallery.gallery.salesmanager.PlayerFeed;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
-import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
+import me.dantaeusb.zettergallery.network.http.dto.PaintingsResponse;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;

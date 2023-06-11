@@ -1,6 +1,7 @@
 package me.dantaeusb.zettergallery.core;
 
 import me.dantaeusb.zetter.Zetter;
+import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.common.extensions.IForgeMenuType;
@@ -10,7 +11,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 public class ZetterGalleryContainerMenus {
-    private static final DeferredRegister<MenuType<?>> CONTAINERS = DeferredRegister.create(ForgeRegistries.MENU_TYPES, Zetter.MOD_ID);
+    private static final DeferredRegister<MenuType<?>> CONTAINERS = DeferredRegister.create(ForgeRegistries.MENU_TYPES, ZetterGallery.MOD_ID);
 
     public static RegistryObject<MenuType<PaintingMerchantMenu>> PAINTING_MERCHANT = CONTAINERS.register("painting_merchant_container", () -> IForgeMenuType.create(PaintingMerchantMenu::createMenuClientSide));
 

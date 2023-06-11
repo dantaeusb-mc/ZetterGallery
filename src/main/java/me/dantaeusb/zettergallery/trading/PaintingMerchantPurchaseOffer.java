@@ -8,7 +8,7 @@ import me.dantaeusb.zetter.item.PaintingItem;
 import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zettergallery.core.ZetterGalleryCanvasTypes;
-import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
+import me.dantaeusb.zettergallery.network.http.dto.PaintingsResponse;
 import me.dantaeusb.zettergallery.storage.GalleryPaintingData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;

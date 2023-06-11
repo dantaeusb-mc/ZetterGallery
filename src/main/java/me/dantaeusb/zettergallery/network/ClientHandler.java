@@ -4,6 +4,7 @@ import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.packet.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 
 public class ClientHandler {
@@ -42,13 +43,16 @@ public class ClientHandler {
      * @param packetIn
      * @param world
      */
-    public static void processPaintingMerchantInfo(final SMerchantInfoPacket packetIn, Level world) {
+    public static void processPaintingMerchantInfo(final SMerchantOffersPacket packetIn, Level world) {
         Player player = Minecraft.getInstance().player;
         assert player != null;
+        AbstractContainerMenu playerContainerMenu = player.containerMenu;
 
-        if (player.containerMenu instanceof PaintingMerchantMenu) {
-            ((PaintingMerchantMenu) player.containerMenu).setMerchantId(packetIn.merchantId);
-            ((PaintingMerchantMenu) player.containerMenu).setMerchantLevel(packetIn.merchantLevel);
+        if (packetIn.containerId == playerContainerMenu.containerId && player.containerMenu instanceof PaintingMerchantMenu paintingMerchantMenu) {
+            paintingMerchantMenu.setMerchantId(packetIn.merchantId);
+            paintingMerchantMenu.setOffers(packetIn.offers);
+            paintingMerchantMenu.setXp(packetIn.villagerXp);
+            paintingMerchantMenu.setMerchantLevel(packetIn.villagerLevel);
         }
     }
 

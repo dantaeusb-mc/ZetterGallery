@@ -5,7 +5,7 @@ import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.DummyCanvasData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.network.ClientHandler;
-import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
+import me.dantaeusb.zettergallery.network.http.dto.PaintingsResponse;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;

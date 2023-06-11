@@ -1,9 +1,7 @@
-package me.dantaeusb.zettergallery.network.http.stub;
+package me.dantaeusb.zettergallery.network.http.dto;
 
 import me.dantaeusb.zettergallery.gallery.AuthorizationCode;
-import me.dantaeusb.zettergallery.gallery.GalleryServerCapability;
 
-import java.util.Date;
 import java.util.UUID;
 
 public class ServerPlayerResponse {

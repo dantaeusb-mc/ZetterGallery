@@ -1,6 +1,5 @@
 package me.dantaeusb.zettergallery.storage;
 
-import me.dantaeusb.zetter.client.gui.overlay.PaintingInfoOverlay;
 import me.dantaeusb.zetter.core.Helper;
 import me.dantaeusb.zetter.storage.AbstractCanvasData;
 import me.dantaeusb.zetter.storage.CanvasDataBuilder;
@@ -8,7 +7,6 @@ import me.dantaeusb.zetter.storage.CanvasDataType;
 import me.dantaeusb.zetter.storage.PaintingData;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.core.ZetterGalleryCanvasTypes;
-import me.dantaeusb.zettergallery.core.ZetterGalleryOverlays;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -26,6 +24,7 @@ import java.util.UUID;
 public class GalleryPaintingData extends PaintingData {
     public static final String TYPE = "painting";
     public static final String CODE_PREFIX = ZetterGallery.MOD_ID + "_" + TYPE + "_";
+    public static final ResourceLocation OVERLAY_KEY = new ResourceLocation(ZetterGallery.MOD_ID, "gallery_painting_info");
 
     public static final CanvasDataBuilder<GalleryPaintingData> BUILDER = new GalleryPaintingDataBuilder();
 

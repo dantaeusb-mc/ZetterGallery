@@ -24,15 +24,6 @@ public class ZetterGalleryGameEvents {
     }
 
     /**
-     * @todo: [MED] Do we really need that hook here? It might be called very frequently
-     * @param event
-     */
-    @SubscribeEvent
-    public static void onRenderTickStart(TickEvent.ClientTickEvent event) {
-        ZetterGalleryOverlays.GALLERY_PAINTING_INFO.tick();
-    }
-
-    /**
      * We need this because we need to start flow
      * only when container is opened and initialized on both sides
      * @param event

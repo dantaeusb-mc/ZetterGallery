@@ -17,7 +17,7 @@ import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.gallery.SalesManager;
 import me.dantaeusb.zettergallery.menu.PaintingMerchantMenu;
 import me.dantaeusb.zettergallery.network.http.GalleryError;
-import me.dantaeusb.zettergallery.network.http.stub.PaintingsResponse;
+import me.dantaeusb.zettergallery.network.http.dto.PaintingsResponse;
 import me.dantaeusb.zettergallery.network.packet.*;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantOffer;
 import me.dantaeusb.zettergallery.trading.PaintingMerchantPurchaseOffer;
@@ -25,6 +25,7 @@ import me.dantaeusb.zettergallery.trading.PaintingMerchantSaleOffer;
 import net.minecraft.core.NonNullList;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.stats.Stats;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.ContainerListener;
@@ -175,6 +176,7 @@ public class PaintingMerchantContainer implements Container {
                 if (inputStack.getItem() == ZetterItems.PAINTING.get()) {
                     // Current offer is to sell this painting, and we can proceed if validated
                     final String canvasCode = PaintingItem.getPaintingCode(inputStack);
+                    final int generation = PaintingItem.getGeneration(inputStack);
 
                     /**
                      * If item was not changed, there's no need
@@ -197,14 +199,14 @@ public class PaintingMerchantContainer implements Container {
 
                     PaintingMerchantSaleOffer saleOffer;
                     if (paintingData != null) {
-                        saleOffer = PaintingMerchantSaleOffer.createOfferFromPlayersPainting(canvasCode, paintingData, 4);
+                        saleOffer = PaintingMerchantSaleOffer.createOfferFromPlayersPainting(canvasCode, paintingData, generation, 4);
 
                         Level level = this.merchant.getTradingPlayer().level();
                         if (level.isClientSide()) {
                             saleOffer.register(this.merchant.getTradingPlayer().level());
                         }
                     } else {
-                        saleOffer = PaintingMerchantSaleOffer.createOfferWithoutPlayersPainting(canvasCode, this.merchant.getTradingPlayer(), 4);
+                        saleOffer = PaintingMerchantSaleOffer.createOfferWithoutPlayersPainting(canvasCode, this.merchant.getTradingPlayer(), generation, 4);
                         CanvasRenderer.getInstance().queueCanvasTextureUpdate(canvasCode);
                     }
 
@@ -337,38 +339,50 @@ public class PaintingMerchantContainer implements Container {
      * care about.
      */
     public void checkout(ItemStack purchaseStack) {
-        PaintingMerchantOffer offer = this.getCurrentOffer();
+        PaintingMerchantOffer paintingOffer = this.getCurrentOffer();
+        MerchantOffer merchantOffer = this.getVanillaMerchantOffer(paintingOffer);
 
-        if (offer instanceof PaintingMerchantSaleOffer saleOffer) {
-            if (!offer.isReady()) {
-                Zetter.LOG.error("Offer is not ready for checkout");
-                return;
-            }
+        ItemStack stack = this.itemStacks.get(0);
+
+        if (!merchantOffer.take(stack, ItemStack.EMPTY)) {
+            Zetter.LOG.error("Cannot take offer");
+            return;
+        }
+
+        if (!paintingOffer.isReady()) {
+            Zetter.LOG.error("Offer is not ready for checkout");
+            return;
+        }
+
+        this.merchant.notifyTrade(merchantOffer);
+        this.merchant.getTradingPlayer().awardStat(Stats.TRADED_WITH_VILLAGER);
+        this.merchant.overrideXp(this.merchant.getVillagerXp() + merchantOffer.getXp());
+
+        if (paintingOffer instanceof PaintingMerchantSaleOffer saleOffer) {
+            this.itemStacks.set(INPUT_SLOT, ItemStack.EMPTY);
 
             if (!this.merchant.getTradingPlayer().isLocalPlayer()) {
                 ConnectionManager.getInstance().registerSale(
                     (ServerPlayer) this.player,
                     saleOffer,
                     this::finalizeCheckout,
-                    offer::markError
+                    paintingOffer::markError
                 );
             }
+        } else if (paintingOffer instanceof PaintingMerchantPurchaseOffer purchaseOffer) {
+            this.itemStacks.get(INPUT_SLOT).shrink(paintingOffer.getPrice());
+            purchaseOffer.writeOfferResultData(this.merchant.getTradingPlayer().level(), purchaseStack);
 
-            this.itemStacks.set(INPUT_SLOT, ItemStack.EMPTY);
-        } else if (offer instanceof PaintingMerchantPurchaseOffer purchaseOffer) {
-            if (!this.merchant.getTradingPlayer().isLocalPlayer()) {
+            if (!this.merchant.getTradingPlayer().level().isClientSide()) {
                 ConnectionManager.getInstance().registerPurchase(
                     (ServerPlayer) this.player,
                     purchaseOffer.getPaintingUuid(),
                     purchaseOffer.getPrice(),
                     purchaseOffer.getCycleIncrementId(),
                     this::finalizeCheckout,
-                    offer::markError
+                    paintingOffer::markError
                 );
             }
-
-            this.itemStacks.get(INPUT_SLOT).shrink(offer.getPrice());
-            purchaseOffer.writeOfferResultData(this.merchant.getTradingPlayer().level(), purchaseStack);
         }
 
         // Reset item if we were selling item
@@ -376,13 +390,14 @@ public class PaintingMerchantContainer implements Container {
     }
 
     /**
-     * Response from server after sell/purchase request: either
-     * request was fulfilled and player may take the painting or something went wrong
-     * and we do nothing
+     * Response from server after sell/purchase request:
+     * we do not necessarily expect to register purchase
+     * and still let painting to be retrieved when error occurs.
+     *
+     * But we would like to have some notification that the
+     * purchase was registered.
      */
     public void finalizeCheckout() {
-        PaintingMerchantOffer offer = this.getCurrentOffer();
-        this.merchant.notifyTrade(this.getVanillaMerchantOffer(offer));
         this.playTradeSound();
     }
 

@@ -1,4 +1,4 @@
-package me.dantaeusb.zettergallery.network.http.stub;
+package me.dantaeusb.zettergallery.network.http.dto;
 
 import javax.annotation.Nullable;
 import java.util.Date;

@@ -12,8 +12,6 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = ZetterGallery.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ZetterGalleryOverlays {
-    public static GalleryPaintingInfoOverlay GALLERY_PAINTING_INFO = new GalleryPaintingInfoOverlay();
-
     @SubscribeEvent
     public static void onRegisterOverlays(RegisterGuiOverlaysEvent event) {
         GalleryPaintingInfoOverlay overlay = new GalleryPaintingInfoOverlay();

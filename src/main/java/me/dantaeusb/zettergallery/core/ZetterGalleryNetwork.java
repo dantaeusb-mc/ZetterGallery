@@ -72,9 +72,9 @@ public class ZetterGalleryNetwork {
             CFeedRefreshRequest::handle,
             Optional.of(PLAY_TO_SERVER));
 
-        simpleChannel.registerMessage(GALLERY_MERCHANT_INFO, SMerchantInfoPacket.class,
-                SMerchantInfoPacket::writePacketData, SMerchantInfoPacket::readPacketData,
-                SMerchantInfoPacket::handle,
+        simpleChannel.registerMessage(GALLERY_MERCHANT_INFO, SMerchantOffersPacket.class,
+                SMerchantOffersPacket::writePacketData, SMerchantOffersPacket::readPacketData,
+                SMerchantOffersPacket::handle,
                 Optional.of(PLAY_TO_CLIENT));
 
         simpleChannel.registerMessage(GALLERY_OFFERS_ERROR, SOffersErrorPacket.class,
