@@ -1,6 +1,6 @@
 {
 	"container.zettergallery.merchant.another_players_painting": "他のプレイヤーが作った絵画は売ることができません.",
-	"container.zettergallery.merchant.authenticating": "接続中",
+	"container.zettergallery.merchant.authenticating": "接続",
 	"container.zettergallery.merchant.fetching_offers": "依頼をリクエスト中",
 	"container.zettergallery.merchant.info": "絵画の情報",
 	"container.zettergallery.merchant.links_disabled_tooltip": "Minecraft の設定で Web 機能が無効になっています.",
@@ -9,7 +9,7 @@
 	"container.zettergallery.merchant.login_disabled": "無効",
 	"container.zettergallery.merchant.login_request": "ログイン",
 	"container.zettergallery.merchant.login_request_tooltip": "ログインすると絵画を販売し、パーソナライズすることができます.",
-	"container.zettergallery.merchant.login_waiting": "ログインしているかを確認中.",
+	"container.zettergallery.merchant.login_waiting": "ログイン状況を確認中.",
 	"container.zettergallery.merchant.paginator": "絵画を切り替える.",
 	"container.zettergallery.merchant.paginator.next": "次の絵画",
 	"container.zettergallery.merchant.paginator.previous": "前の絵画",
