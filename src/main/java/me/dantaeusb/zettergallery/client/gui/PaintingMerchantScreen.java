@@ -195,7 +195,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
                     poseStack,
                     xPos,
                     yPos,
-                    this.getBlitOffset(), // hmmmm
+                    0, // hmmmm
                     BAR_U,
                     BAR_V,
                     BAR_WIDTH,
@@ -215,7 +215,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
                         poseStack,
                         xPos,
                         yPos,
-                        this.getBlitOffset(),
+                        0,
                         BAR_U,
                         BAR_V + BAR_HEIGHT,
                         i1 + 1, // WIDTH
@@ -275,7 +275,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.setShaderTexture(0, GUI_TEXTURE_RESOURCE);
 
-        blit(poseStack, this.leftPos, this.topPos, this.getBlitOffset(), 0.0F, 0.0F, this.imageWidth, this.imageHeight, 512, 256);
+        blit(poseStack, this.leftPos, this.topPos, 0, 0.0F, 0.0F, this.imageWidth, this.imageHeight, 512, 256);
 
         // Suggest paintings or emeralds for sale
         final int SELL_SLOT_X = 119;

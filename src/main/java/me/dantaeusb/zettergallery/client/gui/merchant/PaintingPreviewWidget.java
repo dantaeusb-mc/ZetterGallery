@@ -27,7 +27,7 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
     }
 
     @Override
-    public void render(@NotNull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(@NotNull PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         PaintingMerchantOffer offer = this.parentScreen.getCurrentOffer();
 
         if (offer == null || offer.isError()) {
@@ -59,7 +59,7 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
         }
 
         matrixStack.pushPose();
-        matrixStack.translate(this.x + offsetX, this.y + offsetY, 1.0F);
+        matrixStack.translate(this.getX() + offsetX, this.getY() + offsetY, 1.0F);
         matrixStack.scale(scale, scale, 1.0F);
 
         MultiBufferSource.BufferSource renderBuffers = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
@@ -84,7 +84,7 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
 
         frame = frame > 2 ? 1 : frame; // 3rd frame is the same as 1st frame
 
-        blit(matrixStack, this.x + (this.width - LOADING_WIDTH) / 2, this.y + (this.height - LOADING_HEIGHT) / 2, LOADING_UPOS, LOADING_VPOS + LOADING_HEIGHT * frame, LOADING_WIDTH, LOADING_HEIGHT, 512, 256);
+        blit(matrixStack, this.getX() + (this.width - LOADING_WIDTH) / 2, this.getY() + (this.height - LOADING_HEIGHT) / 2, LOADING_UPOS, LOADING_VPOS + LOADING_HEIGHT * frame, LOADING_WIDTH, LOADING_HEIGHT, 512, 256);
     }
 
     public boolean isLoading() {
@@ -112,10 +112,5 @@ public class PaintingPreviewWidget extends AbstractPaintingMerchantWidget {
         }
 
         return null;
-    }
-
-    @Override
-    public void updateNarration(NarrationElementOutput p_169152_) {
-
     }
 }

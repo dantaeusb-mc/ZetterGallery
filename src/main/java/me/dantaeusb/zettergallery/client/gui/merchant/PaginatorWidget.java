@@ -34,7 +34,7 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
     }
 
     @Override
-    public void render(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
+    public void renderWidget(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks) {
         RenderSystem.setShaderTexture(0, PaintingMerchantScreen.GUI_TEXTURE_RESOURCE);
 
         if (this.canSelect()) {
@@ -42,8 +42,8 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
             if (isPointInRegion(PREV_OFFER_BUTTON_XPOS, PREV_OFFER_BUTTON_YPOS, OFFER_BUTTON_WIDTH, OFFER_BUTTON_HEIGHT, mouseX, mouseY)) {
                 blit(
                         matrixStack,
-                        this.x + PREV_OFFER_BUTTON_XPOS,
-                        this.y + PREV_OFFER_BUTTON_YPOS,
+                        this.getX() + PREV_OFFER_BUTTON_XPOS,
+                        this.getY() + PREV_OFFER_BUTTON_YPOS,
                         PREV_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH * 2,
                         PREV_OFFER_BUTTON_VPOS,
                         OFFER_BUTTON_WIDTH,
@@ -54,8 +54,8 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
             } else {
                 blit(
                         matrixStack,
-                        this.x + PREV_OFFER_BUTTON_XPOS,
-                        this.y + PREV_OFFER_BUTTON_YPOS,
+                        this.getX() + PREV_OFFER_BUTTON_XPOS,
+                        this.getY() + PREV_OFFER_BUTTON_YPOS,
                         PREV_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH,
                         PREV_OFFER_BUTTON_VPOS,
                         OFFER_BUTTON_WIDTH,
@@ -69,8 +69,8 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
             if (isPointInRegion(NEXT_OFFER_BUTTON_XPOS, NEXT_OFFER_BUTTON_YPOS, OFFER_BUTTON_WIDTH, OFFER_BUTTON_HEIGHT, mouseX, mouseY)) {
                 blit(
                         matrixStack,
-                        this.x + NEXT_OFFER_BUTTON_XPOS,
-                        this.y + NEXT_OFFER_BUTTON_YPOS,
+                        this.getX() + NEXT_OFFER_BUTTON_XPOS,
+                        this.getY() + NEXT_OFFER_BUTTON_YPOS,
                         NEXT_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH * 2,
                         NEXT_OFFER_BUTTON_VPOS,
                         OFFER_BUTTON_WIDTH,
@@ -81,8 +81,8 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
             } else {
                 blit(
                         matrixStack,
-                        this.x + NEXT_OFFER_BUTTON_XPOS,
-                        this.y + NEXT_OFFER_BUTTON_YPOS,
+                        this.getX() + NEXT_OFFER_BUTTON_XPOS,
+                        this.getY() + NEXT_OFFER_BUTTON_YPOS,
                         NEXT_OFFER_BUTTON_UPOS + OFFER_BUTTON_WIDTH,
                         NEXT_OFFER_BUTTON_VPOS,
                         OFFER_BUTTON_WIDTH,
@@ -94,8 +94,8 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
         } else {
             blit(
                     matrixStack,
-                    this.x + PREV_OFFER_BUTTON_XPOS,
-                    this.y + PREV_OFFER_BUTTON_YPOS,
+                    this.getX() + PREV_OFFER_BUTTON_XPOS,
+                    this.getY() + PREV_OFFER_BUTTON_YPOS,
                     PREV_OFFER_BUTTON_UPOS,
                     PREV_OFFER_BUTTON_VPOS,
                     OFFER_BUTTON_WIDTH,
@@ -106,8 +106,8 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
 
             blit(
                     matrixStack,
-                    this.x + NEXT_OFFER_BUTTON_XPOS,
-                    this.y + NEXT_OFFER_BUTTON_YPOS,
+                    this.getX() + NEXT_OFFER_BUTTON_XPOS,
+                    this.getY() + NEXT_OFFER_BUTTON_YPOS,
                     NEXT_OFFER_BUTTON_UPOS,
                     NEXT_OFFER_BUTTON_VPOS,
                     OFFER_BUTTON_WIDTH,
@@ -173,15 +173,10 @@ public class PaginatorWidget extends AbstractPaintingMerchantWidget {
      * @return
      */
     protected boolean isPointInRegion(int x, int y, int width, int height, double mouseX, double mouseY) {
-        int i = this.x;
-        int j = this.y;
+        int i = this.getX();
+        int j = this.getY();
         mouseX = mouseX - (double)i;
         mouseY = mouseY - (double)j;
         return mouseX >= (double)(x - 1) && mouseX < (double)(x + width + 1) && mouseY >= (double)(y - 1) && mouseY < (double)(y + height + 1);
-    }
-
-    @Override
-    public void updateNarration(NarrationElementOutput pNarrationElementOutput) {
-
     }
 }
