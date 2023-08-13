@@ -1,6 +1,6 @@
 modLoader="javafml"
 
-loaderVersion="[43,)"
+loaderVersion="[45,)"
 
 license="Mozilla Public License 2.0"
 
@@ -44,20 +44,20 @@ description='''
 [[dependencies.zettergallery]]
     modId="forge"
     mandatory=true
-    versionRange="[43,)"
+    versionRange="[45,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.zettergallery]]
     modId="zetter"
     mandatory=true
-    versionRange="[0.21.0-1.19.2-rc,)"
+    versionRange="[0.21.4,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.zettergallery]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.19.2]"
+    versionRange="[1.19.4]"
     ordering="NONE"
     side="BOTH"

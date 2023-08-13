@@ -88,12 +88,7 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
     protected void init() {
         super.init();
 
-        this.inventoryLabelX = 107;
-    }
-
-    @Override
-    protected void rebuildWidgets() {
-        super.rebuildWidgets();
+        this.paintingMerchantWidgets.clear();
 
         this.authWidget = new AuthWidget(this, this.getGuiLeft() + AUTH_POSITION_X, this.getGuiTop() + AUTH_POSITION_Y);
         this.previewWidget = new PaintingPreviewWidget(this, this.getGuiLeft() + PREVIEW_POSITION_X, this.getGuiTop() + PREVIEW_POSITION_Y);
@@ -106,6 +101,8 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         this.addPaintingMerchantWidget(this.paginatorWidget);
         this.addPaintingMerchantWidget(this.infoWidget);
         this.addPaintingMerchantWidget(this.refreshWidget);
+
+        this.inventoryLabelX = 107;
     }
 
     @Override
@@ -294,11 +291,11 @@ public class PaintingMerchantScreen extends AbstractContainerScreen<PaintingMerc
         blit(poseStack, this.leftPos + SELL_SLOT_X, this.topPos + SELL_SLOT_Y, SELL_SLOT_U, SELL_SLOT_V + sellSlotVOffset, SELL_SLOT_WIDTH, SELL_SLOT_HEIGHT);
 
         // Widgets
-        this.authWidget.render(poseStack, mouseX, mouseY, partialTicks);
-        this.previewWidget.render(poseStack, mouseX, mouseY, partialTicks);
-        this.paginatorWidget.render(poseStack, mouseX, mouseY, partialTicks);
-        this.infoWidget.render(poseStack, mouseX, mouseY, partialTicks);
-        this.refreshWidget.render(poseStack, mouseX, mouseY, partialTicks);
+        this.authWidget.renderWidget(poseStack, mouseX, mouseY, partialTicks);
+        this.previewWidget.renderWidget(poseStack, mouseX, mouseY, partialTicks);
+        this.paginatorWidget.renderWidget(poseStack, mouseX, mouseY, partialTicks);
+        this.infoWidget.renderWidget(poseStack, mouseX, mouseY, partialTicks);
+        this.refreshWidget.renderWidget(poseStack, mouseX, mouseY, partialTicks);
     }
 
     public void onClose() {
