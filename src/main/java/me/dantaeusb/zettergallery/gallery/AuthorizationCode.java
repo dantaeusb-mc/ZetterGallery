@@ -12,4 +12,12 @@ public class AuthorizationCode {
         this.issuedAt = issuedAt;
         this.notAfter = notAfter;
     }
+
+    /**
+     * Assuming valid if not expired
+     * @return
+     */
+    public boolean valid() {
+        return this.notAfter.getTime() - System.currentTimeMillis() > 0;
+    }
 }

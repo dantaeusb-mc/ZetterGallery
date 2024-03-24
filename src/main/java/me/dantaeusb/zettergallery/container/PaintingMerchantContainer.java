@@ -344,6 +344,10 @@ public class PaintingMerchantContainer implements Container {
 
         ItemStack stack = this.itemStacks.get(0);
 
+        /**
+         * This will reduce the stack size for the price of the offer,
+         * no additional actions are needed.
+         */
         if (!merchantOffer.take(stack, ItemStack.EMPTY)) {
             Zetter.LOG.error("Cannot take offer");
             return;
@@ -370,7 +374,6 @@ public class PaintingMerchantContainer implements Container {
                 );
             }
         } else if (paintingOffer instanceof PaintingMerchantPurchaseOffer purchaseOffer) {
-            this.itemStacks.get(INPUT_SLOT).shrink(paintingOffer.getPrice());
             purchaseOffer.writeOfferResultData(this.merchant.getTradingPlayer().level(), purchaseStack);
 
             if (!this.merchant.getTradingPlayer().level().isClientSide()) {

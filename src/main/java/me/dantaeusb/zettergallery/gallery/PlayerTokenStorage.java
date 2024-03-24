@@ -3,8 +3,9 @@ package me.dantaeusb.zettergallery.gallery;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.Nullable;
-import java.sql.Timestamp;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class PlayerTokenStorage {
@@ -21,6 +22,36 @@ public class PlayerTokenStorage {
         }
 
         return instance;
+    }
+
+    /**
+     * Check that the Player tokens are still relevant:
+     * 1. Remove if expired
+     * 2. Refresh if can be refreshed
+     * 3. Remove authorization code if expired
+     */
+    public void validateTokens() {
+        final Date now = new Date();
+
+        if (this.playerTokenMap.isEmpty()) {
+            return;
+        }
+
+        for (Map.Entry<UUID, PlayerToken> entry : this.playerTokenMap.entrySet()) {
+            if (entry.getValue().notAfter.before(now)) {
+                this.playerTokenMap.remove(entry.getKey());
+            }
+
+            if (entry.getValue().needRefresh()) {
+                // @todo: [MED] Refresh token
+            }
+
+            if (entry.getValue().authorizationCode != null && entry.getValue().authorizationCode.notAfter.before(now)) {
+                entry.getValue().dropAuthorizationCode();
+            }
+        }
+
+        this.playerTokenMap.entrySet().removeIf(entry -> entry.getValue().notAfter.before(now));
     }
 
     public int getSize() {
