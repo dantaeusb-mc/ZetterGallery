@@ -3,6 +3,7 @@ package me.dantaeusb.zettergallery.core;
 import me.dantaeusb.zettergallery.ZetterGallery;
 import me.dantaeusb.zettergallery.gallery.ConnectionManager;
 import me.dantaeusb.zettergallery.gallery.SalesManager;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
@@ -27,5 +28,14 @@ public class ZetterGalleryServerEvents {
         ConnectionManager.getInstance().handleServerStop(event.getServer());
         ConnectionManager.closeConnection();
         SalesManager.close();
+    }
+
+    @SubscribeEvent
+    public static void serverTick(final TickEvent.ServerTickEvent event)
+    {
+        if (event.phase == TickEvent.Phase.END)
+        {
+            ConnectionManager.getInstance().handleTick(event.getServer());
+        }
     }
 }

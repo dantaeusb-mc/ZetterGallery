@@ -24,6 +24,13 @@ import java.util.function.Consumer;
  * Deferred server registration
  */
 public class ConnectionManager implements AutoCloseable {
+    /**
+     * We're refreshing tokens and invalidating codes every minute.
+     * Tokens doesn't need to be refreshed that often, but authorization
+     * codes are very short-lived.
+     */
+    public static final int TICKS_TO_REFRESH = 20 * 60;
+
     private static @Nullable ConnectionManager instance;
 
     private final GalleryConnection connection;
@@ -40,6 +47,7 @@ public class ConnectionManager implements AutoCloseable {
     private String errorMessage = "Connection is not ready";
 
     private long errorTimestamp;
+    private long lastRefreshTimestamp;
 
     private ConnectionManager(Level overworld) {
         this.overworld = overworld;
@@ -80,10 +88,36 @@ public class ConnectionManager implements AutoCloseable {
         }
     }
 
+    /**
+     * Revoke the server token as the server is stopping so that
+     * the token can not be used anymore.
+     * @param server
+     */
     public void handleServerStop(MinecraftServer server) {
         if (this.status == ConnectionStatus.READY) {
             this.dropServerToken();
         }
+    }
+
+    /**
+     * Ticks to keep the server token and players token storage up to date.
+     */
+    public void handleTick(MinecraftServer server) {
+        if (this.status != ConnectionStatus.READY || System.currentTimeMillis() < this.lastRefreshTimestamp + TICKS_TO_REFRESH) {
+            return;
+        }
+
+        if (this.serverToken.needRefresh()) {
+            this.refreshServerToken(
+                this.refreshToken,
+                (token) -> {},
+                Zetter.LOG::error
+            );
+        }
+
+        this.playerTokenStorage.validateTokens();
+
+        this.lastRefreshTimestamp = System.currentTimeMillis();
     }
 
     public GalleryConnection getConnection() {
@@ -200,10 +234,9 @@ public class ConnectionManager implements AutoCloseable {
                 return;
             }
 
-            if (playerToken.isAuthorized()) {
+            if (playerToken.isAuthorized() && playerToken.valid()) {
                 successConsumer.accept(playerToken);
-                // @todo: [HIGH] Check it's not expired!
-            } else if (playerToken.authorizationCode != null) {
+            } else if (playerToken.authorizationCode != null && playerToken.authorizationCode.valid()) {
                 GalleryServerCapability galleryServerCapability = (GalleryServerCapability) Helper.getWorldGalleryCapability(this.overworld);
 
                 this.connection.requestServerPlayerToken(
@@ -250,7 +283,13 @@ public class ConnectionManager implements AutoCloseable {
                     }
                 );
             } else {
-                errorConsumer.accept(new GalleryError(GalleryError.UNKNOWN, "No authorization code"));
+                this.requestAuthorizationCode(
+                    player,
+                    (authorizationCode) -> {
+                        this.authenticateServerPlayer(player, successConsumer, errorConsumer);
+                    },
+                    errorConsumer
+                );
             }
         } else {
             this.registerServerPlayer(
